@@ -1,2 +1,2 @@
 # pyathena
-python scritcs for Athena-TIGRESS
+python scripts and example notebooks for Athena-TIGRESS
