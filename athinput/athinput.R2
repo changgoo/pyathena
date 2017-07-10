@@ -96,7 +96,7 @@ kappa           = 1.e7            # conductivity in unit of c.g.s.
 iprob           = 4               # 1: eigen mode/2: random perturbation/3: power spectrum
 surf            = 134.82          # gas surface density
 sz0             = 10              # initial velocity dispersion
-n0              = 46.9798         # initial Pressure
+n0              = 86.8875         # initial Pressure
 beta            = 10              # 
 ispect          = 2               # 1: power law/2: G&O form
 expo            = 2.000000        # exponent of power law. for ispect=1
