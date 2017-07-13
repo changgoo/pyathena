@@ -37,15 +37,15 @@ def parse_filename(filename):
 		mpi_mode=False
 
 	base=os.path.basename(filename)
-        base_split=base.split('.')
-        if len(base_split) == 3:
-          id=base_split[0]
-          step=base_split[1]
-          ext=base_split[2]
-        else:
-	  id=base_split[0]
-	  step=base_split[0]
-          ext=base_split[-1]
+	base_split=base.split('.')
+	if len(base_split) == 3:
+		id=base_split[0]
+		step=base_split[1]
+		ext=base_split[2]
+	else:
+		id=base_split[0]
+		step=base_split[0]
+		ext=base_split[-1]
 
 	return path,id,step,ext,mpi_mode
 
@@ -56,9 +56,9 @@ def parse_line(line, grid):
 		grid['vtk_version'] = sp[-1]
 	elif "time=" in sp:
 		time_index = sp.index("time=")
-        	grid['time'] = float(sp[time_index+1].rstrip(','))
-        	if 'level' in sp: grid['level'] = int(sp[time_index+3].rstrip(','))
-        	if 'domain' in sp: grid['domain'] = int(sp[time_index+5].rstrip(','))  
+		grid['time'] = float(sp[time_index+1].rstrip(','))
+		if 'level' in sp: grid['level'] = int(sp[time_index+3].rstrip(','))
+		if 'domain' in sp: grid['domain'] = int(sp[time_index+5].rstrip(','))  
 		if sp[0] == "PRIMITIVE": 
 			grid['prim_var_type']=True
 	elif "DIMENSIONS" in sp:
@@ -98,7 +98,7 @@ class AthenaDomain(object):
 		self.ngrids = 1
 		if mpi:
 			self.ngrids += len(glob.glob(os.path.join(dir,'id*/%s-id*.%s.%s' % (id, step, ext))))
-                	for n in range(1,self.ngrids):
+			for n in range(1,self.ngrids):
 				self.flist.append(os.path.join(dir,'id%d/%s-id%d.%s.%s' % (n,id,n,step, ext)))
 		if setgrid:
 			if ds==None: 
@@ -110,7 +110,7 @@ class AthenaDomain(object):
 			self.domain=self._setup_domain(self.grids)
 			if ds==None: 
 				self.domain['field_map']=None
-                        else:
+			else:
 				self.domain['field_map']=ds.domain['field_map']
 			self._setup_mpi_grid()
 			self._setup()
@@ -158,10 +158,10 @@ class AthenaDomain(object):
 		self.gid = np.arange(self.ngrids)
 		i = 0
 		for n in range(self.NGrids[2]):
-		  for m in range(self.NGrids[1]):
-		    for l in range(self.NGrids[0]):
-		      self.grids[i]['is']=np.array([l*gnx[0],m*gnx[1],n*gnx[2]])
-		      i += 1 
+			for m in range(self.NGrids[1]):
+				for l in range(self.NGrids[0]):
+					self.grids[i]['is']=np.array([l*gnx[0],m*gnx[1],n*gnx[2]])
+					i += 1 
 
 	def _setup_grid(self):
 		grids=[]
@@ -196,9 +196,9 @@ class AthenaZprof(object):
 			path=path+os.path.sep
 			mpi=False
 		if filename.endswith('.p'):
-		  base=os.path.basename(filename[:-2])
+			base=os.path.basename(filename[:-2])
 		else:
-		  base=os.path.basename(filename)
+			base=os.path.basename(filename)
 		base_sp=base.split('.')
 		ext = base_sp[-1]
 		phase = base_sp[-2]
@@ -213,10 +213,10 @@ class AthenaZprof(object):
 		#print id,step,phase,ext
 		self._set_plist()
 		if not filename.endswith('.p'): 
-		  self._set_time()
-		  if stitch:
+			self._set_time()
+		if stitch:
 			for p in self.plist: self._stitch(p)
-		  if clean:
+		if clean:
 			for p in self.plist: self._clean(p,forced=forced_clean)
 
 	def _set_time(self):
@@ -300,7 +300,7 @@ class AthenaDataSet(AthenaDomain):
 			fm['magnetic_field']=fm['face_centered_B']
 			fm.pop('face_centered_B')
 		nscal=0
-                if 'specific_scalar[0]' in fm.keys():
+		if 'specific_scalar[0]' in fm.keys():
 			keys=fm.keys()
 			for k in keys:
 				if k.startswith('specific_scalar'):
@@ -432,7 +432,7 @@ class AthenaDataSet(AthenaDomain):
 				v1=gd['velocity1']
 				v2=gd['velocity2']
 				v3=gd['velocity3']
-                        	vmag=np.sqrt(v1**2+v2**2+v3**2)
+				vmag=np.sqrt(v1**2+v2**2+v3**2)
 				return vmag
 			else: return gd[field]
 		elif field.startswith('magnetic_field'):
@@ -595,28 +595,28 @@ class AthenaDataSet(AthenaDomain):
 		fm=self.domain['field_map']
 		
 		if field in self.field_list:
-		  if fm[field]['nvar']==3:
-			data=np.empty((dnx[2],dnx[1],dnx[0],3),dtype=fm[field]['dtype'])
-		  else:
-			data=np.empty((dnx[2],dnx[1],dnx[0]),dtype=fm[field]['dtype'])
-		  if field is 'face_centered_B1':
-			data=np.empty((dnx[2],dnx[1],dnx[0]+1),dtype=fm[field]['dtype'])
-		  if field is 'face_centered_B2':
-			data=np.empty((dnx[2],dnx[1]+1,dnx[0]),dtype=fm[field]['dtype'])
-		  if field is 'face_centered_B3':
-			data=np.empty((dnx[2]+1,dnx[1],dnx[0]),dtype=fm[field]['dtype'])
-                elif field in self.derived_field_list:
-		  data=np.empty((dnx[2],dnx[1],dnx[0]),dtype=fm['density']['dtype'])
+			if fm[field]['nvar']==3:
+				data=np.empty((dnx[2],dnx[1],dnx[0],3),dtype=fm[field]['dtype'])
+			else:
+				data=np.empty((dnx[2],dnx[1],dnx[0]),dtype=fm[field]['dtype'])
+			if field is 'face_centered_B1':
+				data=np.empty((dnx[2],dnx[1],dnx[0]+1),dtype=fm[field]['dtype'])
+			if field is 'face_centered_B2':
+				data=np.empty((dnx[2],dnx[1]+1,dnx[0]),dtype=fm[field]['dtype'])
+			if field is 'face_centered_B3':
+				data=np.empty((dnx[2]+1,dnx[1],dnx[0]),dtype=fm[field]['dtype'])
+		elif field in self.derived_field_list:
+			data=np.empty((dnx[2],dnx[1],dnx[0]),dtype=fm['density']['dtype'])
 		return data
 
 	def _get_slab_grid(self,slab=1,verbose=False):
 		if slab > self.NGrids[2]: 
-		    print "%d is lareger than %d" % (slab,self,NGrids[2])
+			print "%d is lareger than %d" % (slab,self,NGrids[2])
 		NxNy=self.NGrids[0]*self.NGrids[1]
 		gidx, = np.where(slab == self.gid/NxNy+1)
 		grids = []
 		for i in gidx:
-		  grids.append(self.grids[i])
+			grids.append(self.grids[i])
 		if verbose: print "XY slab from z=%g to z=%g" % (grids[0]['left_edge'][2],grids[0]['right_edge'][2])
 		return grids
 
@@ -625,10 +625,10 @@ class AthenaDataSet(AthenaDomain):
 		fm=self.domain['field_map']
 		dnx=np.copy(self.domain['Nx'])
 		if slab: 
-		  dnx[2]=self.grids[0]['Nx'][2]
-		  grids = self._get_slab_grid(slab=slab)
+			dnx[2]=self.grids[0]['Nx'][2]
+			grids = self._get_slab_grid(slab=slab)
 		else:
-		  grids = self.grids
+			grids = self.grids
 		data = self._set_data_array(field,dnx)
 		for g in grids:
 			gis=np.copy(g['is'])
@@ -640,14 +640,14 @@ class AthenaDataSet(AthenaDomain):
 				data[gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0],:]=gd
 			else:
 				if gie[0] == dnx[0] and field is 'face_centered_B1':
-				    data[gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]+1]=gd
+					data[gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]+1]=gd
 				elif gie[1] == dnx[1] and field is 'face_centered_B2':
-				    data[gis[2]:gie[2],gis[1]:gie[1]+1,gis[0]:gie[0]]=gd
+					data[gis[2]:gie[2],gis[1]:gie[1]+1,gis[0]:gie[0]]=gd
 				elif gie[2] == dnx[2] and field is 'face_centered_B3':
-				    data[gis[2]:gie[2]+1,gis[1]:gie[1],gis[0]:gie[0]]=gd
+					data[gis[2]:gie[2]+1,gis[1]:gie[1],gis[0]:gie[0]]=gd
 				else:
-				    gd=gd[0:gnx[2],0:gnx[1],0:gnx[0]]
-				    data[gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]]=gd
+					gd=gd[0:gnx[2],0:gnx[1],0:gnx[0]]
+					data[gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]]=gd
 			
 		return data
 
@@ -697,14 +697,11 @@ class AthenaRegion(object):
 			if (gre > le).all() and (gle <re).all():
 				print g['left_edge'],g['right_edge']
 				grid_list.append(g)
-                self.grid_list=grid_list
-                self.le=le
-                self.re=re
+		self.grid_list=grid_list
+		self.le=le
+		self.re=re
 		self.ngrid=len(grid_list)
 		return grid_list
-
-
-
 
 	
 class AthenaSlice(AthenaRegion):
@@ -891,7 +888,7 @@ def read_starvtk(starfile,time_out=False):
 		line = file.readline()
 		parse_line(line, star)
 
-        time=star['time']
+	time=star['time']
 	nstar=star['nstar']
 	#print nstar
 	fm=set_field_map(star)
@@ -919,29 +916,28 @@ def read_starvtk(starfile,time_out=False):
 		star_dict['x3']=pos[i][2]
 		star_dict['time']=time
 
-        if time_out:
-	    return time,pd.DataFrame(star)
-        else:
-	    return pd.DataFrame(star)
+	if time_out:
+		return time,pd.DataFrame(star)
+	else:
+		return pd.DataFrame(star)
 
 def starparvtk_to_starparhist(spfiles):
-    import pandas as pd
-    spfiles.sort()
-    sphst={}
-    for f in spfiles:
-        sp=read_starvtk(f)
-        if len(sp) != 0:
-            idx=sp['mass'] != 0
-            sp=sp[idx]
-            sp.index=sp.time
-            if len(sp) != 0:
-                for id in sp.id:
-                    if sphst.has_key(id):
-                        sphst[id]=pd.DataFrame.append(sphst[id],sp[sp.id == id])
-                    else:
-                        sphst[id]=pd.DataFrame(sp[sp.id == id])
-    sppd=pd.Panel(sphst)
-    fsp=f.split('.')
-    sppd.to_pickle(fsp[0]+'.starpar.p')
-    return sppd
-
+	import pandas as pd
+	spfiles.sort()
+	sphst={}
+	for f in spfiles:
+		sp=read_starvtk(f)
+		if len(sp) != 0:
+			idx=sp['mass'] != 0
+		sp=sp[idx]
+		sp.index=sp.time
+		if len(sp) != 0:
+			for id in sp.id:
+				if sphst.has_key(id):
+					sphst[id]=pd.DataFrame.append(sphst[id],sp[sp.id == id])
+				else:
+					sphst[id]=pd.DataFrame(sp[sp.id == id])
+	sppd=pd.Panel(sphst)
+	fsp=f.split('.')
+	sppd.to_pickle(fsp[0]+'.starpar.p')
+	return sppd

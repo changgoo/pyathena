@@ -96,7 +96,7 @@ kappa           = 1.e7            # conductivity in unit of c.g.s.
 iprob           = 4               # 1: eigen mode/2: random perturbation/3: power spectrum
 surf            = 134.82          # gas surface density
 sz0             = 10              # initial velocity dispersion
-n0              = 86.8875         # initial Pressure
+n0              = 56.4277         # initial Pressure
 beta            = 10              # 
 ispect          = 2               # 1: power law/2: G&O form
 expo            = 2.000000        # exponent of power law. for ispect=1
@@ -106,7 +106,7 @@ khigh           = 128             # cutoff wavenumber
 Omega           = 0.0926309       # angular speed of Galactic rotation (km/s/kpc)
 qshear          = 1.0             # shear parameter -dlnOmega/dlnR
 SurfS           = 462.977         # stellar surface density for KG89 model (Msun/pc^2)
-zstar           = 0.245           # stellar disk scale height for KG89 model (pc)
+zstar           = 245             # stellar disk scale height for KG89 model (pc)
 rhodm           = 0.0791234       # dark matter density at the midplane for KG89 model (Msun/pc^3)
 R0              = 2000            # Galactocentric radius (pc)
 tHII            = -1              # Feedback interval for HII
