@@ -137,37 +137,43 @@ def get_hat(nside,ipix):
 
     return hat
 
-def get_los(data,domain,nside,ipix,\
-  mhd=True,rmax=3000.,deltas=1.,center=[0.,0.,0.]):
+def get_los(data,domain,nside,ipix,fields=['density','temperature'],\
+  vel=True,mhd=True,rmax=3000.,deltas=1.,center=[0.,0.,0.]):
     hat=get_hat(nside,ipix)
     idx,sarr = los_idx(hat['Z'],domain,rmax=rmax,ds=deltas,center=center)
+    if vel:
+        fields += ['velocity1','velocity2','velocity3']
+    if mhd:
+        fields += ['magnetic_field1','magnetic_field2','magnetic_field3']
     if domain.has_key('Omega'):
         Omega=domain['Omega']
         qshear=domain['qshear'] 
         xarr=sarr*hat['Z'][0]+center[0]
-        vy0=-qshear*Omega*xarr
+        if vel: vy0=-qshear*Omega*xarr
         joffset=get_joffset(domain)
         sheared_periodic(domain,idx,joffset=joffset)
     else:
         periodic(domain,idx,iaxis=[0,1])
     los_out={} 
-    for f in data.keys():
+    for f in fields:
         los_out[f]=interp3D(data[f],idx)
-    if domain.has_key('Omega'):
+    if vel and domain.has_key('Omega'):
         los_out['velocity2'] += vy0
     
-    for axis in ['Z','X','Y']:
-        los_out['velocity_'+axis] =hat[axis][0]*los_out['velocity1'] 
-        los_out['velocity_'+axis]+=hat[axis][1]*los_out['velocity2']
-        los_out['velocity_'+axis]+=hat[axis][2]*los_out['velocity3']
-        if mhd: 
+    if vel:
+        for axis in ['Z','X','Y']:
+            los_out['velocity_'+axis] =hat[axis][0]*los_out['velocity1'] 
+            los_out['velocity_'+axis]+=hat[axis][1]*los_out['velocity2']
+            los_out['velocity_'+axis]+=hat[axis][2]*los_out['velocity3']
+    if mhd: 
+        for axis in ['Z','X','Y']:
             los_out['magnetic_field_'+axis] =hat[axis][0]*los_out['magnetic_field1'] 
             los_out['magnetic_field_'+axis]+=hat[axis][1]*los_out['magnetic_field2']
             los_out['magnetic_field_'+axis]+=hat[axis][2]*los_out['magnetic_field3']
     los_out['sarr']=sarr
     return los_out
 
-def los_to_HI(los,vmax=100,dvch=1.0):
+def los_to_HI(los,vmax=100,dvch=1.0,deltas=1.):
     nu0=1.420406e9*u.Hz
     A10=2.8843e-15/u.s
     mass=c.m_p
@@ -191,7 +197,7 @@ def los_to_HI(los,vmax=100,dvch=1.0):
     v_L=c3*nu_L
 
     c4=3./32./np.pi*A10*c.h*c.c**2/c.k_B/nu0
-    ds=los['sarr'][1]
+    ds=deltas
 
     phi_v=c1/v_L*np.exp(-(c2*(vchannel-vlos)/v_L)**2)
     kappa_v=c4*nlos/Tspin*phi_v
@@ -202,12 +208,12 @@ def los_to_HI(los,vmax=100,dvch=1.0):
     tau_v=np.nansum(kappa_v*ds*c.pc,axis=1).cgs
     return {'TB':TB,'TBthin':TBthin,'tau':tau_v,'vchannel':vchannel[:,0]}
 
-def los_to_dustpol(los,Tdust=18,nu0=353):
+def los_to_dustpol(los,Tdust=18,nu0=353,deltas=1.):
     from astropy.analytic_functions import blackbody_lambda, blackbody_nu
     Bnu=blackbody_nu(nu0*u.GHz,Tdust*u.K)
     sigma_353=1.2e-26*u.cm**2 # Planck 2013 results XI. by Planck Collaboration XI (2014)
     p0=0.2
-    ds=los['sarr'][1]*u.pc
+    ds=deltas*c.pc
     
     Bperp2=los['magnetic_field_X']**2+los['magnetic_field_Y']**2
     B2=Bperp2+los['magnetic_field_Z']**2
