@@ -8,7 +8,7 @@ sys.path.pop(1)
 sys.path.insert(0,'../')
 from matplotlib.colors import LogNorm
 import pyathena as pa
-coolftn=pa.coolftn('../pyathena/coolftn.p')
+coolftn=pa.coolftn()
 
 import pyathena.synthetic_observations as syn
 import healpy as hp
