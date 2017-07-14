@@ -1,2 +1,5 @@
 *.pyc
 notebook/.ipynb_checkpoints/
+pyathena/build
+pyathena/pyathena
+pyathena/*.c
