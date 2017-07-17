@@ -36,6 +36,7 @@ def data_read(fname,vel=True,mhd=True,usefits=True):
         fields=['density','temperature']
         if vel: fields.append('velocity')
         if mhd: fields.append('magnetic_field')
+        hdulist.close()
     else:
         ds=pa.AthenaDataSet(fname)
         rstfnames=glob.glob('%s/id0/%s.????.rst' % (ds.dir,ds.id)) \
@@ -62,12 +63,19 @@ def data_read(fname,vel=True,mhd=True,usefits=True):
         for f in fields:
             fitsname='%s/fits/%s.%s.%s.fits' % (dir,id,step,f[:4])
             if f.startswith('velo') or f.startswith('magn'):
-                hdulist=fits.open(fitsname,memmap=False)
+                hdulist=fits.open(fitsname,memmap=False,lazy_load_hdus=False)
+                hdulist.readall()
+                #fitsdata=fits.getdata(fitsname)
                 for iaxis in range(3):
                     data['%s%d' % (f,iaxis+1)]=hdulist[0].data[:,:,:,iaxis]
+                    #data['%s%d' % (f,iaxis+1)]=fitsdata[:,:,:,iaxis]
+                hdulist.close()
             else:
-                hdulist=fits.open(fitsname,memmap=False)
+                hdulist=fits.open(fitsname,memmap=False,lazy_load_hdus=False)
+                hdulist.readall()
+                #fitsdata=fits.getdata(fitsname)
                 data[f]=hdulist[0].data
+                #data[f]=fitsdata
     else:
         for f in fields:
             data[f] = ds.read_all_data(f)
@@ -97,7 +105,7 @@ def make_pol_map(data,domain,mapfname='nomap',Nside=4,center=[0.,0.,0.],write=Fa
     for ipix in xrange(npix):
         angle = np.rad2deg(hp.pix2ang(Nside,ipix))
         if ipix % Nside == 0: print '%d of %d' % (ipix,npix)
-        if np.abs(90-angle[0]) > 5:
+        if np.abs(90-angle[0]) > 0:
             los=syn.get_los(data,domain,Nside,ipix,vel=False,mhd=True,\
                             rmax=rmax,deltas=deltas,center=center)
             if write:
@@ -117,63 +125,64 @@ def make_pol_map(data,domain,mapfname='nomap',Nside=4,center=[0.,0.,0.],write=Fa
     if mapfname != 'nomap': 
         hp.write_map(mapfname,[Imap,Qmap,Umap],column_units=['MJy/sr','MJy/sr','MJy/sr'])
 
-def make_pol_map_all(data,domain,mapfname='nomap',\
-  rhole=100.,Nside=4,center=[0.,0.,0.],write=False):
+def make_pol_map_all(data,domain,mapfname='nomap',dl=5.,\
+  Nside=4,center=[0.,0.,0.],write=False):
     deltas=domain['dx'][2]/2.
-    rmax=domain['Lx'][0]*2
+    rmax=1024.#domain['Lx'][2]/2
     print 'rmax', rmax
     print 'ds  ', deltas
 
     npix=hp.nside2npix(Nside)
 
-    Imap={'full':[],'hole':[],'cnm':[],'unm':[],'wnm':[]}
-    Qmap={'full':[],'hole':[],'cnm':[],'unm':[],'wnm':[]}
-    Umap={'full':[],'hole':[],'cnm':[],'unm':[],'wnm':[]}
+    newfile=True
+    nslice=8
+    dr=int(rmax/nslice)
+    nr=int(rmax/deltas)
+    print dr, nr
+    l0=0.0
     for ipix in xrange(npix):
+        if newfile:
+            Imap=[]
+            Qmap=[]
+            Umap=[]
+            for map in [Imap,Qmap,Umap]: 
+                for r in range(nslice): map.append({'ipix':[],'cnm':[],'unm':[],'wnm':[]})
         angle = np.rad2deg(hp.pix2ang(Nside,ipix))
-        if ipix % Nside == 0: print '%d of %d' % (ipix,npix)
-        if np.abs(90-angle[0]) > 5:
-            los=syn.get_los(data,domain,Nside,ipix,vel=False,mhd=True,\
-                            rmax=rmax,deltas=deltas,center=center)
-            for k in Imap.keys():
+        los=syn.get_los(data,domain,Nside,ipix,vel=False,mhd=True,\
+                        rmax=rmax,deltas=deltas,center=center)
+        for f in los.keys():
+            los[f]=los[f][:nr].reshape(nslice,dr)
+        idx={}
+        idx['cnm']=los['temperature'] < 184.
+        idx['unm']=(los['temperature'] >= 184.)&(los['temperature'] < 5050.)
+        idx['wnm']=(los['temperature'] >= 5050.)&(los['temperature'] < 2.e4)
+        los_p = {'cnm':copy.deepcopy(los),'unm':copy.deepcopy(los),'wnm':copy.deepcopy(los)}
+        for p in ['cnm','unm','wnm']:
+            los_p[p]['density'][~idx[p]] = 0.0
+        for r in range(nslice):
+            Imap[r]['ipix'].append(ipix)
+            Qmap[r]['ipix'].append(ipix)
+            Umap[r]['ipix'].append(ipix)
+            for p in ['cnm','unm','wnm']:
                 newlos={}
-                if k == 'hole':
-                    idx=los['sarr'] < rhole
-                elif k == 'cnm':
-                    idx=los['temperature'] < 184.
-                elif k == 'unm':
-                    idx=(los['temperature'] >= 184.)&(los['temperature'] < 5050.)
-                elif k == 'wnm':
-                    idx=(los['temperature'] >= 5050.)&(los['temperature'] < 2.e4)
-                else:
-                    idx=los['sarr'] > 0
-                for f in los.keys():
-                    newlos[f]=los[f][idx]
+                for f in los.keys(): newlos[f]=los_p[p][f][r,:]
                 I,Q,U=syn.los_to_dustpol(newlos,deltas=deltas)
-                Imap[k].append(I.value)
-                Qmap[k].append(Q.value)
-                Umap[k].append(U.value)
+                Imap[r][p].append(I.value)
+                Qmap[r][p].append(Q.value)
+                Umap[r][p].append(U.value)
+        if angle[0] > l0+dl or ipix == (npix-1):
+            for r in range(nslice):
+               df=pd.DataFrame({'I':Imap[r],'Q':Qmap[r],'U':Umap[r]})
+               df.to_pickle(mapfname+'.l%03d.r%d.p' % (int(l0),r))
+            l0=angle[0]
+            newfile=True
+            print l0,ipix,len(Imap[0]['cnm'])
         else:
-            for k in Imap.keys():
-                Imap[k].append(hp.UNSEEN)
-                Qmap[k].append(hp.UNSEEN)
-                Umap[k].append(hp.UNSEEN)
-    for k in Imap.keys():
-        Imap[k]=np.array(Imap[k])
-        Qmap[k]=np.array(Qmap[k])
-        Umap[k]=np.array(Umap[k])
-        polmap=[Imap[k],Qmap[k],Umap[k]]
-        if mapfname != 'nomap': 
-            if k == 'full':
-               fitsfname=mapfname
-            else:
-               fitsfname=mapfname.replace('.fits','.%s.fits' % k)
-            hp.write_map(fitsfname,polmap,column_units=['MJy/sr','MJy/sr','MJy/sr'])
-
+            newfile=False
 ## global parameters
 base='/tigress/changgoo/'
 id='MHD_2pc_S'
-Nside=4
+Nside=512
 center=[[0.,0.,0.],[256.,256.,0.],[-256.,256.,0.],[-256.,-256.,0.],[256.,-256.,0.]]
 ifile=12
 ##
@@ -185,12 +194,13 @@ if __name__ == '__main__':
     #def runall():
     fname=fnames[ifile]
     dir, id, step, ext, mpi = pa.parse_filename(fname)
-    data,domain=data_read(fname,mhd=True,usefits=True)
+    data,domain=data_read(fname,mhd=True,vel=False,usefits=False)
     for i,c in enumerate(center):
-        losdir='%s/dustpol/%s_%d_c%d/' % (dir,step,Nside,i)
-        mapfname='%s/dustpol/%s.%s.n%d.c%d.fits' % (dir,id,step,Nside,i)
-        if not os.path.isdir(losdir): os.mkdir(losdir)
         print mapfname,i,c
-        make_pol_map(data,domain,mapfname=mapfname,center=c,Nside=Nside,write=False)
+#        losdir='%s/dustpol/%s_%d_c%d/' % (dir,step,Nside,i)
+#        mapfname='%s/dustpol/%s.%s.n%d.c%d.fits' % (dir,id,step,Nside,i)
+#        if not os.path.isdir(losdir): os.mkdir(losdir)
+#        make_pol_map(data,domain,mapfname=mapfname,center=c,Nside=Nside,write=False)
 
-
+        mapfname='%s/dustpol/%s.%s.n%d.c%d' % (dir,id,step,Nside,i)
+        make_pol_map_all(data,domain,mapfname=mapfname,center=c,Nside=Nside,write=False,dl=5)
