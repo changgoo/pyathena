@@ -74,9 +74,10 @@ def data_read(fname,vel=True,mhd=True,usefits=True):
         data['temperature']=coolftn.get_temp(ds.read_all_data('T1'))
         fields.append('temperature')
     
-    r3d,x3d,y3d,z3d=pa.pos3d(domain)
-    vy0=-domain['qshear']*domain['Omega']*x3d
-    data['velocity2'] -= vy0
+    if vel:
+        r3d,x3d,y3d,z3d=pa.pos3d(domain)
+        vy0=-domain['qshear']*domain['Omega']*x3d
+        data['velocity2'] -= vy0
 
     print data.keys()
 
