@@ -1,10 +1,12 @@
+
+from astropy.io import fits
+import pyathena as pa
+import os
+import numpy as np
 def save_to_fits(ds,mhd=True):
-    from astropy.io import fits
-    import pyathena as pa
     units=pa.set_units(muH=1.4271)
     coolftn=pa.coolftn()
     
-    import os
     if not os.path.isdir(ds.dir+'fits'): os.mkdir(ds.dir+'fits')
     fields=['density','temperature','velocity']
     if mhd: fields.append('magnetic_field')
@@ -34,3 +36,34 @@ def save_to_fits(ds,mhd=True):
             hdr['Omega']=(ds.domain['Omega'],'km/s/pc')
         hdu = fits.PrimaryHDU(data,header=hdr)
         hdu.writeto(fitsname,clobber=True)
+
+def get_domain(fitsname,vel=True,mhd=True):
+    hdulist=fits.open(fitsname,memmap=True)
+    hdr=hdulist[0].header
+    domain={}
+    domain['time']=hdr['time']
+    domain['qshear']=hdr['qshear']
+    domain['Omega']=hdr['Omega']
+    domain['left_edge']=np.array([hdr['xmin'],hdr['ymin'],hdr['zmin']])
+    domain['right_edge']=np.array([hdr['xmax'],hdr['ymax'],hdr['zmax']])
+    domain['dx']=np.array([hdr['dx'],hdr['dy'],hdr['dz']])
+    domain['Nx']=np.array([hdr['naxis1'],hdr['naxis2'],hdr['naxis3']])
+    domain['Lx']=domain['right_edge']-domain['left_edge']
+    fields=['density','temperature']
+    if vel: fields.append('velocity')
+    if mhd: fields.append('magnetic_field')
+    hdulist.close()
+    return domain,fields
+
+def get_data(fitsname,data={}):
+    hdulist=fits.open(fitsname)
+    field=hdulist[0].header['field']
+    hdulist.readall()
+    if field.startswith('velo') or field.startswith('magn'):
+        for iaxis in range(3):
+            data['%s%d' % (field,iaxis+1)]=hdulist[0].data[:,:,:,iaxis]
+    else:
+        data[field]=hdulist[0].data
+    hdulist.close()
+
+    return data
