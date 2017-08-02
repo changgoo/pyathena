@@ -94,9 +94,9 @@ gamma           = 1.66666667      # gamma = C_p/C_v
 amp             = 2.0             # drho/rho <= amp
 kappa           = 1.e7            # conductivity in unit of c.g.s.
 iprob           = 4               # 1: eigen mode/2: random perturbation/3: power spectrum
-surf            = 57.1614         # gas surface density
+surf            = 87.9406         # gas surface density
 sz0             = 10              # initial velocity dispersion
-n0              = 13.3441         # initial Pressure
+n0              = 23.9737         # initial Pressure
 beta            = 10              # 
 ispect          = 2               # 1: power law/2: G&O form
 expo            = 2.000000        # exponent of power law. for ispect=1

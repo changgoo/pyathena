@@ -182,7 +182,7 @@ def make_pol_map_all(data,domain,mapfname='nomap',dl=5.,\
 ## global parameters
 base='/tigress/changgoo/'
 id='MHD_2pc_S'
-Nside=512
+Nside=128
 center=[[0.,0.,0.],[256.,256.,0.],[-256.,256.,0.],[-256.,-256.,0.],[256.,-256.,0.]]
 ifile=12
 ##
@@ -196,11 +196,12 @@ if __name__ == '__main__':
     dir, id, step, ext, mpi = pa.parse_filename(fname)
     data,domain=data_read(fname,mhd=True,vel=False,usefits=False)
     for i,c in enumerate(center):
-        print mapfname,i,c
 #        losdir='%s/dustpol/%s_%d_c%d/' % (dir,step,Nside,i)
 #        mapfname='%s/dustpol/%s.%s.n%d.c%d.fits' % (dir,id,step,Nside,i)
 #        if not os.path.isdir(losdir): os.mkdir(losdir)
 #        make_pol_map(data,domain,mapfname=mapfname,center=c,Nside=Nside,write=False)
 
         mapfname='%s/dustpol/%s.%s.n%d.c%d' % (dir,id,step,Nside,i)
+        print mapfname,i,c
         make_pol_map_all(data,domain,mapfname=mapfname,center=c,Nside=Nside,write=False,dl=5)
+

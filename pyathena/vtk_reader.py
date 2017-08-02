@@ -626,7 +626,7 @@ class AthenaDataSet(AthenaDomain):
 		dnx=np.copy(self.domain['Nx'])
 		if slab: 
 			dnx[2]=self.grids[0]['Nx'][2]
-			grids = self._get_slab_grid(slab=slab)
+			grids = self._get_slab_grid(slab=slab,verbose=verbose)
 		else:
 			grids = self.grids
 		data = self._set_data_array(field,dnx)
