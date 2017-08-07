@@ -74,7 +74,7 @@ def interp3D(input_array,indices):
              input_array[x1,y1,z1]*x*y*z)
   return output
 
-def los_idx(hat,domain,smin=0.,rmax=3000.,ds=1.,
+def los_idx(hat,domain,smin=0.,smax=3000.,ds=1.,
             center=[0,0,0],vectorize=True,zmax_cut=True):
   zmax=domain['right_edge'][2]-0.5*domain['dx'][2]
   zmin=domain['left_edge'][2]+0.5*domain['dx'][2]
@@ -82,7 +82,7 @@ def los_idx(hat,domain,smin=0.,rmax=3000.,ds=1.,
   yhat=hat[1]
   zhat=hat[2]
 # vectorlized version
-  smax = np.sqrt(rmax**2+zmax**2)
+#  smax = np.sqrt(smax**2-zmax**2)
   if vectorize:
     sarr=np.arange(smin,smax,ds)
     if zmax_cut:
@@ -137,10 +137,49 @@ def get_hat(nside,ipix):
 
     return hat
 
+def get_rslice(data,domain,nside,s0,fields=['density','temperature'],\
+  vel=True,mhd=True,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+    npix=hp.nside2npix(Nside)
+    for ipix in range(npix): 
+        hat=get_hat(nside,ipix)
+        idx,sarr = los_idx(hat['Z'],domain,smax=smax,ds=deltas,center=center)
+    if vel:
+        fields += ['velocity1','velocity2','velocity3']
+    if mhd:
+        fields += ['magnetic_field1','magnetic_field2','magnetic_field3']
+    if domain.has_key('Omega'):
+        Omega=domain['Omega']
+        qshear=domain['qshear'] 
+        xarr=sarr*hat['Z'][0]+center[0]
+        if vel: vy0=-qshear*Omega*xarr
+        joffset=get_joffset(domain)
+        sheared_periodic(domain,idx,joffset=joffset)
+    else:
+        periodic(domain,idx,iaxis=[0,1])
+    los_out={} 
+    for f in fields:
+        los_out[f]=interp3D(data[f],idx)
+    if vel and domain.has_key('Omega'):
+        los_out['velocity2'] += vy0
+    
+    if vel:
+        for axis in ['Z','X','Y']:
+            los_out['velocity_'+axis] =hat[axis][0]*los_out['velocity1'] 
+            los_out['velocity_'+axis]+=hat[axis][1]*los_out['velocity2']
+            los_out['velocity_'+axis]+=hat[axis][2]*los_out['velocity3']
+    if mhd: 
+        for axis in ['Z','X','Y']:
+            los_out['magnetic_field_'+axis] =hat[axis][0]*los_out['magnetic_field1'] 
+            los_out['magnetic_field_'+axis]+=hat[axis][1]*los_out['magnetic_field2']
+            los_out['magnetic_field_'+axis]+=hat[axis][2]*los_out['magnetic_field3']
+    los_out['sarr']=sarr
+    return los_out
+
+
 def get_los(data,domain,nside,ipix,fields=['density','temperature'],\
-  vel=True,mhd=True,rmax=3000.,deltas=1.,center=[0.,0.,0.]):
+  vel=True,mhd=True,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
     hat=get_hat(nside,ipix)
-    idx,sarr = los_idx(hat['Z'],domain,rmax=rmax,ds=deltas,center=center)
+    idx,sarr = los_idx(hat['Z'],domain,smin=smin,smax=smax,ds=deltas,center=center)
     if vel:
         fields += ['velocity1','velocity2','velocity3']
     if mhd:

@@ -320,3 +320,126 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
         plt.close()
     else:
         return fig
+
+def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
+               writefile=True,tstamp=True,field_label=True):
+    global aux
+    plt.rc('font',size=14)
+    plt.rc('xtick',labelsize=14)
+    plt.rc('ytick',labelsize=14)
+
+    slc_data=pickle.load(open(slcfname,'rb'))
+    x0=slc_data[axis+'extent'][0]
+    y0=slc_data[axis+'extent'][2]
+    print x0,y0
+    Lx=slc_data[axis+'extent'][1]-slc_data[axis+'extent'][0]
+    Ly=slc_data[axis+'extent'][3]-slc_data[axis+'extent'][2]
+    if extent is None: extent=[x0,x0+Lx,y0,y0+Ly]
+    x0=extent[0]
+    y0=extent[2]
+    lx=extent[1]-extent[0]
+    ly=extent[3]-extent[2]
+    print extent,lx,ly
+    ix=2
+    iz=ix*ly/lx
+    nf=len(fields_to_draw)
+    fig=plt.figure(1,figsize=(ix*nf,iz+ix*1.2))
+    gs = gridspec.GridSpec(1,nf)
+    gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
+    norm_factor=2.
+
+    starname=slcfname.replace('slice/','id0/').replace('slice.p','starpar.vtk')
+    sp=read_starvtk(starname)
+    if slc_data.has_key('time'):
+        tMyr=slc_data['time']
+    else:
+        time,sp=read_starvtk(starname,time_out=True)
+        tMyr=time*Myr
+    images=[]
+    star_axis=-1
+    for j,f in enumerate(fields_to_draw):
+        ax=plt.subplot(gs[0,j])
+        if f is 'star_particles': 
+          scatter_sp(sp,ax,axis=axis,norm_factor=norm_factor,type='surf')
+          ax.set_xlim(x0,x0+lx)
+          ax.set_ylim(y0,y0+ly);
+          ax.set_aspect(1.0)
+          star_axis=j
+        else:
+          data=slc_data[axis][f]
+          im=ax.imshow(data,origin='lower',interpolation='bilinear')#interpolation='nearest',resample=True)
+          if aux[f]['log']: im.set_norm(LogNorm()) 
+          im.set_extent(slc_data[axis+'extent'])
+          im.set_cmap(aux[f]['cmap'])
+          im.set_clim(aux[f]['clim'])
+          images.append(im)
+          ax.set_xlim(extent[0],extent[1])
+          ax.set_ylim(extent[2],extent[3])
+          ax.set_aspect(1.0)
+
+    for j,(im,f) in enumerate(zip(images,fields_to_draw)):
+        if f != 'star_particles':
+            ax=plt.subplot(gs[0,j])
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("top", "3%", pad="1%") 
+##           cax=plt.subplot(gs[0,j])
+            cbar = fig.colorbar(im,cax=cax,orientation='horizontal')
+            cbar.set_label(aux[f]['label'])
+            cax.xaxis.tick_top()
+            cax.xaxis.set_label_position('top')
+            if aux[f].has_key('cticks'): cbar.set_ticks(aux[f]['cticks'])
+
+    if star_axis != -1:
+        ax=plt.subplot(gs[0,star_axis])
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("top", "3%", pad="1%") 
+##       cax=plt.subplot(gs[0,0])
+        cbar = colorbar.ColorbarBase(cax, ticks=[0,20,40],
+               cmap=plt.cm.cool_r, norm=Normalize(vmin=0,vmax=40), 
+               orientation='horizontal')
+        cax.xaxis.tick_top()
+        cax.xaxis.set_label_position('top')
+        cbar.set_label(r'${\rm age [Myr]}$')
+ 
+        s1=ax.scatter(Lx*2,Ly*2,
+          s=np.sqrt(1.e3)/norm_factor,color='k',
+          alpha=.8,label=r'$10^3 M_\odot$')
+        s2=ax.scatter(Lx*2,Ly*2,
+          s=np.sqrt(1.e4)/norm_factor,color='k',
+          alpha=.8,label=r'$10^4 M_\odot$')
+        s3=ax.scatter(Lx*2,Ly*2,
+          s=np.sqrt(1.e5)/norm_factor,
+          color='k',alpha=.8,label=r'$10^5 M_\odot$')
+ 
+        ax.set_xlim(x0,x0+lx)
+        ax.set_ylim(y0,y0+ly);
+        legend=ax.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'), 
+                         scatterpoints = 1, loc='lower left',fontsize='medium',frameon=True)
+
+    axes=fig.axes
+    plt.setp([ax.get_xticklabels() for ax in axes[:nf]],visible=False)
+    plt.setp([ax.get_yticklabels() for ax in axes[:nf]],visible=False)
+    plt.setp(axes[:nf],'xlim',(x0,x0+lx))
+    plt.setp(axes[:nf],'ylim',(y0,y0+ly))
+
+    plt.setp(axes[0],'xlabel','x [kpc]')
+    plt.setp(axes[0],'ylabel','z [kpc]')
+    if tstamp: 
+      ax=axes[0]
+      ax.text(0.5,0.95,'t=%3d Myr' % tMyr,size=16,horizontalalignment='center',
+              transform = ax.transAxes,**(texteffect()))
+#      axes[0].text(x0*0.9,y0*0.9,
+#                   't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect(16)))
+#      plt.setp(axes[0],'title','t=%3d Myr' % tMyr)
+    plt.setp([ax.get_xticklabels() for ax in axes[:nf:nf]], visible=True)
+    plt.setp([ax.get_yticklabels() for ax in axes[:nf:nf]], visible=True)
+    plt.setp([ax.xaxis.get_majorticklabels() for ax in axes[:nf:nf]], rotation=45 )
+
+    pngfname=slcfname+'.png'
+    #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
+    #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
+    if writefile:
+        plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
+        plt.close()
+    else:
+        return fig
