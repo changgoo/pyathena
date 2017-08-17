@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 
 def cc_arr(domain):
 	le=domain['left_edge']
@@ -188,3 +189,14 @@ def pos3d(domain,x0=0.,y0=0.,z0=0.):
     r3d = np.sqrt((x3d)**2+(y3d)**2+(z3d)**2)
 
     return r3d,x3d,y3d,z3d
+
+def compare_files(source, output):
+    smtime=os.path.getmtime(source)
+    if os.path.isfile(output):
+        omtime=os.path.getmtime(output)
+        if omtime < smtime:
+            return False
+        else:
+            return True
+    else:
+        return False
