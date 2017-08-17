@@ -63,7 +63,7 @@ dt              = 0.333333        # time increment between outputs
 grav_no         = 1               # 
 cour_no         = 0.3             # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim            = -1              # cycle limit
-tlim            = 203.490976      # time limit
+tlim            = 207.416902      # time limit
 time            = 0.0             # Current Simulation Time
 nstep           = 0               # Current Simulation Time Step
 
@@ -93,31 +93,31 @@ AutoWithNProc   = 0               #
 gamma           = 1.66666667      # gamma = C_p/C_v
 amp             = 2.0             # drho/rho <= amp
 kappa           = 1.e7            # conductivity in unit of c.g.s.
-iprob           = 4               # 1: eigen mode/2: random perturbation/3: power spectrum
-surf            = 207.415         # gas surface density
+iprob           = 5               # 1: eigen mode/2: random perturbation/3: power spectrum
+surf            = 144.706         # gas surface density
 sz0             = 10              # initial velocity dispersion
-n0              = 107.84          # initial Pressure
+n0              = 62.4864         # initial Pressure
 beta            = 10              # 
-ispect          = 2               # 1: power law/2: G&O form
+ispect          = 1               # 1: power law/2: G&O form
 expo            = 2.000000        # exponent of power law. for ispect=1
 kpeak           = 4               # peak wave number. for ispect=2
 klow            = 1               # cutoff wavenumber
 khigh           = 128             # cutoff wavenumber
-Omega           = 0.0926309       # angular speed of Galactic rotation (km/s/kpc)
+Omega           = 0.0908776       # angular speed of Galactic rotation (km/s/kpc)
 qshear          = 1.0             # shear parameter -dlnOmega/dlnR
 SurfS           = 462.977         # stellar surface density for KG89 model (Msun/pc^2)
 zstar           = 245             # stellar disk scale height for KG89 model (pc)
 rhodm           = 0.0791234       # dark matter density at the midplane for KG89 model (Msun/pc^3)
 R0              = 2000            # Galactocentric radius (pc)
-tHII            = -1              # Feedback interval for HII
-tSN             = 4.              # Feedback interval for SN
 dedt            = 0.16            # Amplitude of driven turbulence: Edot per area (Lsun/pc^2)
-dtdrive         = 3.39152         # Time interval for new perturbation (Myr)
-driving_time    = 33.9152         # Shut off time for driven turbulence (Myr)
+dtdrive         = 3.45695         # Time interval for new perturbation (Myr)
+driving_time    = 34.5695         # Shut off time for driven turbulence (Myr)
+snrate_random   = 0.000783673     # 
+heat_ratio0     = 62.4864         # 
 rho_crit        = 1.000000000000000e+00 # Default Value
 
 <feedback>
-SFUV0           = 61.1078         # G/G0=SFUV/SFUV0
+SFUV0           = 42.6351         # G/G0=SFUV/SFUV0
 fbin            = 0.6666667       # fraction of binary runaways
 fdyn            = 0.0             # fraction of dynamical runaways
 Mej             = 10.0            # mass of ejecta (+ pre winds)

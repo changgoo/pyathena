@@ -246,7 +246,7 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
               ax.set_aspect(1.0)
             else:
               data=slc_data[axis][f]
-              im=ax.imshow(data,origin='lower')
+              im=ax.imshow(data,origin='lower',interpolation='bilinear')
               if aux[f]['log']: im.set_norm(LogNorm()) 
               extent=slc_data[axis+'extent']
               im.set_extent(extent)

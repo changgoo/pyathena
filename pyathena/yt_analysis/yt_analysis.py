@@ -434,7 +434,7 @@ def main(**kwargs):
         if i%nprocs == rank:
           if not compare_files(surfname,surfname+'ng'):
             print 'drawing for %s on %d' % (surfname,rank)
-          plot_projection(surfname,f)
+            plot_projection(surfname,f)
           if not compare_files(slcfname,slcfname+'ng'):
             print 'drawing for %s on %d' % (slcfname,rank)
             plot_slice(slcfname,f,fields_to_draw)
