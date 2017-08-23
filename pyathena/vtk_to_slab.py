@@ -28,11 +28,11 @@ def main(**kwargs):
         fskip = eval(sp[2])
     else:
         start = 0
-        end = len(fname)
+        end = len(files)
         fskip = 1
 
     files=files[start:end:fskip]
-
+    newbase='/tigress/changgoo/'
 
     rstfiles=glob.glob('%s%s/id0/%s.????.rst' % (base,dir,id))
     rstfiles+=glob.glob('%s%s/rst/%s.????.rst' % (base,dir,id))
@@ -49,7 +49,8 @@ def main(**kwargs):
 
     print Nproc,NGrids
 
-    if not os.path.isdir('%s%s/slab' % (base,dir)): os.mkdir('%s%s/slab' % (base,dir))
+    if not os.path.isdir('%s%s/' % (newbase,dir)): os.mkdir('%s%s/' % (newbase,dir))
+    if not os.path.isdir('%s%s/slab' % (newbase,dir)): os.mkdir('%s%s/slab' % (newbase,dir))
 
     for f in files:
         print f
@@ -60,10 +61,10 @@ def main(**kwargs):
             grids=gid[gid/Nproc_h == islab]
             if islab == 0: baseid=id
             else: baseid='%s-id%d' %(id,islab)
-            if not os.path.isdir('%s%s/slab/id%d' % (base,dir,islab)):
-                os.mkdir('%s%s/slab/id%d' % (base,dir,islab))
+            if not os.path.isdir('%s%s/slab/id%d' % (newbase,dir,islab)):
+                os.mkdir('%s%s/slab/id%d' % (newbase,dir,islab))
             command=[join_vtk]
-            outfile='%s%s/slab/id%d/%s.%s.vtk' % (base,dir,islab,baseid,fstep)
+            outfile='%s%s/slab/id%d/%s.%s.vtk' % (newbase,dir,islab,baseid,fstep)
             command.append('-o %s' % outfile)
             for gidx in grids:
                 if gidx == 0: 
@@ -77,9 +78,36 @@ def main(**kwargs):
             else:
                 print '%s is newer than %s' % (outfile, vtkfile)
 # delete originals
-#        file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
-#        os.remove(file_originals)
-#        print file_originals
+        file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
+        if len(file_originals) > 0: 
+            for f in file_originals: os.remove(f)
+            os.remove('%s/id0/%s.%s.%s' % (fpath,fbase,fstep,fext))
+# copy starpar.vtk
+        src_starpar_name='%s/id0/%s.%s.starpar.vtk' % (fpath,fbase,fstep)
+        dst_name='%s%s/slab/id0/' % (newbase,dir)
+        if os.path.isfile(src_starpar_name): 
+            command=['mv',src_starpar_name,dst_name]
+            subprocess.call(string.join(command),shell=True)
+
+# move zprof
+        src_zprof_names=glob.glob('%s/id0/%s.%s.*.zprof' % (fpath,fbase,fstep))
+        dst_name='%s%s/slab/id0/' % (newbase,dir)
+        for f in src_zprof_names:
+            if os.path.isfile(f):
+                command=['mv',f,dst_name]
+                subprocess.call(string.join(command),shell=True)
+# copy history
+    src_hst_name='%s/id0/%s.hst' % (fpath,fbase)
+    dst_name='%s%s/slab/id0/' % (newbase,dir)
+    if os.path.isfile(src_hst_name):
+        command=['cp',src_hst_name,dst_name]
+        subprocess.call(string.join(command),shell=True)
+
+    src_hst_name='%s/id0/%s.sn' % (fpath,fbase)
+    dst_name='%s%s/slab/id0/' % (newbase,dir)
+    if os.path.isfile(src_hst_name):
+        command=['cp',src_hst_name,dst_name]
+        subprocess.call(string.join(command),shell=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

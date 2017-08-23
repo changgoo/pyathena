@@ -191,7 +191,10 @@ def pos3d(domain,x0=0.,y0=0.,z0=0.):
     return r3d,x3d,y3d,z3d
 
 def compare_files(source, output):
-    smtime=os.path.getmtime(source)
+    if os.path.isfile(source):
+        smtime=os.path.getmtime(source)
+    else:
+        return True
     if os.path.isfile(output):
         omtime=os.path.getmtime(output)
         if omtime < smtime:
