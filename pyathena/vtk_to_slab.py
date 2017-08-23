@@ -32,7 +32,10 @@ def main(**kwargs):
         fskip = 1
 
     files=files[start:end:fskip]
-    newbase='/tigress/changgoo/'
+    if kwargs['new_base_directory'] != '':
+        newbase=kwargs['new_base_directory']
+    else:
+        newbase=base
 
     rstfiles=glob.glob('%s%s/id0/%s.????.rst' % (base,dir,id))
     rstfiles+=glob.glob('%s%s/rst/%s.????.rst' % (base,dir,id))
@@ -115,6 +118,9 @@ if __name__ == '__main__':
     parser.add_argument('-b','--base_directory',type=str,
                         default='/tigress/changgoo/',
                         help='base working directory')
+    parser.add_argument('-nb','--new_base_directory',type=str,
+                        default='',
+                        help='new base directory')
     parser.add_argument('-d','--directory',type=str,default='',
                         help='working directory')
     parser.add_argument('-i','--id',type=str,
