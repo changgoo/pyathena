@@ -117,7 +117,7 @@ heat_ratio0     = 0.108519        #
 rho_crit        = 1.000000000000000e+00 # Default Value
 
 <feedback>
-SFUV0           = 3.08474         # G/G0=SFUV/SFUV0
+SFUV0           = 7.48534         # G/G0=SFUV/SFUV0
 fbin            = 0.6666667       # fraction of binary runaways
 fdyn            = 0.0             # fraction of dynamical runaways
 Mej             = 10.0            # mass of ejecta (+ pre winds)

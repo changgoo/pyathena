@@ -109,7 +109,7 @@ SurfS           = 42.0003         # stellar surface density for KG89 model (Msun
 zstar           = 245             # stellar disk scale height for KG89 model (pc)
 rhodm           = 0.00649386      # dark matter density at the midplane for KG89 model (Msun/pc^3)
 R0              = 8000            # Galactocentric radius (pc)
-dedt            = 0.01            # Amplitude of driven turbulence: Edot per area (Lsun/pc^2)
+dedt            = 0.04            # Amplitude of driven turbulence: Edot per area (Lsun/pc^2)
 dtdrive         = 11.556          # Time interval for new perturbation (Myr)
 driving_time    = 115.56          # Shut off time for driven turbulence (Myr)
 snrate_random   = 1.64288e-05     # 
@@ -117,7 +117,7 @@ heat_ratio0     = 1.90371         #
 rho_crit        = 1.000000000000000e+00 # Default Value
 
 <feedback>
-SFUV0           = 6.84423         # G/G0=SFUV/SFUV0
+SFUV0           = 16.608          # G/G0=SFUV/SFUV0
 fbin            = 0.6666667       # fraction of binary runaways
 fdyn            = 0.0             # fraction of dynamical runaways
 Mej             = 10.0            # mass of ejecta (+ pre winds)

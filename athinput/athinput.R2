@@ -94,9 +94,9 @@ gamma           = 1.66666667      # gamma = C_p/C_v
 amp             = 2.0             # drho/rho <= amp
 kappa           = 1.e7            # conductivity in unit of c.g.s.
 iprob           = 5               # 1: eigen mode/2: random perturbation/3: power spectrum
-surf            = 144.706         # gas surface density
+surf            = 217.059         # gas surface density
 sz0             = 10              # initial velocity dispersion
-n0              = 62.4864         # initial Pressure
+n0              = 115.906         # initial Pressure
 beta            = 10              # 
 ispect          = 1               # 1: power law/2: G&O form
 expo            = 2.000000        # exponent of power law. for ispect=1
@@ -109,15 +109,15 @@ SurfS           = 462.977         # stellar surface density for KG89 model (Msun
 zstar           = 245             # stellar disk scale height for KG89 model (pc)
 rhodm           = 0.0791234       # dark matter density at the midplane for KG89 model (Msun/pc^3)
 R0              = 2000            # Galactocentric radius (pc)
-dedt            = 0.16            # Amplitude of driven turbulence: Edot per area (Lsun/pc^2)
+dedt            = 10.24           # Amplitude of driven turbulence: Edot per area (Lsun/pc^2)
 dtdrive         = 3.45695         # Time interval for new perturbation (Myr)
 driving_time    = 34.5695         # Shut off time for driven turbulence (Myr)
 snrate_random   = 0.000783673     # 
-heat_ratio0     = 62.4864         # 
+heat_ratio0     = 115.906         # 
 rho_crit        = 1.000000000000000e+00 # Default Value
 
 <feedback>
-SFUV0           = 42.6351         # G/G0=SFUV/SFUV0
+SFUV0           = 103.457         # G/G0=SFUV/SFUV0
 fbin            = 0.6666667       # fraction of binary runaways
 fdyn            = 0.0             # fraction of dynamical runaways
 Mej             = 10.0            # mass of ejecta (+ pre winds)
