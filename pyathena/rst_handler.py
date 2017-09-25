@@ -2,6 +2,7 @@ import struct
 import numpy as np
 import glob
 import os
+import sys
 
 #writer 
 
@@ -118,15 +119,24 @@ def get_eint(rstdata,neg_correct=True):
         eint -= 0.5*Bc**2
     
     if neg_correct:
+        k_end,j_end,i_end = eint.shape
+        k_str=j_str=i_str = 0
         k,j,i=np.where(eint<0)
         eavg=[]
         for kk,jj,ii in zip(k,j,i):
-            epart=eint[kk-1:kk+2,jj-1:jj+2,ii-1:ii+2]
+            kl=kk if kk==k_str else kk-1
+            kh=kk+1 if kk==(k_end-1) else kk+2
+            jl=jj if jj==j_str else jj-1
+            jh=jj+1 if jj==(j_end-1) else jj+2
+            il=ii if ii==i_str else ii-1
+            ih=ii+1 if ii==(i_end-1) else ii+2
+            epart=eint[kl:kh,jl:jh,il:ih]
             e_neg=epart[epart<0]
             Nneg=len(e_neg)
             eavg.append((epart.sum()-e_neg.sum())/(epart.size-e_neg.size))
-            print eint[kk,jj,ii],eavg[-1],epart.sum(),e_neg.sum()
+            print kk,jj,ii,eint[kk,jj,ii],eavg[-1],epart.sum(),e_neg.sum()
         eint[k,j,i]=np.array(eavg)
+        if len(eint[eint<0]) > 0: sys.exit("negative energy persist!")
  
     return eint
 
