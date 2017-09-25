@@ -57,7 +57,7 @@ def write_onefile(newfile,data_part,data_par):
 
     return
 
-def write_allfile(pardata,rstdata,grids,id='newrst',dname='/tigress/changgoo/rst/',verbose=False,scalar=0):
+def write_allfile(pardata,rstdata,grids,id='newrst',dname='/tigress/changgoo/rst/',itime=0,verbose=False,scalar=0):
     ngrids=len(grids)
 #    if not (ds.domain['Nx'][::-1] == rstdata['DENSITY'].shape).all():
 #       print 'mismatch in DIMENSIONS!!'
@@ -74,9 +74,9 @@ def write_allfile(pardata,rstdata,grids,id='newrst',dname='/tigress/changgoo/rst
 
     for i in range(ngrids):
         if i == 0:
-          fname=id+'.0000.rst'
+          fname=id+'.%4.4d.rst' % itime
         else:
-          fname=id+'-id%d.0000.rst' % i
+          fname=id+'-id%d.%4.4d.rst' % (i,itime)
 
         g=grids[i]
         gis=g['is']
@@ -427,8 +427,9 @@ def read_rst_grid(rstfile,verbose=False):
 
     return rst,data_array
 
-def read(rstfile,grids,NGrids,verbose=False):
-    par=parse_par(rstfile)
+def read(rstfile,grids,NGrids,parfile=None,verbose=False):
+    if parfile==None: par=parse_par(rstfile)
+    else: par=parse_par(parfile)
     nprocs=len(grids)#par['domain1']['AutoWithNProc']
     field_maps=[]
     rstdata={}

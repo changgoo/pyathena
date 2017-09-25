@@ -8,7 +8,8 @@ def main(**kwargs):
     f_lowres=kwargs['file']
     dir=kwargs['dir']
     id=kwargs['id']
-    print f_lowres,dir,id
+    itime=int(f_lowres[-8:-4])
+    print f_lowres,dir,id,itime
 
     par=rh.parse_par(f_lowres)
     dm=par['domain1']
@@ -26,13 +27,20 @@ def main(**kwargs):
     print 'nscalars:',ns
     
     pardata_low=rh.parse_misc_info(f_lowres)
+    par=pardata_low['par']
 
     new_Nx=Nx
     new_NB=Nx
     new_grids,new_NG=rh.calculate_grid(new_Nx,new_NB)
 
+    par=par.replace('NGrid_x1      = %d' % NG[0],'NGrid_x1      = %d' % new_NG[0])
+    par=par.replace('NGrid_x2      = %d' % NG[1],'NGrid_x2      = %d' % new_NG[1])
+    par=par.replace('NGrid_x3      = %d' % NG[2],'NGrid_x3      = %d' % new_NG[2])
+    par=par.replace('AutoWithNProc = %d' % NG[0]*NG[1]*NG[2],'AutoWithNProc = 0')
+    pardata_low['par']=par
+
     rh.write_allfile(pardata_low,rstdata_low,new_grids,\
-        dname=dir,id=id,verbose=True,scalar=ns)
+        dname=dir,id=id,itime=itime,verbose=True,scalar=ns)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
