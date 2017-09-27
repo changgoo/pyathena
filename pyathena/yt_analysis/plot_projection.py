@@ -20,7 +20,7 @@ from scatter_sp import scatter_sp
 
 aux=ya.set_aux('solar')
 
-def plot_projection(surfname,f):
+def plot_projection(surfname,starfname):
     global aux
 
     plt.rc('font',size=11)
@@ -30,7 +30,7 @@ def plot_projection(surfname,f):
     fig=plt.figure(0,figsize=(5.5,5))
     gs = gridspec.GridSpec(2,2,width_ratios=[1,0.03],wspace=0.0)
 
-    sp= read_starvtk(f[:-3]+'starpar.vtk')
+    sp=read_starvtk(starfname)
     frb=pickle.load(open(surfname,'rb'))
     extent=np.array(frb['bounds'])/1.e3
     x0=extent[0]
@@ -41,7 +41,7 @@ def plot_projection(surfname,f):
     if frb.has_key('time'):
         tMyr=frb['time']
     else:
-        time,sp=read_starvtk(f[:-3]+'starpar.vtk',time_out=True)
+        time,sp=read_starvtk(starfname,time_out=True)
         tMyr=time*Myr
     ax=plt.subplot(gs[:,0])
     im=ax.imshow(frb['data'],norm=LogNorm(),origin='lower')
@@ -83,5 +83,5 @@ def plot_projection(surfname,f):
     ax.set_xlabel('x [kpc]')
     ax.set_ylabel('y [kpc]')
 
-    pngfname=surfname[:-1]+'png'
+    pngfname=surfname+'ng'
     return fig

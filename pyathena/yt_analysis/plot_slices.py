@@ -204,7 +204,7 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
         plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
         plt.close()
 
-def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
+def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
                writefile=True,tstamp=True,stars=True,field_label=True):
     global aux
     plt.rc('font',size=14)
@@ -225,11 +225,11 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
     gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
     norm_factor=2.
 
-    sp=read_starvtk(vtkfname[:-3]+'starpar.vtk')
+    sp=read_starvtk(starfname)
     if slc_data.has_key('time'):
         tMyr=slc_data['time']
     else:
-        time,sp=read_starvtk(vtkfname[:-3]+'starpar.vtk',time_out=True)
+        time,sp=read_starvtk(starfname,time_out=True)
         tMyr=time*Myr
     images=[]
     for i,axis in enumerate(['y','z']):
@@ -312,7 +312,7 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
     plt.setp([ax.get_yticklabels() for ax in axes[:2*nf:nf]], visible=True)
     plt.setp([ax.xaxis.get_majorticklabels() for ax in axes[nf:2*nf]], rotation=45 )
 
-    pngfname=slcfname+'.png'
+    pngfname=slcfname+'ng'
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
@@ -435,7 +435,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
     plt.setp([ax.get_yticklabels() for ax in axes[:nf:nf]], visible=True)
     plt.setp([ax.xaxis.get_majorticklabels() for ax in axes[:nf:nf]], rotation=45 )
 
-    pngfname=slcfname+'.png'
+    pngfname=slcfname+'ng'
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
