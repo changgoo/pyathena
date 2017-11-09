@@ -1,137 +1,10 @@
 # cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True
 
-import numpy as np
-import healpy as hp
-import astropy.constants as c
-import astropy.units as u
-
-Tdust=18
-nu0=353
-from astropy.modeling.blackbody import blackbody_lambda, blackbody_nu
-Bnu=blackbody_nu(nu0*u.GHz,Tdust*u.K).to('MJy/sr').value
-sigma_353=1.2e-26 # Planck 2013 results XI. by Planck Collaboration XI (2014)
-p0=0.2
-pc_to_cm=c.pc.cgs.value
-
-def cc_idx(domain,pos):
-    le=domain['left_edge']
-    dx=domain['dx']
-    Nx=domain['Nx']
-    if np.array(pos).ndim == 2:
-        le=le[:,np.newaxis]
-        dx=dx[:,np.newaxis]
-        Nx=Nx[:,np.newaxis]
-    idx=(pos-le-0.5*dx)/dx
-    return idx
-
-def sheared_periodic(domain,idx,joffset=0.0):
-    Nx=domain['Nx'][0]
-    nidx = idx[0] < 0
-    pidx = idx[0] >= Nx
-    while(nidx.any()):
-        idx[1][nidx] -= joffset
-        idx[0][nidx] += Nx
-        nidx=idx[0]<0
-    while(pidx.any()):
-        idx[1][pidx] += joffset
-        idx[0][pidx] -= Nx
-        pidx = idx[0] >= Nx
-    periodic(domain,idx,iaxis=[1])
-
-def periodic(domain,idx,iaxis=[0,1,2]):
-    Nx=domain['Nx']
-    for i in iaxis:
-        idx[i]=np.fmod(idx[i],Nx[i])
-        idx[idx < 0] += Nx[i]
-
-def los_idx(hat,domain,smin=0.,smax=3000.,ds=1.,
-            center=[0,0,0],vectorize=True,zmax_cut=True):
-    zmax=domain['right_edge'][2]-0.5*domain['dx'][2]
-    zmin=domain['left_edge'][2]+0.5*domain['dx'][2]
-    xhat=hat[0]
-    yhat=hat[1]
-    zhat=hat[2]
-# vectorlized version
-#  smax = np.sqrt(smax**2-zmax**2)
-    if vectorize:
-        sarr=np.arange(smin,smax,ds)
-        if zmax_cut:
-            zarr=zhat*sarr
-            ind = np.where((zarr < zmax)*(zarr > zmin))
-            sarr = sarr[ind]
-        xarr=xhat*sarr + center[0]
-        yarr=yhat*sarr + center[1]
-        zarr=zhat*sarr + center[2]
-        iarr = cc_idx(domain,[xarr,yarr,zarr])
-
-    else:
-# while loop for s from 0 to smax
-        idx=[]
-        s=ds
-        sarr=[]
-        while s < smax:
-# get x,y,z by multiplying the path length s 
-            x=xhat*s + center[0]
-            y=yhat*s + center[1]
-            z=zhat*s + center[2]
-            if zmax_cut and abs(z)>zmax: break
-# get i,j,k by applying periodic BCs in x and y
-            idx.append(cc_idx(domain,[x,y,z]))
-            sarr.append(s)
-            s = s+ds
-# store indices and path lengthes
-        iarr=np.array(idx).T
-        sarr=np.array(sarr)
-
-    return iarr,sarr
-
-def get_joffset(domain):
-    Omega=domain['Omega']
-    qshear=domain['qshear'] 
-    Lx=domain['right_edge'][0]-domain['left_edge'][0]
-    Ly=domain['right_edge'][1]-domain['left_edge'][1]
-    qomL=qshear*Omega*Lx
-    yshear=qomL*domain['time']
-    deltay=np.mod(yshear,Ly)
-    joffset=deltay/domain['dx'][1]
-
-    return joffset
-
-def get_hat(nside,ipix):
-
-    theta,phi = hp.pix2ang(nside,ipix)
-    rhat=[np.sin(theta)*np.cos(phi),np.sin(theta)*np.sin(phi),np.cos(theta)]
-    thhat=[np.cos(theta)*np.cos(phi),np.cos(theta)*np.sin(phi),-np.sin(theta)]
-    phhat=[-np.sin(phi),np.cos(phi),0]
-    hat={'Z':rhat,'X':thhat,'Y':phhat}
-
-    return hat
-
-def los_to_dustpol(los,deltas=1.):
-
-    ds=deltas*pc_to_cm
-    
-    Bperp2=los['magnetic_field_X']**2+los['magnetic_field_Y']**2
-    B2=Bperp2+los['magnetic_field_Z']**2
-    cos2phi=(los['magnetic_field_X']**2-los['magnetic_field_Y']**2)/Bperp2
-    sin2phi=los['magnetic_field_X']*los['magnetic_field_Y']/Bperp2
-    cosgam2=Bperp2/B2
-
-    nH=los['density']
-    dtau=sigma_353*nH*ds
-    tau=dtau.cumsum()
- #   print nH.sum()*ds.cgs,tau[-1], np.exp(-tau[-1])
-
-    I=Bnu*(1.0-p0*(cosgam2-2./3.0))*dtau#*np.exp(-tau)
-    Q=p0*Bnu*cos2phi*cosgam2*dtau#*np.exp(-tau)
-    U=p0*Bnu*sin2phi*cosgam2*dtau#*np.exp(-tau)
-    
-    return I.sum(),Q.sum(),U.sum()
-
 # Cython
 
+from .tools import *
+import numpy as np
 cimport numpy as np # access to Numpy from Cython layer
-
 cimport cython
 
 @cython.boundscheck(False) # won't check that index is in bounds of array
@@ -174,8 +47,10 @@ cdef interp3D_cy(double[:,:,::1] input_array,
                     input_array[x1,y1,z0]*x*y*(1-z) +\
                     input_array[x1,y1,z1]*x*y*z
                     
-cpdef get_los_cy(data,domain,nside,ipix,
-                 smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+cpdef get_los_cy(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+    """
+    cpdef get_los_cy(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+    """
     hat=get_hat(nside,ipix)
     idx,sarr = los_idx(hat['Z'],domain,smin=smin,smax=smax,ds=deltas,center=center)
     

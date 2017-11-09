@@ -30,7 +30,11 @@ def cc_pos(domain,idx):
 def cc_idx(domain,pos):
     le=domain['left_edge']
     dx=domain['dx']
-    return (pos-le-0.5*dx)/dx
+    if np.array(pos).ndim == 2:
+        le=le[:,np.newaxis]
+        dx=dx[:,np.newaxis]
+    idx=(pos-le-0.5*dx)/dx
+    return idx
 
 def vecpot(bx,by):
     nx=bx.data.shape[0]
