@@ -12,7 +12,7 @@ cimport cython
 @cython.nonecheck(False) # variables are never set to None
 @cython.cdivision(True) # don't protect against dividing by zero
 
-cdef interp3D_cy(double[:,:,::1] input_array,
+cdef void interp3D_cy(double[:,:,::1] input_array,
              double[::1] x_indices,
              double[::1] y_indices,
              double[::1] z_indices,

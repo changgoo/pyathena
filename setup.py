@@ -6,12 +6,12 @@ from Cython.Build import cythonize
 
 # We only have one extension for now:
 extensions = [
-    Extension("pyathena.synthetic_observations.get_los",
-              ["synthetic_observations/get_los.pyx"],
+    Extension("*",
+              ["pyathena/synthetic_observations/*.pyx"],
               include_dirs=[np.get_include()])
 ]
 
 setup(
-    name="get_los",
+    name="synthetic_observations",
     ext_modules=cythonize(extensions)
 )
