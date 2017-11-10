@@ -35,12 +35,19 @@ def load_los(domain,srange=None,bmin=-1,ithread=0,nthread=1,Nside=4,center=[0.,0
             pix_arr.append(ipix)
     return los_all,pix_arr
                 
-def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap):
+def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap,srange=None,Trange=None):
     deltas=domain['dx'][2]/2.
+
+    los=los_all[0]
+    if srange != None: sidx=(los.index >= srange[0]) & (los.index <= srange[1])
 
     args={'Bnu':41495.876171482356, 'sigma':1.e-26, 'p0':0.2, 'attenuation': 0}
 
     for ipix,los in list(zip(pix_arr,los_all)):
+        if srange != None: los=los[sidx]
+        if Trange != None: 
+            Tidx=(los['temperature'] >= Trange[0]) & (los['temperature'] <= Trange[1])
+            los=los[Tidx]
         nH=los['density']
         Bx=los['magnetic_field_X']
         By=los['magnetic_field_Y']
