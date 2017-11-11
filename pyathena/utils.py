@@ -33,6 +33,10 @@ def cc_idx(domain,pos):
     if np.array(pos).ndim == 2:
         le=le[:,np.newaxis]
         dx=dx[:,np.newaxis]
+    elif np.array(pos).ndim == 3:
+        le=le[:,np.newaxis,np.newaxis]
+        dx=dx[:,np.newaxis,np.newaxis]
+
     idx=(pos-le-0.5*dx)/dx
     return idx
 

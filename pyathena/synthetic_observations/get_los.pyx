@@ -5,12 +5,6 @@
 from .tools import *
 import numpy as np
 cimport numpy as np # access to Numpy from Cython layer
-cimport cython
-
-@cython.boundscheck(False) # won't check that index is in bounds of array
-@cython.wraparound(False) # array[-1] won't work
-@cython.nonecheck(False) # variables are never set to None
-@cython.cdivision(True) # don't protect against dividing by zero
 
 cdef void interp3D_cy(double[:,:,::1] input_array,
              double[::1] x_indices,
@@ -21,7 +15,7 @@ cdef void interp3D_cy(double[:,:,::1] input_array,
     cdef:
         int x0,y0,z0,x1,y1,z1
         double x,y,z
-        size_t i
+        int i
         
     for i in range(nindices):
         x0 = int(x_indices[i])
@@ -47,9 +41,9 @@ cdef void interp3D_cy(double[:,:,::1] input_array,
                     input_array[x1,y1,z0]*x*y*(1-z) +\
                     input_array[x1,y1,z1]*x*y*z
                     
-cpdef get_los_cy(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+def get_los_all(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
     """
-    cpdef get_los_cy(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+    cpdef get_los_all(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
     """
     hat=get_hat(nside,ipix)
     idx,sarr = los_idx(hat['Z'],domain,smin=smin,smax=smax,ds=deltas,center=center)
@@ -119,4 +113,32 @@ cpdef get_los_cy(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,
         los_out['magnetic_field_'+axis]+=hat[axis][1]*los_out['magnetic_field2']
         los_out['magnetic_field_'+axis]+=hat[axis][2]*los_out['magnetic_field3']
     los_out['sarr']=sarr
+
     return los_out
+
+def get_los_one(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+    """
+    cpdef get_los_one(data,domain,nside,ipix,smin=0.,smax=3000.,deltas=1.,center=[0.,0.,0.]):
+    """
+    hat=get_hat(nside,ipix)
+    idx,sarr = los_idx(hat['Z'],domain,smin=smin,smax=smax,ds=deltas,center=center)
+
+    if 'Omega' in domain:
+        joffset=get_joffset(domain)
+        sheared_periodic(domain,idx,joffset=joffset)
+    else:
+        periodic(domain,idx,iaxis=[0,1])
+
+    Nz,Ny,Nx=data.shape
+    nidx=len(idx[0])
+
+    cdef:
+        double[::1] _xidx= np.array(idx[2], np.float64)
+        double[::1] _yidx= np.array(idx[1], np.float64)
+        double[::1] _zidx= np.array(idx[0], np.float64)
+        double[::1] _output=np.empty(nidx, np.float64)
+        double[:,:,::1] _input=np.array(data, np.float64)
+
+    interp3D_cy(_input,_xidx,_yidx,_zidx,_output,nidx,Nx,Ny,Nz)
+
+    return sarr,np.array(_output)

@@ -22,7 +22,7 @@ def periodic(domain,idx,iaxis=[0,1,2]):
     Nx=domain['Nx']
     for i in iaxis:
         idx[i]=np.fmod(idx[i],Nx[i])
-        idx[idx < 0] += Nx[i]
+        idx[i][idx[i] < 0] += Nx[i]
 
 def los_idx(hat,domain,smin=0.,smax=3000.,ds=1.,
             center=[0,0,0],vectorize=True,zmax_cut=True):
@@ -36,14 +36,14 @@ def los_idx(hat,domain,smin=0.,smax=3000.,ds=1.,
     if vectorize:
         sarr=np.arange(smin,smax,ds)
         if zmax_cut:
-            zarr=zhat*sarr
-            ind = np.where((zarr < zmax)*(zarr > zmin))
+            zarr=zhat*sarr + center[2]
+            ind = np.where((zarr < zmax) & (zarr > zmin))
             sarr = sarr[ind]
         xarr=xhat*sarr + center[0]
         yarr=yhat*sarr + center[1]
         zarr=zhat*sarr + center[2]
-        iarr = cc_idx(domain,[xarr,yarr,zarr])
 
+        iarr = cc_idx(domain,[xarr,yarr,zarr])
     else:
 # while loop for s from 0 to smax
         idx=[]

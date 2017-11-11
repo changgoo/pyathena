@@ -52,6 +52,7 @@ cdef void calc_stokes(double[::1] nH, double[::1] Bx, double[::1] By, double[::1
     pol[0]=I
     pol[1]=Q
     pol[2]=U
+
 cpdef los_to_dustpol(nH, Bx, By, Bz, deltas, args):
     cdef:
         double[::1] _nH= np.array(nH, np.float64)
