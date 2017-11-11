@@ -5,13 +5,13 @@ import glob
 import os
 import re
 import pandas as pd
-from .ath_hst import test_pickle
+from ath_hst import test_pickle
 from itertools import *
 import astropy.constants as c
 import astropy.units as u
 import pickle as p
-from .utils import *
-from .set_units import set_units
+from utils import *
+from set_units import set_units
 
 def parse_filename(filename):
 	"""
