@@ -2,4 +2,6 @@
 notebook/.ipynb_checkpoints/
 pyathena/build
 pyathena/pyathena
-pyathena/*.c
+build
+*.c
+*.so

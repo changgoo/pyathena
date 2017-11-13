@@ -4,13 +4,12 @@ import string
 import glob
 import os
 import re
-import exceptions
 import pandas as pd
 from ath_hst import test_pickle
 from itertools import *
 import astropy.constants as c
 import astropy.units as u
-import cPickle as p
+import pickle as p
 from utils import *
 from set_units import set_units
 
@@ -52,32 +51,32 @@ def parse_filename(filename):
 def parse_line(line, grid):
 	sp = line.strip().split()
 
-	if "vtk" in sp:
+	if b"vtk" in sp:
 		grid['vtk_version'] = sp[-1]
-	elif "time=" in sp:
-		time_index = sp.index("time=")
-		grid['time'] = float(sp[time_index+1].rstrip(','))
-		if 'level' in sp: grid['level'] = int(sp[time_index+3].rstrip(','))
-		if 'domain' in sp: grid['domain'] = int(sp[time_index+5].rstrip(','))  
-		if sp[0] == "PRIMITIVE": 
+	elif b"time=" in sp:
+		time_index = sp.index(b"time=")
+		grid['time'] = float(sp[time_index+1].rstrip(b','))
+		if b'level' in sp: grid['level'] = int(sp[time_index+3].rstrip(b','))
+		if b'domain' in sp: grid['domain'] = int(sp[time_index+5].rstrip(b','))  
+		if sp[0] == b"PRIMITIVE": 
 			grid['prim_var_type']=True
-	elif "DIMENSIONS" in sp:
+	elif b"DIMENSIONS" in sp:
 		grid['Nx'] = np.array(sp[-3:]).astype('int')
-	elif "ORIGIN" in sp:
+	elif b"ORIGIN" in sp:
 		grid['left_edge'] = np.array(sp[-3:]).astype('float64')
-	elif "SPACING" in sp:
+	elif b"SPACING" in sp:
 		grid['dx'] = np.array(sp[-3:]).astype('float64')
-	elif "CELL_DATA" in sp:
+	elif b"CELL_DATA" in sp:
 		grid['ncells'] = int(sp[-1])
-	elif "SCALARS" in sp:
+	elif b"SCALARS" in sp:
 		grid['read_field'] = sp[1]
 		grid['read_type'] = 'scalar'
-	elif "VECTORS" in sp:
+	elif b"VECTORS" in sp:
 		grid['read_field'] = sp[1]
 		grid['read_type'] = 'vector'
-	elif "NSTARS" in sp:
+	elif b"NSTARS" in sp:
 		grid['nstar'] = eval(sp[1])
-	elif "POINTS" in sp:
+	elif b"POINTS" in sp:
 		grid['nstar'] = eval(sp[1])
 		grid['ncells'] = eval(sp[1])
 
@@ -86,7 +85,7 @@ class AthenaDomain(object):
 	def __init__(self,filename,ds=None,setgrid=True,serial=False):
 		self.flist = glob.glob(filename)
 		if len(self.flist) == 0: 
-			print 'no such file: %s' % filename
+			print(('no such file: %s' % filename))
 		dir, id, step, ext, mpi = parse_filename(filename)
 		self.dir = dir
 		self.id = id
@@ -154,7 +153,7 @@ class AthenaDomain(object):
 
 	def _setup_mpi_grid(self):
 		gnx = self.grids[0]['Nx']
-		self.NGrids = self.domain['Nx']/self.grids[0]['Nx']
+		self.NGrids = (self.domain['Nx']/self.grids[0]['Nx']).astype(np.int)
 		self.gid = np.arange(self.ngrids)
 		i = 0
 		for n in range(self.NGrids[2]):
@@ -245,14 +244,14 @@ class AthenaZprof(object):
 #				for i in range(1,nproc):
 #					flist.append(os.path.join(self.path,'id%d/%s-id%d.%s.%s.%s' % (i, self.id, i, self.step, phase, self.ext)))
 				flist.sort()
-				print "Read-Merge-Write for ",phase
+				print(("Read-Merge-Write for ",phase))
 				data=pd.DataFrame()
 				for f in flist:
 					df=pd.read_csv(f,comment='#',index_col=0)
 					data=data.add(df,fill_value=0)
 				data.to_pickle(fname+'.p')
 			else:
-				print "Read-Write for ",phase
+				print(("Read-Write for ",phase))
 				df=pd.read_csv(fname,comment='#',index_col=0)
 				df.to_pickle(fname+'.p')
 
@@ -261,7 +260,7 @@ class AthenaZprof(object):
 		if test_pickle(fname) or forced: 
 			if self.mpi: flist = glob.glob(os.path.join(self.path,'id*/%s-id*.%s.%s.%s' % (self.id, self.step, phase, self.ext)))
 			if len(flist) != 0: 
-				print "Clean for ",phase
+				print(("Clean for ",phase))
 				for f in flist: os.remove(f)
 
 	def zpfile(self,phase):
@@ -277,7 +276,7 @@ class AthenaZprof(object):
 		elif phase in self.plist: 
 			zprof=pd.read_pickle(self.zpfile(phase)+'.p')
 		else: 
-			print phase," is not defined"
+			print((phase," is not defined"))
 
 		return zprof
 			
@@ -293,21 +292,21 @@ class AthenaDataSet(AthenaDomain):
 		if self.domain['field_map']==None:
 			self.domain['field_map'] = self._set_field_map(self.grids[0])
 		fm = self.domain['field_map']
-		if 'cell_centered_B' in fm.keys():
+		if 'cell_centered_B' in list(fm.keys()):
 			fm['magnetic_field']=fm['cell_centered_B']
 			fm.pop('cell_centered_B')
-		elif 'face_centered_B' in fm.keys():
+		elif 'face_centered_B' in list(fm.keys()):
 			fm['magnetic_field']=fm['face_centered_B']
 			fm.pop('face_centered_B')
 		nscal=0
-		if 'specific_scalar[0]' in fm.keys():
-			keys=fm.keys()
+		if 'specific_scalar[0]' in list(fm.keys()):
+			keys=list(fm.keys())
 			for k in keys:
 				if k.startswith('specific_scalar'):
 					newkey=re.sub("\s|\W","",k)
 					fm[newkey] = fm.pop(k)
 					nscal += 1
-		self.field_list=fm.keys()
+		self.field_list=list(fm.keys())
 
 		
 		derived_field_list=[]
@@ -363,7 +362,7 @@ class AthenaDataSet(AthenaDomain):
 		self.derived_field_list_hd=derived_field_list_hd
 		self.derived_field_list_mhd=derived_field_list_mhd
 		for f in self.derived_field_list+self.field_list:
-			if not self.units.has_key(f): self.units[f]=1.0*u.dimensionless_unscaled
+			if f not in self.units: self.units[f]=1.0*u.dimensionless_unscaled
 
 	def _set_field_map(self,grid):
 		return set_field_map(grid)
@@ -373,7 +372,7 @@ class AthenaDataSet(AthenaDomain):
 
 	def _read_grid_data(self,grid,field):
 		gd=grid['data']
-		if gd.has_key(field):
+		if field in gd:
 			return
 
 		file=open(grid['filename'],'rb')
@@ -400,7 +399,7 @@ class AthenaDataSet(AthenaDomain):
 
 	def _get_grid_data(self,grid,field):
 		gd=grid['data']
-		if gd.has_key(field):
+		if field in gd:
 			return gd[field]
 		elif field in self.field_list:
 			self._read_grid_data(grid,field)
@@ -409,7 +408,7 @@ class AthenaDataSet(AthenaDomain):
 			data=self._get_derived_field(grid,field)
 			return data
 		else:
-			print field,' is not supported'
+			print((field,' is not supported'))
 
 	def _set_vector_field(self,grid,unit,vfield):
 		gd=grid['data']
@@ -424,7 +423,7 @@ class AthenaDataSet(AthenaDomain):
 		import astropy.constants as c
 		u=self.units
 		gd=grid['data']
-		if gd.has_key(field):
+		if field in gd:
 			return gd[field]
 		elif field.startswith('velocity'):
 			self._read_grid_data(grid,'velocity')
@@ -611,13 +610,13 @@ class AthenaDataSet(AthenaDomain):
 
 	def _get_slab_grid(self,slab=1,verbose=False):
 		if slab > self.NGrids[2]: 
-			print "%d is lareger than %d" % (slab,self,NGrids[2])
+			print(("%d is lareger than %d" % (slab,self,NGrids[2])))
 		NxNy=self.NGrids[0]*self.NGrids[1]
 		gidx, = np.where(slab == self.gid/NxNy+1)
 		grids = []
 		for i in gidx:
 			grids.append(self.grids[i])
-		if verbose: print "XY slab from z=%g to z=%g" % (grids[0]['left_edge'][2],grids[0]['right_edge'][2])
+		if verbose: print(("XY slab from z=%g to z=%g" % (grids[0]['left_edge'][2],grids[0]['right_edge'][2])))
 		return grids
 
 	def read_all_data(self,field,slab=False,verbose=False):
@@ -695,7 +694,7 @@ class AthenaRegion(object):
 			
 			# get all grids with gre > le
 			if (gre > le).all() and (gle <re).all():
-				print g['left_edge'],g['right_edge']
+				print((g['left_edge'],g['right_edge']))
 				grid_list.append(g)
 		self.grid_list=grid_list
 		self.le=le
@@ -709,14 +708,14 @@ class AthenaSlice(AthenaRegion):
 		self.slice(ds,*args,**kwargs)
 
 	def slice(self,ds,*args,**kwargs):
-		if kwargs.has_key('axis'): axis=kwargs['axis']
-		else: print 'need to specify symmetric axis'
+		if 'axis' in kwargs: axis=kwargs['axis']
+		else: print('need to specify symmetric axis')
 
-		if kwargs.has_key('center'): c=kwargs['center']
-		else: print 'need to specify center of the plane'
+		if 'center' in kwargs: c=kwargs['center']
+		else: print('need to specify center of the plane')
 
-		if kwargs.has_key('field'): field=kwargs['field']
-		else: print 'need to specify field'
+		if 'field' in kwargs: field=kwargs['field']
+		else: print('need to specify field')
 
 		if axis == 'x': axis = 2
 		elif axis == 'y': axis = 1
@@ -751,7 +750,7 @@ class AthenaSlice(AthenaRegion):
 			gis=g['is'][aidx]
 			gnx=g['Nx'][aidx]
 			gie=gis+gnx
-			if not gd.has_key(field): 
+			if field not in gd: 
 				#ng = ng+1
 				#print "Reading:",g['filename'],ng
 				gdata=ds._get_grid_data(g,field)
@@ -769,11 +768,11 @@ class AthenaSlice(AthenaRegion):
 
 class AthenaSurf(object):
 	def __init__(self,ds,*args,**kwargs):
-		if kwargs.has_key('axis'): axis=kwargs['axis']
+		if 'axis' in kwargs: axis=kwargs['axis']
 		else: axis=1
-		if kwargs.has_key('field'): field=kwargs['field']
+		if 'field' in kwargs: field=kwargs['field']
 		else: field='density'
-		if kwargs.has_key('weighted_field'): wfield=kwargs['weighted_field']
+		if 'weighted_field' in kwargs: wfield=kwargs['weighted_field']
 		else: wfield=None
 
 		self.axis=axis
@@ -821,42 +820,42 @@ def set_field_map(grid):
 
 	field_map={}
 
-	if grid.has_key('Nx'): Nx=grid['Nx']
+	if 'Nx' in grid: Nx=grid['Nx']
 
 	while offset < eof:
 
 		line=file.readline()
 		sp = line.strip().split()
 		#print line,sp
-			
-		field_map[sp[1]] = {}
-		field_map[sp[1]]['read_table']=False
+		field=sp[1].decode('utf-8')	
+		field_map[field] = {}
+		field_map[field]['read_table']=False
 
-		if "SCALARS" in line:
+		if b"SCALARS" in line:
 			tmp=file.readline()
-			field_map[sp[1]]['read_table']=True
-			field_map[sp[1]]['nvar'] = 1
-		elif "VECTORS" in line:
-			field_map[sp[1]]['nvar'] = 3
+			field_map[field]['read_table']=True
+			field_map[field]['nvar'] = 1
+		elif b"VECTORS" in line:
+			field_map[field]['nvar'] = 3
 		else:
-			print 'Error: '+sp[0] + ' is unknown type'
+			print(('Error: '+sp[0] + ' is unknown type'))
 			raise TypeError
 
-		field_map[sp[1]]['offset']=offset
-		field_map[sp[1]]['ndata']=field_map[sp[1]]['nvar']*grid['ncells']
-		if sp[1] == 'face_centered_B1':
-			field_map[sp[1]]['ndata']=(Nx[0]+1)*Nx[1]*Nx[2]
-		elif sp[1] == 'face_centered_B2':
-			field_map[sp[1]]['ndata']=Nx[0]*(Nx[1]+1)*Nx[2]
-		elif sp[1] == 'face_centered_B3':
-			field_map[sp[1]]['ndata']=Nx[0]*Nx[1]*(Nx[2]+1)
+		field_map[field]['offset']=offset
+		field_map[field]['ndata']=field_map[field]['nvar']*grid['ncells']
+		if field == 'face_centered_B1':
+			field_map[field]['ndata']=(Nx[0]+1)*Nx[1]*Nx[2]
+		elif field == 'face_centered_B2':
+			field_map[field]['ndata']=Nx[0]*(Nx[1]+1)*Nx[2]
+		elif field == 'face_centered_B3':
+			field_map[field]['ndata']=Nx[0]*Nx[1]*(Nx[2]+1)
 				
-		if sp[2]=='int': dtype='i'
-		elif sp[2]=='float': dtype='f'
-		elif sp[2]=='double': dtype='d'
-		field_map[sp[1]]['dtype']=dtype
-		field_map[sp[1]]['dsize']=field_map[sp[1]]['ndata']*struct.calcsize(dtype)
-		file.seek(field_map[sp[1]]['dsize'],1)
+		if sp[2]==b'int': dtype='i'
+		elif sp[2]==b'float': dtype='f'
+		elif sp[2]==b'double': dtype='d'
+		field_map[field]['dtype']=dtype
+		field_map[field]['dsize']=field_map[field]['ndata']*struct.calcsize(dtype)
+		file.seek(field_map[field]['dsize'],1)
 		offset = file.tell()
 		tmp=file.readline()
 		if len(tmp)>1: file.seek(offset)
@@ -933,7 +932,7 @@ def starparvtk_to_starparhist(spfiles):
 		sp.index=sp.time
 		if len(sp) != 0:
 			for id in sp.id:
-				if sphst.has_key(id):
+				if id in sphst:
 					sphst[id]=pd.DataFrame.append(sphst[id],sp[sp.id == id])
 				else:
 					sphst[id]=pd.DataFrame(sp[sp.id == id])

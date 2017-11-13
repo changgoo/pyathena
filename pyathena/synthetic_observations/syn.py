@@ -302,16 +302,4 @@ def Tspin_WF(Temp,nH,nalpha=1.e-6):
 
     return Ts
 
-def load_planck_cmap(cmap_fname="../misc/Planck_Parchment_RGB.txt"):
-    '''
-    https://zonca.github.io/2013/09/Planck-CMB-map-at-high-resolution.html
-    '''
-    from matplotlib.colors import ListedColormap
-    import numpy as np
-    colombi1_cmap = ListedColormap(np.loadtxt(cmap_fname)/255.)
-    colombi1_cmap.set_bad("gray") # color of missing pixels
-    colombi1_cmap.set_under("white") # color of background, necessary if you want to use
-
-    cmap = colombi1_cmap
-    return cmap
 

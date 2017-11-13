@@ -7,7 +7,7 @@ from yt.utilities.physical_constants import \
     clight, \
     kboltz, \
     G
-import cPickle as p
+import pickle as p
 import numpy as np
 import sys
 sys.path.insert(0,'../../')
@@ -31,13 +31,13 @@ def _T1(field, data):
         return data["gas","pressure"]/data["gas","density"]*mh/kboltz
 
 def _mu(field, data):
-	cf=pa.coolftn()
+        cf=pa.coolftn()
         T1=data["gas","T1"].d
         temp=cf.get_temp(T1)
         return temp/T1
 
 def _temperature(field,data):
-	return data["gas","T1"]*data["gas","mu"]
+        return data["gas","T1"]*data["gas","mu"]
 
 # rotation
 Omega=YTQuantity(28,"km/s/kpc")
@@ -62,7 +62,7 @@ unit_base={"length_unit": (1.0,"pc"),
            "magnetic_unit": (5.4786746797e-07,"gauss")}
 
 import matplotlib.pyplot as plt
-from shiftedColorMap import *
+from .shiftedColorMap import *
 
 def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     ds.add_field(("gas","nH"),function=_ndensity, \
@@ -161,6 +161,6 @@ def set_aux(model='solar'):
 def check_aux(fields):
     aux=set_aux()
     for f in fields:
-        if not aux.has_key(f):
-            print "auxiliary information for %s is missing",f
-            print aux[f]
+        if f not in aux:
+            print("auxiliary information for %s is missing",f)
+            print(aux[f])

@@ -25,7 +25,7 @@ def main(**kwargs):
     dm=par['domain1']
     Nx=np.array([dm['Nx1'],dm['Nx2'],dm['Nx3']])
     Ng=np.array([dm['NGrid_x1'],dm['NGrid_x2'],dm['NGrid_x3']])
-    Ng=np.array([1,1,1])
+#    Ng=np.array([1,1,1])
     Nb=Nx/Ng
 
     grids,NG=rh.calculate_grid(Nx,Nb)
@@ -81,7 +81,9 @@ def main(**kwargs):
     print par[par.rfind('<domain1'):par.rfind('<problem')]
 
     rh.write_allfile(pardata_low,rstdata_high,new_grids,\
-        dname='/nobackup/ckim14/%s/rst/' % id,id=id,verbose=True,scalar=ns)
+    dname='/nobackup/ckim14/%s/rst/' % id,id=id,verbose=True,scalar=ns)
+#    dname='/u/ckim14/rst/',id=id,verbose=True,scalar=ns)
+#    dname='/tigress/changgoo/rst/',id=id,verbose=True,scalar=ns)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
