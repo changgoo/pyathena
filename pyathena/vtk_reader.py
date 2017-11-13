@@ -43,8 +43,8 @@ def parse_filename(filename):
 		step=base_split[1]
 		ext=base_split[2]
 	else:
-		id=base_split[0]
-		step=base_split[0]
+		id=string.join(base_split[:-2],'.')
+		step=base_split[-2]
 		ext=base_split[-1]
 
 	return path,id,step,ext,mpi_mode
