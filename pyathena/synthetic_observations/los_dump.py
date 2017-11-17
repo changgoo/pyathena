@@ -1,6 +1,7 @@
 import os
 from .get_los import *
-from .tools import get_hat
+from .tools import get_hat,los_idx_all
+from .reader import read_data
 import healpy as hp
 import pandas as pd
 
@@ -83,6 +84,80 @@ def los_dump_one(data,field,domain,ithread=0,nthread=1,Nside=4,center=[0.,0.,0.]
         etime=time.time()
         print("Exiting %d: Wall time %g" % (ithread,etime-stime))
 
+def los_dump_all(ds,domain,Nside=4,center=[0,0,0],force_write=False):
+    deltas=domain['dx'][2]/2.
+    smax=domain['Lx'][2]/2
+
+    losdir=domain['losdir']
+    step=domain['step']
+    cstring='x%dy%dz%d' % (center[0],center[1],center[2])
+    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+ 
+    x0,y0,z0,dx,dy,dz,vy0 = get_index_all(domain,Nside,center,smax,deltas)
+
+    for f in domain['fields']:
+        outfile='%s/%s.npy' % (outdir,f)
+        if not os.path.isfile(outfile) or force_write:
+            data=read_data(ds,f,domain)
+            newdata=extend_data(domain,data)
+            d000=newdata[z0  ,y0  ,x0  ]*(1-dz)*(1-dy)*(1-dx)
+            d100=newdata[z0+1,y0  ,x0  ]*dz*(1-dy)*(1-dx)
+            d010=newdata[z0  ,y0+1,x0  ]*(1-dz)*dy*(1-dx)
+            d001=newdata[z0  ,y0  ,x0+1]*(1-dz)*(1-dy)*dx
+            d110=newdata[z0+1,y0+1,x0  ]*dz*dy*(1-dx)
+            d101=newdata[z0+1,y0  ,x0+1]*dz*(1-dy)*dx
+            d011=newdata[z0  ,y0+1,x0+1]*(1-dz)*dy*dx
+            d111=newdata[z0+1,y0+1,x0+1]*dz*dy*dx
+ 
+            dlos=d000+d100+d010+d001+d110+d101+d011+d111
+            if f is 'velocity2' and 'Omega' in domain: dlos += vy0
+            np.save(outfile,dlos)
+
+def get_index_all(domain,Nside,center,smax,ds):
+
+    npix=hp.nside2npix(Nside)
+    ipix=np.arange(npix)
+    hat=get_hat(Nside,ipix)
+    iarr,xarr,sarr=los_idx_all(hat['Z'],domain,smin=0,smax=smax,ds=ds,center=center)
+
+    Nx,Ny,Nz=domain['Nx']
+
+    if 'Omega' in domain:
+        joffset=get_joffset(domain)
+        Omega=domain['Omega']
+        qshear=domain['qshear']
+        vy0 = -qshear*Omega*xarr[0]
+    else:
+        joffset=0
+        vy0 = None
+
+    xdiv,xidx=np.divmod(iarr[0],Nx)
+    yidx=np.remainder(iarr[1]+xdiv*joffset,Ny)
+    zidx=iarr[2]
+
+    x0 = xidx.astype(np.intp)
+    y0 = yidx.astype(np.intp)
+    z0 = zidx.astype(np.intp)
+    dx = xidx - x0
+    dy = yidx - y0
+    dz = zidx - z0
+
+    return x0,y0,z0,dx,dy,dz,vy0
+
+
+def extend_data(domain,data):
+    joffset=get_joffset(domain)
+
+    dslicey=data[:,0,:]
+    newdata=np.concatenate((data,dslicey[:,np.newaxis,:]),axis=1)
+    d1=np.roll(newdata[:,:,0],-joffset.astype(np.int),axis=1)
+    d2=np.roll(newdata[:,:,0],-(joffset.astype(np.int)+1),axis=1)
+    dj=joffset-joffset.astype(np.int)
+    dslicex=d1*(1-dj)+d2*dj
+
+    newdata=np.concatenate((newdata,dslicex[:,:,np.newaxis]),axis=2)
+    return newdata
+
 def merge_los_dump(domain,nthread,Nside=4,center=[0.,0.,0.],force_write=False):
 
     losdir=domain['losdir']
@@ -104,7 +179,7 @@ def merge_los_dump(domain,nthread,Nside=4,center=[0.,0.,0.],force_write=False):
                 df=df.append(pd.read_pickle(outfile_part))
         pd.DataFrame(df).to_pickle(outfile)
 
-def los_dump_proj(domain,vec_field,Nside=4,center=[0.,0.,0.],force_write=False):
+def los_dump_proj(domain,vec_field,Nside=4,center=[0.,0.,0.],force_write=False,ext='.npy'):
 
     losdir=domain['losdir']
     step=domain['step']
@@ -116,16 +191,23 @@ def los_dump_proj(domain,vec_field,Nside=4,center=[0.,0.,0.],force_write=False):
     los={}
     
     for f in ['1','2','3']:
-        outfile='%s/%s.p' % (outdir,vec_field+f)
-        los[vec_field+f]=pd.read_pickle(outfile)
+        if ext=='.p': 
+            outfile='%s/%s.p' % (outdir,vec_field+f)
+            los[vec_field+f]=pd.read_pickle(outfile)
+        elif ext=='.npy': 
+            outfile='%s/%s.npy' % (outdir,vec_field+f)
+            los[vec_field+f]=np.load(outfile)
 
-    ipix = range(npix)
+    ipix = np.arange(npix)
     hat=get_hat(Nside,ipix)
     for axis in ['Z','X','Y']:
         los_out =hat[axis][0]*los[vec_field+'1'].T
         los_out+=hat[axis][1]*los[vec_field+'2'].T
         los_out+=hat[axis][2]*los[vec_field+'3'].T
-        outfile='%s/%s.p' % (outdir,vec_field+axis)
+        outfile='%s/%s%s' % (outdir,vec_field+axis,ext)
 
         if not os.path.isfile(outfile) or force_write:
-            pd.DataFrame(los_out.T).to_pickle(outfile)
+            if ext=='.p':
+                pd.DataFrame(los_out.T).to_pickle(outfile)
+            elif ext=='.npy':
+                np.save(outfile,los_out.T)

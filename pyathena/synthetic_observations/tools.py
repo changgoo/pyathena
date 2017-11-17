@@ -65,6 +65,22 @@ def los_idx(hat,domain,smin=0.,smax=3000.,ds=1.,
 
     return iarr,sarr
 
+def los_idx_all(hat,domain,smin=0.,smax=3000.,ds=1.,center=[0,0,0],zmax_cut=True):
+    zmax=domain['right_edge'][2]-0.5*domain['dx'][2]
+    zmin=domain['left_edge'][2]+0.5*domain['dx'][2]
+    xhat=hat[0][:,np.newaxis]
+    yhat=hat[1][:,np.newaxis]
+    zhat=hat[2][:,np.newaxis]
+
+    sarr=np.arange(smin,smax,ds)
+    xarr=xhat*sarr + center[0]
+    yarr=yhat*sarr + center[1]
+    zarr=zhat*sarr + center[2]
+
+    iarr = cc_idx(domain,[xarr,yarr,zarr])
+
+    return iarr,[xarr,yarr,zarr],sarr
+
 def get_joffset(domain):
     Omega=domain['Omega']
     qshear=domain['qshear'] 

@@ -1,4 +1,5 @@
 from .los_to_dustpol import los_to_dustpol
+from .tools import get_hat,los_idx_all
 import healpy as hp
 import pandas as pd
 import numpy as np
@@ -57,25 +58,33 @@ def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap,srange=None,Trange=None):
         Qmap[ipix]=Q
         Umap[ipix]=U
 
-def make_map(domain,Nside=4,center=[0,0,0],srange=None,Trange=None):
+def make_map(domain,Nside=4,center=[0,0,0],srange=None,Trange=None,ext='.npy'):
     deltas=domain['dx'][2]/2.
+    smax=domain['Lx'][2]/2.
     losdir=domain['losdir']
     step=domain['step']
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
     outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
     los=[]
     for f in ['density','magnetic_fieldX','magnetic_fieldY','magnetic_fieldZ','temperature']:
-        outfile='%s/%s.p' % (outdir,f)
-        los.append(pd.read_pickle(outfile))
+        outfile='%s/%s%s' % (outdir,f,ext)
+        if ext == '.p':
+            los.append(np.array(pd.read_pickle(outfile)))
+        if ext == '.npy':
+            los.append(np.load(outfile))
     nH,Bx,By,Bz,temp=los
-    sarr=nH.columns
+
     if srange != None: 
+        npix=hp.nside2npix(Nside)
+        ipix=np.arange(npix)
+        hat=get_hat(Nside,ipix)
+        iarr,xarr,sarr=los_idx_all(hat['Z'],domain,smin=0,smax=smax,ds=deltas,center=center)
         sidx=(sarr >= srange[0]) & (sarr <= srange[1])
-        nH=nH.iloc[:,sidx]
-        Bx=Bx.iloc[:,sidx]
-        By=By.iloc[:,sidx]
-        Bz=Bz.iloc[:,sidx]
-        temp=temp.iloc[:,sidx]
+        nH=nH[:,sidx]
+        Bx=Bx[:,sidx]
+        By=By[:,sidx]
+        Bz=Bz[:,sidx]
+        temp=temp[:,sidx]
     if Trange != None: 
         Tidx=(temp >= Trange[0]) & (temp <= Trange[1])
         nH=nH[Tidx]
