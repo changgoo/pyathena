@@ -23,9 +23,9 @@ def main(**kwargs):
 
     if kwargs['range'] != '':
         sp=kwargs['range'].split(',')
-        start = eval(sp[0])
-        end = eval(sp[1])
-        fskip = eval(sp[2])
+        start = int(sp[0])
+        end = int(sp[1])
+        fskip = int(sp[2])
     else:
         start = 0
         end = len(files)
@@ -42,24 +42,27 @@ def main(**kwargs):
 
     par,block,field=parse_par(rstfiles[0])
 
-    NGrids=[eval(par['domain1']['NGrid_x1'][0]),\
-            eval(par['domain1']['NGrid_x2'][0]),\
-            eval(par['domain1']['NGrid_x3'][0])]
+    NGrids=[int(par['domain1']['NGrid_x1'][0]),\
+            int(par['domain1']['NGrid_x2'][0]),\
+            int(par['domain1']['NGrid_x3'][0])]
     Nslab=NGrids[2]
     Nproc=np.prod(NGrids)
     Nproc_h=NGrids[0]*NGrids[1]
     gid=np.arange(Nproc)
 
-    print Nproc,NGrids
+    print(Nproc,NGrids)
 
     if not os.path.isdir(newbase): os.mkdir(newbase)
+    if not os.path.isdir(newbase+'/starpar'): os.mkdir(newbase+'/starpar')
+    if not os.path.isdir(newbase+'/zprof'): os.mkdir(newbase+'/zprof')
+    if not os.path.isdir(newbase+'/hst'): os.mkdir(newbase+'/hst')
 
     for f in files:
-        print f
+        print(f)
         fpath,fbase,fstep,fext,mpi=parse_filename(f)
 
         for islab in range(Nslab):
-            print '%d of %d' % (islab, Nslab)
+            print('%d of %d' % (islab, Nslab))
             grids=gid[gid/Nproc_h == islab]
             if islab == 0: baseid=id
             else: baseid='%s-id%d' %(id,islab)
@@ -78,7 +81,7 @@ def main(**kwargs):
             if not compare_files(vtkfile,outfile) or kwargs['overwrite']:
                 subprocess.call(string.join(command),shell=True)
             else:
-                print '%s is newer than %s' % (outfile, vtkfile)
+                print('%s is newer than %s' % (outfile, vtkfile))
 # delete originals
         file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
         if len(file_originals) > 0: 
@@ -86,27 +89,27 @@ def main(**kwargs):
             os.remove('%s/id0/%s.%s.%s' % (fpath,fbase,fstep,fext))
 # copy starpar.vtk
         src_starpar_name='%s/id0/%s.%s.starpar.vtk' % (fpath,fbase,fstep)
-        dst_name='%s/id0/' % (newbase)
+        dst_name='%s/starpar/' % (newbase)
         if os.path.isfile(src_starpar_name): 
             command=['mv',src_starpar_name,dst_name]
             subprocess.call(string.join(command),shell=True)
 
 # move zprof
         src_zprof_names=glob.glob('%s/id0/%s.%s.*.zprof' % (fpath,fbase,fstep))
-        dst_name='%s/id0/' % (newbase)
+        dst_name='%s/zprof/' % (newbase)
         for f in src_zprof_names:
             if os.path.isfile(f):
                 command=['mv',f,dst_name]
                 subprocess.call(string.join(command),shell=True)
 # copy history
     src_hst_name='%s/id0/%s.hst' % (fpath,fbase)
-    dst_name='%s/id0/' % (newbase)
+    dst_name='%s/hst/' % (newbase)
     if os.path.isfile(src_hst_name):
         command=['cp',src_hst_name,dst_name]
         subprocess.call(string.join(command),shell=True)
 
     src_hst_name='%s/id0/%s.sn' % (fpath,fbase)
-    dst_name='%s/id0/' % (newbase)
+    dst_name='%s/hst/' % (newbase)
     if os.path.isfile(src_hst_name):
         command=['cp',src_hst_name,dst_name]
         subprocess.call(string.join(command),shell=True)
