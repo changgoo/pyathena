@@ -1,5 +1,4 @@
 from .los_to_dustpol import los_to_dustpol
-from .tools import get_hat,los_idx_all
 import healpy as hp
 import pandas as pd
 import numpy as np
@@ -66,31 +65,13 @@ def make_map(domain,Nside=4,center=[0,0,0],srange=None,Trange=None,ext='.npy'):
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
     outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
     los=[]
-    for f in ['density','magnetic_fieldX','magnetic_fieldY','magnetic_fieldZ','temperature']:
+    for f in ['density','magnetic_fieldX','magnetic_fieldY','magnetic_fieldZ']:
         outfile='%s/%s%s' % (outdir,f,ext)
         if ext == '.p':
             los.append(np.array(pd.read_pickle(outfile)))
         if ext == '.npy':
             los.append(np.load(outfile))
-    nH,Bx,By,Bz,temp=los
-
-    if srange != None: 
-        npix=hp.nside2npix(Nside)
-        ipix=np.arange(npix)
-        hat=get_hat(Nside,ipix)
-        iarr,xarr,sarr=los_idx_all(hat['Z'],domain,smin=0,smax=smax,ds=deltas,center=center)
-        sidx=(sarr >= srange[0]) & (sarr <= srange[1])
-        nH=nH[:,sidx]
-        Bx=Bx[:,sidx]
-        By=By[:,sidx]
-        Bz=Bz[:,sidx]
-        temp=temp[:,sidx]
-    if Trange != None: 
-        Tidx=(temp >= Trange[0]) & (temp <= Trange[1])
-        nH=nH[Tidx]
-        Bx=Bx[Tidx]
-        By=By[Tidx]
-        Bz=Bz[Tidx]
+    nH,Bx,By,Bz,=los
 
     args={'Bnu':41495.876171482356, 'sigma':1.e-26, 'p0':0.2, 'attenuation': 0}
     Bnu=args['Bnu']
@@ -110,4 +91,4 @@ def make_map(domain,Nside=4,center=[0,0,0],srange=None,Trange=None,ext='.npy'):
     Q=p0*Bnu*cos2phi*cosgam2*dtau
     U=p0*Bnu*sin2phi*cosgam2*dtau
 
-    return I.sum(axis=1),Q.sum(axis=1),U.sum(axis=1)
+    return I,Q,U

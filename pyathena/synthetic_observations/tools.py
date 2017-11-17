@@ -2,7 +2,20 @@ import numpy as np
 import healpy as hp
 import astropy.constants as c
 import astropy.units as u
+import os
+
 from ..utils import cc_idx
+
+def make_directory(domain,Nside=4,center=[0.,0.,0.]):
+    losdir=domain['losdir']
+    step=domain['step']
+    cstring='x%dy%dz%d' % (center[0],center[1],center[2])
+    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+    
+    if not os.path.isdir(losdir): os.mkdir(losdir)
+    if not os.path.isdir(losdir+step): os.mkdir(losdir+step)
+    if not os.path.isdir(outdir): os.mkdir(outdir)
+
 
 def sheared_periodic(domain,idx,joffset=0.0):
     Nx=domain['Nx'][0]
@@ -64,22 +77,6 @@ def los_idx(hat,domain,smin=0.,smax=3000.,ds=1.,
         sarr=np.array(sarr)
 
     return iarr,sarr
-
-def los_idx_all(hat,domain,smin=0.,smax=3000.,ds=1.,center=[0,0,0],zmax_cut=True):
-    zmax=domain['right_edge'][2]-0.5*domain['dx'][2]
-    zmin=domain['left_edge'][2]+0.5*domain['dx'][2]
-    xhat=hat[0][:,np.newaxis]
-    yhat=hat[1][:,np.newaxis]
-    zhat=hat[2][:,np.newaxis]
-
-    sarr=np.arange(smin,smax,ds)
-    xarr=xhat*sarr + center[0]
-    yarr=yhat*sarr + center[1]
-    zarr=zhat*sarr + center[2]
-
-    iarr = cc_idx(domain,[xarr,yarr,zarr])
-
-    return iarr,[xarr,yarr,zarr],sarr
 
 def get_joffset(domain):
     Omega=domain['Omega']
