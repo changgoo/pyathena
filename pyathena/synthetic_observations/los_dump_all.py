@@ -24,9 +24,8 @@ def los_idx_all(hat,domain,smin=0.,smax=3000.,ds=1.,center=[0,0,0],zmax_cut=True
     return iarr,[xarr,yarr,zarr],sarr
 
 
-def los_dump(ds,domain,Nside=4,center=[0,0,0],force_write=False):
-    deltas=domain['dx'][2]/2.
-    smax=domain['Lx'][2]/2
+def los_dump(ds,domain,deltas,smax,fields=['density'],
+             Nside=4,center=[0,0,0],force_write=False):
 
     losdir=domain['losdir']
     step=domain['step']
@@ -35,9 +34,10 @@ def los_dump(ds,domain,Nside=4,center=[0,0,0],force_write=False):
  
     x0,y0,z0,dx,dy,dz,vy0 = get_index_all(domain,Nside,center,smax,deltas)
 
-    for f in domain['fields']:
+    for f in fields:
         outfile='%s/%s.npy' % (outdir,f)
         if not os.path.isfile(outfile) or force_write:
+            print('interpolating and writing: %s' % f)
             data=read_data(ds,f,domain)
             newdata=extend_data(domain,data)
             d000=newdata[z0  ,y0  ,x0  ]*(1-dz)*(1-dy)*(1-dx)
@@ -72,7 +72,10 @@ def get_index_all(domain,Nside,center,smax,ds):
         vy0 = None
 
     xdiv,xidx=np.divmod(iarr[0],Nx)
-    yidx=np.remainder(iarr[1]+xdiv*joffset,Ny)
+    if domain['shear']:
+        yidx=np.remainder(iarr[1]+xdiv*joffset,Ny)
+    else:
+        yidx=np.remainder(iarr[1],Ny)
     zidx=iarr[2]
 
     x0 = xidx.astype(np.intp)
