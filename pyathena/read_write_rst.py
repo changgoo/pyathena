@@ -25,7 +25,7 @@ def main(**kwargs):
     dm=par['domain1']
     Nx=np.array([dm['Nx1'],dm['Nx2'],dm['Nx3']])
     Ng=np.array([dm['NGrid_x1'],dm['NGrid_x2'],dm['NGrid_x3']])
-    Ng=np.array([1,1,1])
+#    Ng=np.array([1,1,1])
     Nb=Nx/Ng
 
     grids,NG=rh.calculate_grid(Nx,Nb)
@@ -49,6 +49,15 @@ def main(**kwargs):
         rstdata_low=crop(rstdata_low,z1,z2)
     rstdata_high=rh.refine(rstdata_low,scalar=ns)
 #    rstdata_high=rstdata_low
+    for i,d in enumerate([rstdata_low,rstdata_high]):
+        Bx=d['1-FIELD']
+        By=d['2-FIELD']
+        Bz=d['3-FIELD']
+        dBx = np.diff(Bx,axis=2)
+        dBy = np.diff(By,axis=1)
+        dBz = np.diff(Bz,axis=0)
+        dB=dBx+dBy+dBz
+        print np.abs(dB).max(),dB.std()
 
     pardata_low=rh.parse_misc_info(f_lowres)
     par=pardata_low['par']
@@ -72,7 +81,9 @@ def main(**kwargs):
     print par[par.rfind('<domain1'):par.rfind('<problem')]
 
     rh.write_allfile(pardata_low,rstdata_high,new_grids,\
-        dname='/u/ckim14/rst/',id=id,verbose=True,scalar=ns)
+    dname='/nobackup/ckim14/%s/rst/' % id,id=id,verbose=True,scalar=ns)
+#    dname='/u/ckim14/rst/',id=id,verbose=True,scalar=ns)
+#    dname='/tigress/changgoo/rst/',id=id,verbose=True,scalar=ns)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()

@@ -6,7 +6,7 @@ import yt
 import glob
 import argparse
 import os
-import cPickle as pickle
+import pickle as pickle
 
 import matplotlib.colorbar as colorbar
 import matplotlib.pyplot as plt
@@ -130,7 +130,7 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
     gs.update(left=0.10,right=0.90,wspace=0,hspace=0)
 
     sp=read_starvtk(vtkfname[:-3]+'starpar.vtk')
-    if slc_data.has_key('time'):
+    if 'time' in slc_data:
         tMyr=slc_data['time']
     else:
         time,sp=read_starvtk(vtkfname[:-3]+'starpar.vtk',time_out=True)
@@ -163,7 +163,7 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
         cbar.set_label(aux[f]['label'])
         #cax.xaxis.tick_top()
         #cax.xaxis.set_label_position('top')
-        if aux[f].has_key('cticks'): cbar.set_ticks(aux[f]['cticks'])
+        if 'cticks' in aux[f]: cbar.set_ticks(aux[f]['cticks'])
 
     if stars:
       cax=plt.subplot(gs2[0])
@@ -228,7 +228,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
     if stars:
       sp=read_starvtk(starfname)
 
-    if slc_data.has_key('time'):
+    if 'time' in slc_data:
         tMyr=slc_data['time']
     else:
         time,sp=read_starvtk(starfname,time_out=True)
@@ -267,7 +267,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
         cbar.set_label(aux[f]['label'])
         cax.xaxis.tick_top()
         cax.xaxis.set_label_position('top')
-        if aux[f].has_key('cticks'): cbar.set_ticks(aux[f]['cticks'])
+        if 'cticks' in aux[f]: cbar.set_ticks(aux[f]['cticks'])
 
     ax=plt.subplot(gs[0,0])
     divider = make_axes_locatable(ax)
@@ -333,7 +333,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
     slc_data=pickle.load(open(slcfname,'rb'))
     x0=slc_data[axis+'extent'][0]
     y0=slc_data[axis+'extent'][2]
-    print x0,y0
+    print(x0,y0)
     Lx=slc_data[axis+'extent'][1]-slc_data[axis+'extent'][0]
     Ly=slc_data[axis+'extent'][3]-slc_data[axis+'extent'][2]
     if extent is None: extent=[x0,x0+Lx,y0,y0+Ly]
@@ -341,7 +341,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
     y0=extent[2]
     lx=extent[1]-extent[0]
     ly=extent[3]-extent[2]
-    print extent,lx,ly
+    print(extent,lx,ly)
     ix=2
     iz=ix*ly/lx
     nf=len(fields_to_draw)
@@ -352,7 +352,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
 
     starname=slcfname.replace('slice/','id0/').replace('slice.p','starpar.vtk')
     sp=read_starvtk(starname)
-    if slc_data.has_key('time'):
+    if 'time' in slc_data:
         tMyr=slc_data['time']
     else:
         time,sp=read_starvtk(starname,time_out=True)
@@ -389,7 +389,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
             cbar.set_label(aux[f]['label'])
             cax.xaxis.tick_top()
             cax.xaxis.set_label_position('top')
-            if aux[f].has_key('cticks'): cbar.set_ticks(aux[f]['cticks'])
+            if 'cticks' in aux[f]: cbar.set_ticks(aux[f]['cticks'])
 
     if star_axis != -1:
         ax=plt.subplot(gs[0,star_axis])

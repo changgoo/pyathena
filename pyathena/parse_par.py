@@ -1,6 +1,6 @@
 def parse_par(rstfile):
 
-    fp=open(rstfile,'rb')
+    fp=open(rstfile,'r')
     par={}
     fields={}
     blocks=[]
