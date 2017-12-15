@@ -225,7 +225,9 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
     gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
     norm_factor=2.
 
-    sp=read_starvtk(starfname)
+    if stars:
+      sp=read_starvtk(starfname)
+
     if slc_data.has_key('time'):
         tMyr=slc_data['time']
     else:
