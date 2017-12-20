@@ -47,8 +47,8 @@ def main(**kwargs):
         x3_new=[xc_pos[z1],xc_pos[z2-1]]
         print z1,z2,xc_pos[0],xc_pos[-1],xc_pos[z1],xc_pos[z2-1]
         rstdata_low=crop(rstdata_low,z1,z2)
-    rstdata_high=rh.refine(rstdata_low,scalar=ns)
-#    rstdata_high=rstdata_low
+#    rstdata_high=rh.refine(rstdata_low,scalar=ns)
+    rstdata_high=rstdata_low
     for i,d in enumerate([rstdata_low,rstdata_high]):
         Bx=d['1-FIELD']
         By=d['2-FIELD']
@@ -81,9 +81,9 @@ def main(**kwargs):
     print par[par.rfind('<domain1'):par.rfind('<problem')]
 
     rh.write_allfile(pardata_low,rstdata_high,new_grids,\
-    dname='/nobackup/ckim14/%s/rst/' % id,id=id,verbose=True,scalar=ns)
+#    dname='/nobackup/ckim14/%s/rst/' % id,id=id,verbose=True,scalar=ns)
 #    dname='/u/ckim14/rst/',id=id,verbose=True,scalar=ns)
-#    dname='/tigress/changgoo/rst/',id=id,verbose=True,scalar=ns)
+    dname='/tigress/PERSEUS/changgoo/%s/rst/' % id,id=id,verbose=True,scalar=ns)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()

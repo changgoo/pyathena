@@ -1,6 +1,6 @@
 import numpy as np
 
-def los_to_HI(dens,temp,vel,vmax=100,dvch=1.0,deltas=1.):
+def los_to_HI(dens,temp,vel,vchannel,deltas=1.,WF=False):
     """
         inputs:
             dens: number density of hydrogen in units of 1/cm^3
@@ -16,21 +16,19 @@ def los_to_HI(dens,temp,vel,vmax=100,dvch=1.0,deltas=1.):
             vchannel: velocity channel
             TBthin: the brithgtness temperature assuming optically-thin case.
     """
-    vchmin=-vmax
-    vchmax=vmax
-    Nchannel=int((vchmax-vchmin)/dvch)+1
-    vchannel=np.tile((np.arange(Nchannel)*dvch+vchmin)[:,np.newaxis],(1,len(dens)))
     
-    Tlos=np.tile(temp,(Nchannel,1))
-    vlos=np.tile(vel,(Nchannel,1))
-    nlos=np.tile(dens,(Nchannel,1))
+    Tlos=temp[:,:,np.newaxis]
+    vlos=vel[:,:,np.newaxis]
+    nlos=dens[:,:,np.newaxis]
 
-    Tspin=Tspin_WF(Tlos,nlos)
+    if WF: Tspin=Tspin_WF(Tlos,nlos)
+    else: Tspin=Tlos
     
     ds=deltas*3.085677581467192e+18
 
     v_L=0.21394414*np.sqrt(Tlos) # in units of km/s
-    phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*(vchannel-vlos)/v_L)**2) # time
+    phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
+          (vchannel[np.newaxis,np.newaxis,:]-vlos)/v_L)**2) # time
     kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
     tau_los=kappa_v*ds # dimensionless
 
@@ -38,7 +36,7 @@ def los_to_HI(dens,temp,vel,vmax=100,dvch=1.0,deltas=1.):
     TB=np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=1) # same unit with Tspin
     TBthin=np.nansum(Tspin*tau_los,axis=1) # same unit with Tspin
     tau_v=np.nansum(kappa_v*ds,axis=1) # dimensionless
-    return {'TB':TB,'TBthin':TBthin,'tau':tau_v,'vchannel':vchannel[:,0]}
+    return TB,tau_v,TBthin
 
 def k10h(T2):
     """
@@ -65,9 +63,10 @@ def Tspin_WF(Temp,nH,nalpha=1.e-6):
     """
        spin temperature including the WF effect for a given nalpha
     """
-    T2=Temp/(1.e2*u.K)
+    T2=Temp/(1.e2)
     Tk=Temp
     TL=Temp
+    TA=3.77
     T21=0.068168759
     A10=2.8843e-15
 

@@ -57,15 +57,64 @@ def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap,srange=None,Trange=None):
         Qmap[ipix]=Q
         Umap[ipix]=U
 
-def make_map(domain,Nside=4,center=[0,0,0],srange=None,Trange=None,ext='.npy'):
-    deltas=domain['dx'][2]/2.
-    smax=domain['Lx'][2]/2.
+def make_map(domain,deltas,Nside=4,center=[0,0,0],ext='.npy',recal=False):
+    
+    losdir=domain['losdir']
+    step=domain['step']
+    cstring='x%dy%dz%d' % (center[0],center[1],center[2])
+    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+
+    Imap_file='%s/Imap.npy' % outdir
+    Qmap_file='%s/Qmap.npy' % outdir
+    Umap_file='%s/Umap.npy' % outdir
+
+    if os.path.isfile(Imap_file) & os.path.isfile(Qmap_file) & \
+       os.path.isfile(Umap_file) & (recal==False):
+        I=np.load(Imap_file)
+        Q=np.load(Qmap_file)
+        U=np.load(Umap_file)
+        return I,Q,U
+    else:
+        los=[]
+        for f in ['density','magnetic_fieldX','magnetic_fieldY','magnetic_fieldZ']:
+            outfile='%s/%s%s' % (outdir,f,ext)
+            if ext == '.p':
+                los.append(np.array(pd.read_pickle(outfile)))
+            if ext == '.npy':
+                los.append(np.load(outfile))
+        nH,Bx,By,Bz,=los
+ 
+        args={'Bnu':41495.876171482356, 'sigma':1.e-26, 'p0':0.2, 'attenuation': 0}
+        Bnu=args['Bnu']
+        p0=args['p0']
+        sigma=args['sigma']
+ 
+        Bperp2=Bx*Bx+By*By
+        B2=Bperp2+Bz*Bz
+        cos2phi=(By*By-Bx*Bx)/Bperp2
+        sin2phi=-Bx*By/Bperp2
+        cosgam2=Bperp2/B2
+ 
+        ds=deltas*3.085677581467192e+18
+        dtau=sigma*nH*ds
+ 
+        I=Bnu*(1.0-p0*(cosgam2-2./3.0))*dtau
+        Q=p0*Bnu*cos2phi*cosgam2*dtau
+        U=p0*Bnu*sin2phi*cosgam2*dtau
+ 
+        np.save('%s/Imap.npy' % outdir,I)
+        np.save('%s/Qmap.npy' % outdir,Q)
+        np.save('%s/Umap.npy' % outdir,U)
+ 
+        return I,Q,U
+
+def make_map_from_v(domain,deltas,Nside=4,center=[0,0,0],srange=None,Trange=None,ext='.npy'):
     losdir=domain['losdir']
     step=domain['step']
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
     outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
     los=[]
-    for f in ['density','magnetic_fieldX','magnetic_fieldY','magnetic_fieldZ']:
+    for f in ['density','velocityX','velocityY','velocityZ']:
         outfile='%s/%s%s' % (outdir,f,ext)
         if ext == '.p':
             los.append(np.array(pd.read_pickle(outfile)))
