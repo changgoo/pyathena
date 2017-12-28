@@ -20,7 +20,7 @@ from .scatter_sp import scatter_sp
 
 aux=ya.set_aux('solar')
 
-def plot_projection(surfname,starfname):
+def plot_projection(surfname,starfname,stars=True):
     global aux
 
     plt.rc('font',size=11)
@@ -30,7 +30,7 @@ def plot_projection(surfname,starfname):
     fig=plt.figure(0,figsize=(5.5,5))
     gs = gridspec.GridSpec(2,2,width_ratios=[1,0.03],wspace=0.0)
 
-    sp=read_starvtk(starfname)
+    if stars: sp=read_starvtk(starfname)
     frb=pickle.load(open(surfname,'rb'),encoding='latin1')
     extent=np.array(frb['bounds'])/1.e3
     x0=extent[0]
@@ -51,34 +51,35 @@ def plot_projection(surfname,starfname):
     ax.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
 
-    scatter_sp(sp,ax,axis='z',runaway=True,type='surf')
+    if stars: scatter_sp(sp,ax,axis='z',runaway=True,type='surf')
 
     cax=plt.subplot(gs[0,1])
     cbar = fig.colorbar(im,cax=cax,orientation='vertical')
     cbar.set_label(aux['surface_density']['label'])
 
-    cax=plt.subplot(gs[1,1])
-    cbar = colorbar.ColorbarBase(cax, ticks=[0,20,40],
-           cmap=plt.cm.cool_r, norm=Normalize(vmin=0,vmax=40), 
-           orientation='vertical')
-    cbar.set_label(r'${\rm age [Myr]}$')
+    if stars:
+      cax=plt.subplot(gs[1,1])
+      cbar = colorbar.ColorbarBase(cax, ticks=[0,20,40],
+             cmap=plt.cm.cool_r, norm=Normalize(vmin=0,vmax=40), 
+             orientation='vertical')
+      cbar.set_label(r'${\rm age [Myr]}$')
+ 
+      norm_factor=2.
+      s1=ax.scatter(Lx*2,Lz*2,
+        s=np.sqrt(1.e3)/norm_factor,color='k',
+        alpha=.8,label=r'$10^3 M_\odot$')
+      s2=ax.scatter(Lx*2,Lz*2,
+        s=np.sqrt(1.e4)/norm_factor,color='k',
+        alpha=.8,label=r'$10^4 M_\odot$')
+      s3=ax.scatter(Lx*2,Lz*2,
+        s=np.sqrt(1.e5)/norm_factor,
+        color='k',alpha=.8,label=r'$10^5 M_\odot$')
 
-    norm_factor=2.
-    s1=ax.scatter(Lx*2,Lz*2,
-      s=np.sqrt(1.e3)/norm_factor,color='k',
-      alpha=.8,label=r'$10^3 M_\odot$')
-    s2=ax.scatter(Lx*2,Lz*2,
-      s=np.sqrt(1.e4)/norm_factor,color='k',
-      alpha=.8,label=r'$10^4 M_\odot$')
-    s3=ax.scatter(Lx*2,Lz*2,
-      s=np.sqrt(1.e5)/norm_factor,
-      color='k',alpha=.8,label=r'$10^5 M_\odot$')
-
-    ax.set_xlim(x0,x0+Lx)
-    ax.set_ylim(y0,y0+Lz);
-    legend=ax.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'), 
-                      loc=2,ncol=3,bbox_to_anchor=(0.0, 1.15),
-                      fontsize='medium',frameon=True)
+      ax.set_xlim(x0,x0+Lx)
+      ax.set_ylim(y0,y0+Lz);
+      legend=ax.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'), 
+                        loc=2,ncol=3,bbox_to_anchor=(0.0, 1.15),
+                        fontsize='medium',frameon=True)
 
     ax.set_xlabel('x [kpc]')
     ax.set_ylabel('y [kpc]')
