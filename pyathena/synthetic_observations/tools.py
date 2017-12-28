@@ -6,14 +6,15 @@ import os
 
 from ..utils import cc_idx
 
-def make_directory(domain,Nside=4,center=[0.,0.,0.]):
+def make_directory(domain,smax,Nside=4,center=[0.,0.,0.]):
     losdir=domain['losdir']
     step=domain['step']
+    stepdir='%s%s-%d' % (losdir,step,smax)
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
-    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+    outdir='%s%s-%d/Nside%d-%s' % (losdir,step,smax,Nside,cstring)
     
     if not os.path.isdir(losdir): os.mkdir(losdir)
-    if not os.path.isdir(losdir+step): os.mkdir(losdir+step)
+    if not os.path.isdir(stepdir): os.mkdir(stepdir)
     if not os.path.isdir(outdir): os.mkdir(outdir)
 
 

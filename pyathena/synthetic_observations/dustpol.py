@@ -57,12 +57,13 @@ def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap,srange=None,Trange=None):
         Qmap[ipix]=Q
         Umap[ipix]=U
 
-def make_map(domain,deltas,Nside=4,center=[0,0,0],ext='.npy',recal=False):
+def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],ext='.npy',recal=False):
     
     losdir=domain['losdir']
     step=domain['step']
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
-    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+    stepdir='%s%s-%d' % (losdir,step,smax)
+    outdir='%s%s-%d/Nside%d-%s' % (losdir,step,smax,Nside,cstring)
 
     Imap_file='%s/Imap.npy' % outdir
     Qmap_file='%s/Qmap.npy' % outdir
@@ -108,11 +109,12 @@ def make_map(domain,deltas,Nside=4,center=[0,0,0],ext='.npy',recal=False):
  
         return I,Q,U
 
-def make_map_from_v(domain,deltas,Nside=4,center=[0,0,0],srange=None,Trange=None,ext='.npy'):
+def make_map_from_v(domain,deltas,smax,Nside=4,center=[0,0,0],srange=None,Trange=None,ext='.npy'):
     losdir=domain['losdir']
     step=domain['step']
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
-    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+    stepdir='%s%s-%d' % (losdir,step,smax)
+    outdir='%s%s-%d/Nside%d-%s' % (losdir,step,smax,Nside,cstring)
     los=[]
     for f in ['density','velocityX','velocityY','velocityZ']:
         outfile='%s/%s%s' % (outdir,f,ext)
@@ -129,8 +131,8 @@ def make_map_from_v(domain,deltas,Nside=4,center=[0,0,0],srange=None,Trange=None
 
     Bperp2=Bx*Bx+By*By
     B2=Bperp2+Bz*Bz
-    cos2phi=(Bx*Bx-By*By)/Bperp2
-    sin2phi=Bx*By/Bperp2
+    cos2phi=(By*By-Bx*Bx)/Bperp2
+    sin2phi=-Bx*By/Bperp2
     cosgam2=Bperp2/B2
 
     ds=deltas*3.085677581467192e+18

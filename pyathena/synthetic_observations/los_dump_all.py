@@ -5,7 +5,17 @@ import healpy as hp
 import numpy as np
 import pandas as pd
 
-from ..utils import cc_idx
+def cc_idx(le,dx,pos):
+    if np.array(pos).ndim == 2:
+        le=le[:,np.newaxis]
+        dx=dx[:,np.newaxis]
+    elif np.array(pos).ndim == 3:
+        le=le[:,np.newaxis,np.newaxis]
+        dx=dx[:,np.newaxis,np.newaxis]
+
+    idx=(pos-le-0.5*dx)/dx
+    return idx
+
 
 def los_idx_all(hat,domain,smin=0.,smax=3000.,ds=1.,center=[0,0,0],zmax_cut=True):
     zmax=domain['right_edge'][2]-0.5*domain['dx'][2]
@@ -19,7 +29,10 @@ def los_idx_all(hat,domain,smin=0.,smax=3000.,ds=1.,center=[0,0,0],zmax_cut=True
     yarr=yhat*sarr + center[1]
     zarr=zhat*sarr + center[2]
 
-    iarr = cc_idx(domain,[xarr,yarr,zarr])
+    le=domain['left_edge']
+    dx=domain['dx']
+    if np.abs(le[2]) < smax: le[2]=-smax
+    iarr = cc_idx(le,dx,[xarr,yarr,zarr])
 
     return iarr,[xarr,yarr,zarr],sarr
 
@@ -30,7 +43,7 @@ def los_dump(ds,domain,deltas,smax,fields=['density'],
     losdir=domain['losdir']
     step=domain['step']
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
-    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+    outdir='%s%s-%d/Nside%d-%s' % (losdir,step,smax,Nside,cstring)
  
     x0,y0,z0,dx,dy,dz,vy0 = get_index_all(domain,Nside,center,smax,deltas)
 
@@ -39,7 +52,8 @@ def los_dump(ds,domain,deltas,smax,fields=['density'],
         if not os.path.isfile(outfile) or force_write:
             print('interpolating and writing: %s' % f)
             data=read_data(ds,f,domain)
-            newdata=extend_data(domain,data)
+            newdata=extend_data(domain,data,smax)
+            print data.shape,newdata.shape
             d000=newdata[z0  ,y0  ,x0  ]*(1-dz)*(1-dy)*(1-dx)
             d100=newdata[z0+1,y0  ,x0  ]*dz*(1-dy)*(1-dx)
             d010=newdata[z0  ,y0+1,x0  ]*(1-dz)*dy*(1-dx)
@@ -87,7 +101,7 @@ def get_index_all(domain,Nside,center,smax,ds):
 
     return x0,y0,z0,dx,dy,dz,vy0
 
-def extend_data(domain,data):
+def extend_data(domain,data,smax):
     joffset=get_joffset(domain)
 
     dslicey=data[:,0,:]
@@ -98,14 +112,21 @@ def extend_data(domain,data):
     dslicex=d1*(1-dj)+d2*dj
 
     newdata=np.concatenate((newdata,dslicex[:,:,np.newaxis]),axis=2)
+
+    Nz, Ny, Nx = newdata.shape
+    New_Nz=smax/domain['dx'][2]
+
+    if New_Nz>(Nz/2):
+        zeros=np.zeros((int(New_Nz-Nz/2),Ny,Nx))
+        newdata=np.concatenate((zeros,newdata,zeros),axis=0)
     return newdata
 
-def los_dump_proj(domain,vec_field,Nside=4,center=[0.,0.,0.],force_write=False,ext='.npy'):
+def los_dump_proj(domain,vec_field,smax,Nside=4,center=[0.,0.,0.],force_write=False,ext='.npy'):
 
     losdir=domain['losdir']
     step=domain['step']
     cstring='x%dy%dz%d' % (center[0],center[1],center[2])
-    outdir='%s%s/Nside%d-%s' % (losdir,step,Nside,cstring)
+    outdir='%s%s-%d/Nside%d-%s' % (losdir,step,smax,Nside,cstring)
  
     npix=hp.nside2npix(Nside)
 
