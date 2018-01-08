@@ -350,7 +350,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
     gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
     norm_factor=2.
 
-    starname=slcfname.replace('slice/','id0/').replace('slice.p','starpar.vtk')
+    starname=slcfname.replace('slice/','starpar/').replace('slice.p','starpar.vtk')
     sp=read_starvtk(starname)
     if 'time' in slc_data:
         tMyr=slc_data['time']
