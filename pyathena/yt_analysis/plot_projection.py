@@ -20,8 +20,10 @@ from .scatter_sp import scatter_sp
 
 aux=ya.set_aux('solar')
 
-def plot_projection(surfname,starfname,stars=True):
+def plot_projection(surfname,starfname,stars=True,writefile=False,runaway=True):
     global aux
+
+    aux=ya.set_aux(os.path.basename(surfname))
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -31,7 +33,7 @@ def plot_projection(surfname,starfname,stars=True):
     gs = gridspec.GridSpec(2,2,width_ratios=[1,0.03],wspace=0.0)
 
     if stars: sp=read_starvtk(starfname)
-    frb=pickle.load(open(surfname,'rb'),encoding='latin1')
+    frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
     extent=np.array(frb['bounds'])/1.e3
     x0=extent[0]
     y0=extent[2]
@@ -51,7 +53,7 @@ def plot_projection(surfname,starfname,stars=True):
     ax.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
 
-    if stars: scatter_sp(sp,ax,axis='z',runaway=True,type='surf')
+    if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf')
 
     cax=plt.subplot(gs[0,1])
     cbar = fig.colorbar(im,cax=cax,orientation='vertical')
@@ -85,4 +87,8 @@ def plot_projection(surfname,starfname,stars=True):
     ax.set_ylabel('y [kpc]')
 
     pngfname=surfname+'ng'
-    return fig
+    if writefile:
+        plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
+        plt.close()
+    else:
+        return fig

@@ -75,7 +75,7 @@ def scatter_sp(sp,ax,axis=0,thickness=10,norm_factor=4., \
             #ax.scatter(spx.iloc[islab],spy.iloc[islab],marker='.',c='k',alpha=1.0)
             #ax.quiver(spx.iloc[islab],spy.iloc[islab],
             #      spvx.iloc[islab],spvy.iloc[islab],color='k',alpha=1.0)
-        ax.scatter(spx,spy,marker='o',color='k',alpha=1.0,s=10.0/norm_factor)
+        ax.scatter(spx,spy,marker='o',color='k',alpha=0.5,s=10.0/norm_factor)
         #ax.quiver(spx,spy,spvx,spvy,color='w',alpha=0.5)
  
       if len(sp_normal) > 0: 
@@ -95,7 +95,7 @@ def scatter_sp(sp,ax,axis=0,thickness=10,norm_factor=4., \
                 vmax=40,vmin=0,cmap=plt.cm.cool_r,alpha=1.0)
         ax.scatter(spx.iloc[iyoung],spy.iloc[iyoung],marker='o',\
             s=spm.iloc[iyoung],c=spa.iloc[iyoung],\
-            vmax=40,vmin=0,cmap=plt.cm.cool_r,alpha=0.7)
+            vmax=40,vmin=0,cmap=plt.cm.cool_r,alpha=0.5)
 
 
 def compare_files(source, output):
@@ -112,6 +112,7 @@ def compare_files(source, output):
 def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
                writefile=True,tstamp=True,stars=True,field_label=True):
     global aux
+   
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
@@ -207,6 +208,8 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
 def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
                writefile=True,tstamp=True,stars=True,field_label=True):
     global aux
+
+    aux=ya.set_aux(os.path.basename(slcfname))
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)

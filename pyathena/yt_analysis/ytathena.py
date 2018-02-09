@@ -9,8 +9,6 @@ from yt.utilities.physical_constants import \
     G
 import pickle as p
 import numpy as np
-import sys
-sys.path.insert(0,'../../')
 import pyathena as pa
 
 # basic qunatities with renormalization
@@ -147,11 +145,26 @@ def set_aux(model='solar'):
         cticks=(0,20,40), \
         n_bins=256, log=False)
 
-    if model is 'starburst':
-        aux['nH']['clim']=(2.e-5,2.e3)
+    if model.startswith('R4'):
+        aux['nH']['clim']=(2.e-4,2.e3)
+        aux['nH']['cticks']=(1.e-2,1,1.e2)
         aux['pok']['clim']=(10,5.e6)
+        aux['pok']['cticks']=(1.e2,1.e4,1.e6)
         aux['surface_density']['clim']=(1,1000)
-        aux['magnetic_field_strength']['clim']=(0.1,100)
+        aux['velocity_z']['clim']=(-300,300)
+        aux['velocity_z']['cticks']=(-200,0,200)
+        aux['magnetic_field_strength']['clim']=(0.01,100)
+
+
+    if model.startswith('R2'):
+        aux['nH']['clim']=(2.e-4,2.e3)
+        aux['nH']['cticks']=(1.e-2,1,1.e2)
+        aux['pok']['clim']=(10,5.e6)
+        aux['pok']['cticks']=(1.e2,1.e4,1.e6)
+        aux['velocity_z']['clim']=(-300,300)
+        aux['velocity_z']['cticks']=(-200,0,200)
+        aux['surface_density']['clim']=(1,1000)
+        aux['magnetic_field_strength']['clim']=(0.01,100)
 
     if model is 'multi_SN':
         aux['nH']['clim']=(2.e-5,2.e2)

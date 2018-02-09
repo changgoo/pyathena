@@ -227,7 +227,7 @@ class AthenaZprof(object):
 
 
 	def _set_plist(self):
-		zpfile = glob.glob(os.path.join(self.path,'id0/%s.%s.*.%s' % (self.id, self.step, self.ext)))
+		zpfile = glob.glob(os.path.join(self.path,'%s.%s.*.%s' % (self.id, self.step, self.ext)))
 		zpfile.sort()
 		self.plist=[]
 		for f in zpfile: 
