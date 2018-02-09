@@ -17,8 +17,6 @@ from pyathena import read_starvtk,texteffect,set_units
 import numpy as np
 import string
 
-aux=ya.set_aux('solar')
-
 fields=['cell_volume','cell_mass']
 unit=set_units(muH=1.4271)
 Myr=unit['time'].to('Myr').value
@@ -111,8 +109,7 @@ def compare_files(source, output):
 
 def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
                writefile=True,tstamp=True,stars=True,field_label=True):
-    global aux
-   
+    aux=ya.set_aux(os.path.basename(slcfname))
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
@@ -207,8 +204,6 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
 
 def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
                writefile=True,tstamp=True,stars=True,field_label=True):
-    global aux
-
     aux=ya.set_aux(os.path.basename(slcfname))
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
@@ -328,7 +323,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
 
 def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
                writefile=True,tstamp=True,field_label=True):
-    global aux
+    aux=ya.set_aux(os.path.basename(slcfname))
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)

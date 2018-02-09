@@ -18,11 +18,7 @@ import numpy as np
 import string
 from .scatter_sp import scatter_sp
 
-aux=ya.set_aux('solar')
-
 def plot_projection(surfname,starfname,stars=True,writefile=False,runaway=True):
-    global aux
-
     aux=ya.set_aux(os.path.basename(surfname))
 
     plt.rc('font',size=11)

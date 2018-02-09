@@ -89,7 +89,7 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
         ds.add_field(("gas","mag_pok"),function=_mag_pok, \
           units='K*cm**(-3)',display_name=r'$P_{\rm mag}/k_{\rm B}$')
 
-def set_aux(model='solar'):
+def set_aux(model='solar',verbose=False):
     aux={}
     aux['density']=dict(label=r'$n_H\;[{\rm cm}^{-3}]$', \
         unit='cm**(-3)', limits=(1.e-6,1.e6), \
@@ -146,6 +146,7 @@ def set_aux(model='solar'):
         n_bins=256, log=False)
 
     if model.startswith('R4'):
+        if verbose: print('auxilary information is set for R4')
         aux['nH']['clim']=(2.e-4,2.e3)
         aux['nH']['cticks']=(1.e-2,1,1.e2)
         aux['pok']['clim']=(10,5.e6)
@@ -156,7 +157,8 @@ def set_aux(model='solar'):
         aux['magnetic_field_strength']['clim']=(0.01,100)
 
 
-    if model.startswith('R2'):
+    elif model.startswith('R2'):
+        if verbose: print('auxilary information is set for R2')
         aux['nH']['clim']=(2.e-4,2.e3)
         aux['nH']['cticks']=(1.e-2,1,1.e2)
         aux['pok']['clim']=(10,5.e6)
@@ -166,9 +168,11 @@ def set_aux(model='solar'):
         aux['surface_density']['clim']=(1,1000)
         aux['magnetic_field_strength']['clim']=(0.01,100)
 
-    if model is 'multi_SN':
+    elif model is 'multi_SN':
         aux['nH']['clim']=(2.e-5,2.e2)
         aux['pok']['clim']=(50,1.e5)
+    else:
+        if verbose: print('auxilary information is set for Solar nbhd.')
     return aux
 
 def check_aux(fields):
