@@ -60,7 +60,7 @@ def main(**kwargs):
     for f in files:
         print(f)
         fpath,fbase,fstep,fext,mpi=parse_filename(f)
-
+        remove_flag=True
         for islab in range(Nslab):
             print('%d of %d' % (islab, Nslab))
             grids=gid[gid/Nproc_h == islab]
@@ -82,12 +82,13 @@ def main(**kwargs):
                 subprocess.call(string.join(command),shell=True)
             else:
                 print('%s is newer than %s' % (outfile, vtkfile))
+                remove_flag=False
 # delete originals
         file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
-        if len(file_originals) > 0: 
+        if (len(file_originals) > 0) and remove_flag: 
             for f in file_originals: os.remove(f)
             os.remove('%s/id0/%s.%s.%s' % (fpath,fbase,fstep,fext))
-# copy starpar.vtk
+# move starpar.vtk
         src_starpar_name='%s/id0/%s.%s.starpar.vtk' % (fpath,fbase,fstep)
         dst_name='%s/starpar/' % (newbase)
         if os.path.isfile(src_starpar_name): 

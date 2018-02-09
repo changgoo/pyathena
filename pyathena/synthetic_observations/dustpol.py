@@ -1,4 +1,5 @@
 from .los_to_dustpol import los_to_dustpol
+from .tools import get_hat,get_joffset
 import healpy as hp
 import pandas as pd
 import numpy as np
@@ -57,7 +58,7 @@ def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap,srange=None,Trange=None):
         Qmap[ipix]=Q
         Umap[ipix]=U
 
-def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],ext='.npy',recal=False):
+def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],recal=False,file_write=False):
     
     losdir=domain['losdir']
     step=domain['step']
@@ -76,14 +77,21 @@ def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],ext='.npy',recal=False):
         U=np.load(Umap_file)
         return I,Q,U
     else:
-        los=[]
-        for f in ['density','magnetic_fieldX','magnetic_fieldY','magnetic_fieldZ']:
-            outfile='%s/%s%s' % (outdir,f,ext)
-            if ext == '.p':
-                los.append(np.array(pd.read_pickle(outfile)))
-            if ext == '.npy':
-                los.append(np.load(outfile))
-        nH,Bx,By,Bz,=los
+        outfile='%s/%s%s' % (outdir,'density','.npy')
+        nH=np.load(outfile)
+        outfile='%s/%s%s' % (outdir,'magnetic_field1','.npy')
+        B1=np.load(outfile)
+        outfile='%s/%s%s' % (outdir,'magnetic_field2','.npy')
+        B2=np.load(outfile)
+        outfile='%s/%s%s' % (outdir,'magnetic_field3','.npy')
+        B3=np.load(outfile)
+    
+        npix=hp.nside2npix(Nside)
+        ipix = np.arange(npix)
+        hat=get_hat(Nside,ipix)
+        Bz=hat['Z'][0][:,np.newaxis]*B1+hat['Z'][1][:,np.newaxis]*B2+hat['Z'][2][:,np.newaxis]*B3
+        Bx=hat['X'][0][:,np.newaxis]*B1+hat['X'][1][:,np.newaxis]*B2+hat['X'][2][:,np.newaxis]*B3
+        By=hat['Y'][0][:,np.newaxis]*B1+hat['Y'][1][:,np.newaxis]*B2 #+hat['Y'][2]*B3 -- this is zer
  
         args={'Bnu':41495.876171482356, 'sigma':1.e-26, 'p0':0.2, 'attenuation': 0}
         Bnu=args['Bnu']
@@ -103,9 +111,10 @@ def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],ext='.npy',recal=False):
         Q=p0*Bnu*cos2phi*cosgam2*dtau
         U=p0*Bnu*sin2phi*cosgam2*dtau
  
-        np.save('%s/Imap.npy' % outdir,I)
-        np.save('%s/Qmap.npy' % outdir,Q)
-        np.save('%s/Umap.npy' % outdir,U)
+        if file_write:
+            np.save('%s/Imap.npy' % outdir,I)
+            np.save('%s/Qmap.npy' % outdir,Q)
+            np.save('%s/Umap.npy' % outdir,U)
  
         return I,Q,U
 

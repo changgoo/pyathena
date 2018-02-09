@@ -114,3 +114,12 @@ def load_planck_cmap(cmap_fname="../misc/Planck_Parchment_RGB.txt"):
     cmap = colombi1_cmap
     return cmap
 
+def get_center(dname):
+    cstr=dname.split('-x')[1]
+    yidx=cstr.rfind('y')
+    zidx=cstr.rfind('z')
+    x0=int(cstr[:yidx])
+    y0=int(cstr[yidx+1:zidx])
+    z0=int(cstr[zidx+1:])
+    center=[x0,y0,z0]
+    return center

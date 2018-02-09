@@ -52,20 +52,46 @@ def los_dump(ds,domain,deltas,smax,fields=['density'],
         if not os.path.isfile(outfile) or force_write:
             print('interpolating and writing: %s' % f)
             data=read_data(ds,f,domain)
-            newdata=extend_data(domain,data,smax)
-            print data.shape,newdata.shape
-            d000=newdata[z0  ,y0  ,x0  ]*(1-dz)*(1-dy)*(1-dx)
-            d100=newdata[z0+1,y0  ,x0  ]*dz*(1-dy)*(1-dx)
-            d010=newdata[z0  ,y0+1,x0  ]*(1-dz)*dy*(1-dx)
-            d001=newdata[z0  ,y0  ,x0+1]*(1-dz)*(1-dy)*dx
-            d110=newdata[z0+1,y0+1,x0  ]*dz*dy*(1-dx)
-            d101=newdata[z0+1,y0  ,x0+1]*dz*(1-dy)*dx
-            d011=newdata[z0  ,y0+1,x0+1]*(1-dz)*dy*dx
-            d111=newdata[z0+1,y0+1,x0+1]*dz*dy*dx
+            data=extend_data(domain,data,smax)
+            dlos=data[z0  ,y0  ,x0  ]*(1-dz)*(1-dy)*(1-dx) +\
+                 data[z0+1,y0  ,x0  ]*dz*(1-dy)*(1-dx) +\
+                 data[z0  ,y0+1,x0  ]*(1-dz)*dy*(1-dx) +\
+                 data[z0  ,y0  ,x0+1]*(1-dz)*(1-dy)*dx +\
+                 data[z0+1,y0+1,x0  ]*dz*dy*(1-dx) +\
+                 data[z0+1,y0  ,x0+1]*dz*(1-dy)*dx +\
+                 data[z0  ,y0+1,x0+1]*(1-dz)*dy*dx +\
+                 data[z0+1,y0+1,x0+1]*dz*dy*dx
  
-            dlos=d000+d100+d010+d001+d110+d101+d011+d111
+            #dlos=d000+d100+d010+d001+d110+d101+d011+d111
             if f is 'velocity2' and 'Omega' in domain: dlos += vy0
             np.save(outfile,dlos)
+
+def los_dump_from_data(data,domain,deltas,smax,f,
+             Nside=4,center=[0,0,0],force_write=False):
+
+    losdir=domain['losdir']
+    step=domain['step']
+    cstring='x%dy%dz%d' % (center[0],center[1],center[2])
+    outdir='%s%s-%d/Nside%d-%s' % (losdir,step,smax,Nside,cstring)
+ 
+    x0,y0,z0,dx,dy,dz,vy0 = get_index_all(domain,Nside,center,smax,deltas)
+
+    outfile='%s/%s.npy' % (outdir,f)
+    if not os.path.isfile(outfile) or force_write:
+        print('interpolating and writing: %s' % f)
+        data=extend_data(domain,data,smax)
+        dlos=data[z0  ,y0  ,x0  ]*(1-dz)*(1-dy)*(1-dx) +\
+             data[z0+1,y0  ,x0  ]*dz*(1-dy)*(1-dx) +\
+             data[z0  ,y0+1,x0  ]*(1-dz)*dy*(1-dx) +\
+             data[z0  ,y0  ,x0+1]*(1-dz)*(1-dy)*dx +\
+             data[z0+1,y0+1,x0  ]*dz*dy*(1-dx) +\
+             data[z0+1,y0  ,x0+1]*dz*(1-dy)*dx +\
+             data[z0  ,y0+1,x0+1]*(1-dz)*dy*dx +\
+             data[z0+1,y0+1,x0+1]*dz*dy*dx
+ 
+        if f is 'velocity2' and 'Omega' in domain: dlos += vy0
+        np.save(outfile,dlos)
+
 
 def get_index_all(domain,Nside,center,smax,ds):
 
