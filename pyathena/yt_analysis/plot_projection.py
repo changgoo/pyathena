@@ -1,5 +1,3 @@
-import matplotlib as mpl
-#mpl.use('Agg')
 
 import pyathena.yt_analysis.ytathena as ya
 import yt
@@ -18,7 +16,7 @@ import numpy as np
 import string
 from .scatter_sp import scatter_sp
 
-def plot_projection(surfname,starfname,stars=True,writefile=False,runaway=True):
+def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True):
     aux=ya.set_aux(os.path.basename(surfname))
 
     plt.rc('font',size=11)
