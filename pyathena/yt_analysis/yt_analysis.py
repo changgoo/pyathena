@@ -67,15 +67,43 @@ def draw_pdf(ax,pdf,field='cell_mass',key='nH-pok'):
 
 def projection(ds,surfname):
     time = ds.current_time.in_units('Myr').v
-    proj = ds.proj('density',axis='z')
-    w=ds.domain_width[0]
-    res=(ds.domain_dimensions[0],ds.domain_dimensions[1])
-    frb = proj.to_frb(width=w,resolution=res)
-    surf=np.array(frb['density'].in_units('Msun/pc**2'))
-    bounds = np.array(frb.bounds)
+    ds.coordinates.x_axis[1]=0
+    ds.coordinates.x_axis['y']=0
+    ds.coordinates.y_axis[1]=2
+    ds.coordinates.y_axis['y']=2
+
+    c=ds.domain_center
+    dx=ds.domain_width/ds.domain_dimensions
+
+    surf_data={}
+    surf_data['time']=time
+    for i,axis in enumerate(['x','y','z']):
+        proj = ds.proj('density',axis=axis)
+        ix=ds.coordinates.x_axis[axis]
+        iy=ds.coordinates.y_axis[axis]
+        res=(ds.domain_dimensions[ix],ds.domain_dimensions[iy])
+        frb = proj.to_frb(ds.domain_width[ix],res,c,ds.domain_width[iy])
+        surf=np.array(frb['density'].in_units('Msun/pc**2'))
+        bounds = np.array(frb.bounds)
+        surf_data[axis]={'data':surf,'bounds':bounds}
     if yt.is_root():
-        pickle.dump({'time':time,'data':surf,'bounds':frb.bounds},
-          open(surfname,'wb'),pickle.HIGHEST_PROTOCOL)
+        pickle.dump(surf_data,open(surfname,'wb'),pickle.HIGHEST_PROTOCOL)
+
+    if ('athena','specific_scalar[0]') in ds.field_list:
+        scal_data={}
+        scal_data['time']=time
+        for i,axis in enumerate(['x','y','z']):
+            proj = ds.proj('specific_scalar[0]',axis=axis,weight_field='density')
+            ix=ds.coordinates.x_axis[axis]
+            iy=ds.coordinates.y_axis[axis]
+            res=(ds.domain_dimensions[ix],ds.domain_dimensions[iy])
+            frb = proj.to_frb(ds.domain_width[ix],res,c,ds.domain_width[iy])
+            scal=np.array(frb['specific_scalar[0]'])
+            bounds = np.array(frb.bounds)
+            scal_data[axis]={'data':scal,'bounds':bounds}
+        if yt.is_root():
+            pickle.dump(scal_data,open(surfname.replace('surf.p','scal0.p'),'wb'),pickle.HIGHEST_PROTOCOL)
+
 
 def phase(sq,phfname,bin_fields):
     global aux
@@ -264,7 +292,7 @@ def main(**kwargs):
             else: ds = yt.load(f,units_override=ya.unit_base, nprocs=nprocs)
             ya.add_yt_fields(ds,mhd=mhd,rotation=rotation,cooling=cooling)
             if not compare_files(f,surfname):
-                if rank == 0: print 'projectiong...'
+                if rank == 0: print 'projecting...'
                 projection(ds,surfname)
             if not compare_files(f,slcfname):
                 if rank == 0: print 'slicing...'
