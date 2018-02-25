@@ -190,6 +190,10 @@ def plot_projection_icm(surfname,scalfname,starfname,
     if stars: sp=read_starvtk(starfname)
     frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
     icm=pickle.load(open(scalfname,'rb'))#,encoding='latin1')
+    print icm['x']['data'].min(),icm['x']['data'].max()
+    for ax in ['x','y']:
+        print ax,icm[ax]['data'].max()
+        icm[ax]['data'] /= icm[ax]['data'].max()
     if 'time' in frb:
         tMyr=frb['time']
     else:
@@ -207,26 +211,36 @@ def plot_projection_icm(surfname,scalfname,starfname,
 
     cism=plt.cm.bone_r
     cicm=plt.cm.Reds
+    cicm._init()
+    x=np.arange(cicm.N)
+    alphas=0.4*(np.tanh((x-80)/30.)+1)
+    #alphas = np.linspace(0.5, 0.5, cicm.N)
+    cicm._lut[:-3,-1] = alphas
+    cicm._lut[-3,-1] = alphas.min()
+    cicm._lut[-2,-1] = alphas.max()
 
-    fig=plt.figure(0,figsize=(ix*2+0.5,iz))
-    gs = gridspec.GridSpec(3,3,width_ratios=[1,1,0.03],wspace=0.0)
-    ax1=plt.subplot(gs[:,0])
-    im1=ax1.imshow(frb['y']['data'],norm=LogNorm(),origin='lower')
-    im1.set_extent(extent)
-    im1.set_cmap(cism)
     clim=aux['surface_density']['clim']
     cmin=clim[0]
     cmax=clim[1]
     clim=(cmin*0.1,cmax)
+    clim_icm=(0.0,0.5)
+    norm_icm=Normalize()
+
+    fig=plt.figure(0,figsize=(ix*2+0.5,iz))
+    gs = gridspec.GridSpec(3,3,width_ratios=[1,1,0.05],wspace=0.0)
+    ax1=plt.subplot(gs[:,0])
+    im1=ax1.imshow(frb['y']['data'],norm=LogNorm(),origin='lower')
+    im1.set_extent(extent)
+    im1.set_cmap(cism)
     im1.set_clim(clim)
 
-    im11=ax1.imshow(icm['y']['data'],norm=LogNorm(),origin='lower',alpha=0.7)
+    im11=ax1.imshow(icm['y']['data'],norm=norm_icm,origin='lower')
     im11.set_extent(extent)
     im11.set_cmap(cicm)
-    im11.set_clim((1.e-2,1))
+    im11.set_clim(clim_icm)
 
-    ax1.text(extent[0]*0.9,extent[3]*0.9,
-            't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect(20)))
+    ax1.text(0.,extent[3]*0.9,
+            't=%3d Myr' % tMyr,ha='center',va='top',**(texteffect(20)))
     if stars: scatter_sp(sp,ax1,axis='y',runaway=runaway,type='surf')
 
     ax2=plt.subplot(gs[:,1])
@@ -235,10 +249,10 @@ def plot_projection_icm(surfname,scalfname,starfname,
     im2.set_cmap(cism)
     im2.set_clim(clim)
 
-    im21=ax2.imshow(icm['x']['data'],norm=LogNorm(),origin='lower',alpha=0.7)
+    im21=ax2.imshow(icm['x']['data'],norm=norm_icm,origin='lower')
     im21.set_extent(extent)
     im21.set_cmap(cicm)
-    im21.set_clim((1.e-2,1))
+    im21.set_clim(clim_icm)
 
 
     if stars: scatter_sp(sp,ax2,axis='x',runaway=runaway,type='surf')
@@ -272,9 +286,9 @@ def plot_projection_icm(surfname,scalfname,starfname,
         color='k',alpha=.8,label=r'$10^5 M_\odot$')
 
       ax1.set_xlim(x0,x0+Lx)
-      ax1.set_ylim(y0,y0+Lz);
       ax2.set_xlim(x0,x0+Lx)
-      ax2.set_ylim(y0,y0+Lz);
+      ax1.set_ylim(y0,y0+Lz)
+      ax2.set_ylim(y0,y0+Lz)
       legend=ax1.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'),
                         loc='lower left',fontsize='medium',frameon=True)
 
@@ -283,6 +297,130 @@ def plot_projection_icm(surfname,scalfname,starfname,
 
     ax2.set_xlabel('y [kpc]')
     plt.setp(ax2.get_yticklabels(),visible=False)
+    pngfname=surfname+'ng'
+    if writefile:
+        plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
+        plt.close()
+    else:
+        return fig
+
+def plot_projection_all(surfnames,writefile=True,runaway=True):
+
+    plt.rc('font',size=16)
+    plt.rc('xtick',labelsize=16)
+    plt.rc('ytick',labelsize=16)
+
+    nsurf=len(surfnames)
+    axis='y'
+    setup=True
+    for i,surfname in enumerate(surfnames):
+        aux=ya.set_aux(os.path.basename(surfname))
+        scalfnames=glob.glob(surfname.replace('surf.p','scal?.p'))
+        starfnames=glob.glob(surfname.replace('surf/','starpar/').replace('surf.p','starpar.vtk'))+glob.glob(surfname.replace('surf/','id0/').replace('surf.p','starpar.vtk'))
+        nstar=len(starfnames)
+        nscal=len(scalfnames)
+       
+        if nstar > 0:
+            starfname=starfnames[0]
+            sp=read_starvtk(starfname)
+        
+        frb=pickle.load(open(surfname,'rb'))
+        if nscal > 0:
+            icm=pickle.load(open(scalfnames[-1],'rb'))
+            print axis,icm[axis]['data'].min(),icm[axis]['data'].max()
+            icm[axis]['data'] /= icm[axis]['data'].max()
+        if setup:
+            if 'time' in frb:
+                tMyr=frb['time']
+            else:
+                time,sp=read_starvtk(starfname,time_out=True)
+                tMyr=time*Myr
+ 
+            extent=np.array(frb['y']['bounds'])/1.e3
+            x0=extent[0]
+            y0=extent[2]
+            Lx=extent[1]-extent[0]
+            Lz=extent[3]-extent[2]
+  
+            ix=3
+            iz=ix*Lz/Lx
+
+            cism=plt.cm.bone_r
+            cicm=plt.cm.Reds
+            cicm._init()
+            x=np.arange(cicm.N)
+            alphas=0.4*(np.tanh((x-80)/30.)+1)
+            #alphas = np.linspace(0.5, 0.5, cicm.N)
+            cicm._lut[:-3,-1] = alphas
+            cicm._lut[-3,-1] = alphas.min()
+            cicm._lut[-2,-1] = alphas.max()
+  
+            clim=aux['surface_density']['clim']
+            cmin=clim[0]
+            cmax=clim[1]
+            clim=(cmin*0.1,cmax)
+            clim_icm=(0.0,0.5)
+            norm_icm=Normalize()
+
+            fig=plt.figure(0,figsize=(ix*nsurf+0.5,iz))
+            gs = gridspec.GridSpec(3,nsurf,width_ratios=[1,1,0.05],wspace=0.0)
+            setup=False
+
+        ax1=plt.subplot(gs[:,i])
+        im1=ax1.imshow(frb[axis]['data'],norm=LogNorm(),origin='lower')
+        im1.set_extent(extent)
+        im1.set_cmap(cism)
+        im1.set_clim(clim)
+
+        if nscal > 0:
+            im11=ax1.imshow(icm[axis]['data'],norm=norm_icm,origin='lower')
+            im11.set_extent(extent)
+            im11.set_cmap(cicm)
+            im11.set_clim(clim_icm)
+
+        if nstar > 0: 
+            scatter_sp(sp,ax1,axis=axis,runaway=runaway,type='surf')
+
+    axes=fig.axes[:nsurf]
+    ax1=axes[0]
+    ax1.text(0.,extent[3]*0.9,'t=%3d Myr' % tMyr,
+             ha='center',va='top',**(texteffect(20)))
+    cax=plt.subplot(gs[0,nsurf])
+    cbar = fig.colorbar(im1,cax=cax,orientation='vertical')
+    cbar.set_label(aux['surface_density']['label'])
+
+    cax=plt.subplot(gs[1,nsurf])
+    cbar = fig.colorbar(im11,cax=cax,orientation='vertical')
+    cbar.set_label(r'$C_{\rm ICM}$')
+
+    if nstar > 0:
+      cax=plt.subplot(gs[2,nsurf])
+      cbar = colorbar.ColorbarBase(cax, ticks=[0,20,40],
+             cmap=plt.cm.cool_r, norm=Normalize(vmin=0,vmax=40), 
+             orientation='vertical')
+      cbar.set_label(r'${\rm age [Myr]}$')
+ 
+      norm_factor=2.
+      s1=ax1.scatter(Lx*2,Lz*2,
+        s=np.sqrt(1.e3)/norm_factor,color='k',
+        alpha=.8,label=r'$10^3 M_\odot$')
+      s2=ax1.scatter(Lx*2,Lz*2,
+        s=np.sqrt(1.e4)/norm_factor,color='k',
+        alpha=.8,label=r'$10^4 M_\odot$')
+      s3=ax1.scatter(Lx*2,Lz*2,
+        s=np.sqrt(1.e5)/norm_factor,
+        color='k',alpha=.8,label=r'$10^5 M_\odot$')
+
+      legend=ax1.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'),
+                        loc='lower left',fontsize='medium',frameon=True)
+    plt.setp(axes,'xlim',(x0,x0+Lx))
+    plt.setp(axes,'ylim',(y0,y0+Lz))
+
+    ax1.set_xlabel('x [kpc]')
+    ax1.set_ylabel('z [kpc]')
+
+    plt.setp(axes,'xlabel','x [kpc]')
+    plt.setp([ax.get_yticklabels() for ax in axes],visible=False)
     pngfname=surfname+'ng'
     if writefile:
         plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
