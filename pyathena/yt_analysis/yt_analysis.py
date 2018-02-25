@@ -20,6 +20,15 @@ fields=['cell_volume','cell_mass']
 unit=set_units(muH=1.4271)
 Myr=unit['time'].to('Myr').value
 
+def get_scalars(ds):
+    scal_fields=[]
+    for f in ds.field_list: 
+        code,field=f
+        if field.startswith('specific_scalar'):
+            scal_fields.append(field)
+
+    return scal_fields
+
 def compare_files(source, output):
     smtime=os.path.getmtime(source)
     if os.path.isfile(output):
@@ -89,21 +98,22 @@ def projection(ds,surfname):
     if yt.is_root():
         pickle.dump(surf_data,open(surfname,'wb'),pickle.HIGHEST_PROTOCOL)
 
-    if ('athena','specific_scalar[0]') in ds.field_list:
+    scal_fields=get_scalars(ds)
+    for nscal,sf in enumerate(scal_fields):
         scal_data={}
         scal_data['time']=time
         for i,axis in enumerate(['x','y','z']):
-            proj = ds.proj('specific_scalar[0]',axis=axis,weight_field='density')
+            proj = ds.proj(sf,axis=axis,weight_field='density')
             ix=ds.coordinates.x_axis[axis]
             iy=ds.coordinates.y_axis[axis]
             res=(ds.domain_dimensions[ix],ds.domain_dimensions[iy])
             frb = proj.to_frb(ds.domain_width[ix],res,c,ds.domain_width[iy])
-            scal=np.array(frb['specific_scalar[0]'])
+            scal=np.array(frb[sf])
             bounds = np.array(frb.bounds)
             scal_data[axis]={'data':scal,'bounds':bounds}
         if yt.is_root():
-            pickle.dump(scal_data,open(surfname.replace('surf.p','scal0.p'),'wb'),pickle.HIGHEST_PROTOCOL)
-
+            scalfname=surfname.replace('surf.p','scal{}.p'.format(nscal))
+            pickle.dump(scal_data,open(scalfname,'wb'),pickle.HIGHEST_PROTOCOL)
 
 def phase(sq,phfname,bin_fields):
     global aux
@@ -270,6 +280,8 @@ def main(**kwargs):
       slc_fields.append('magnetic_field_strength')
       slc_fields.append('mag_pok')
       fields_to_draw.append('magnetic_field_strength')
+    scal_fields=get_scalars(ds)
+    slc_fields+=scal_fields
 
     if rank == 0:
         if not os.path.isdir(dir+'slice/'): os.mkdir(dir+'slice/')

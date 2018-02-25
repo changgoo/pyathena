@@ -144,6 +144,14 @@ def set_aux(model='solar',verbose=False):
         cmap=plt.cm.cool_r,clim=(0,40), \
         cticks=(0,20,40), \
         n_bins=256, log=False)
+    aux['specific_scalar[0]']=dict(label=r'$Z$', limits=(0,2), \
+        n_bins=256, log=False)
+    aux['specific_scalar[1]']=dict(label=r'$Z_{\rm cl}$', limits=(0,2), \
+        n_bins=256, log=False)
+    aux['specific_scalar[2]']=dict(label=r'$Z_{\rm run}$', limits=(0,2), \
+        n_bins=256, log=False)
+    aux['specific_scalar[3]']=dict(label=r'$Z_{\rm ICM}$', limits=(0,2), \
+        n_bins=256, log=False)
 
     if model.startswith('R4'):
         if verbose: print('auxilary information is set for R4')
