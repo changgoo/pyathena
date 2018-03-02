@@ -17,7 +17,9 @@ import string
 from .scatter_sp import scatter_sp
 
 def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux=None):
-    if aux == None: aux=ya.set_aux(os.path.basename(surfname))
+    if aux == None: 
+        aux=ya.set_aux(os.path.basename(surfname))
+        aux=aux['surfacen_density']
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -43,10 +45,11 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     Lz=extent[3]-extent[2]
  
     ax=plt.subplot(gs[:,0])
-    im=ax.imshow(frb['data'],norm=LogNorm(),origin='lower')
+    im=ax.imshow(frb['data'],origin='lower')
     im.set_extent(extent)
-    im.set_cmap(aux['surface_density']['cmap'])
-    im.set_clim(aux['surface_density']['clim'])
+    im.set_cmap(aux['cmap'])
+    im.set_clim(aux['clim'])
+    if aux['log']: im.set_norm(LogNorm())
     ax.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
 
@@ -54,7 +57,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
 
     cax=plt.subplot(gs[0,1])
     cbar = fig.colorbar(im,cax=cax,orientation='vertical')
-    cbar.set_label(aux['surface_density']['label'])
+    cbar.set_label(aux['label'])
 
     if stars:
       cax=plt.subplot(gs[1,1])

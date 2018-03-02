@@ -20,15 +20,6 @@ fields=['cell_volume','cell_mass']
 unit=set_units(muH=1.4271)
 Myr=unit['time'].to('Myr').value
 
-def get_scalars(ds):
-    scal_fields=[]
-    for f in ds.field_list: 
-        code,field=f
-        if field.startswith('specific_scalar'):
-            scal_fields.append(field)
-
-    return scal_fields
-
 def compare_files(source, output):
     smtime=os.path.getmtime(source)
     if os.path.isfile(output):
@@ -98,7 +89,7 @@ def projection(ds,surfname):
     if yt.is_root():
         pickle.dump(surf_data,open(surfname,'wb'),pickle.HIGHEST_PROTOCOL)
 
-    scal_fields=get_scalars(ds)
+    scal_fields=ya.get_scalars(ds)
     for nscal,sf in enumerate(scal_fields):
         scal_data={}
         scal_data['time']=time
@@ -280,7 +271,7 @@ def main(**kwargs):
       slc_fields.append('magnetic_field_strength')
       slc_fields.append('mag_pok')
       fields_to_draw.append('magnetic_field_strength')
-    scal_fields=get_scalars(ds)
+    scal_fields=ya.get_scalars(ds)
     slc_fields+=scal_fields
 
     if rank == 0:

@@ -52,6 +52,15 @@ def _dkinetic_energy(field,data):
 def _mag_pok(field,data):
         return data["gas","magnetic_pressure"]/kboltz
 
+# metals
+def _metal(field,data):
+        return data["gas","specific_scalar[0]"]*data["gas","density"]
+
+def _metal_cl(field,data):
+        return data["gas","specific_scalar[1]"]*data["gas","density"]
+
+def _metal_run(field,data):
+        return data["gas","specific_scalar[2]"]*data["gas","density"]
 
 unit_base={"length_unit": (1.0,"pc"), 
            "time_unit": (1.0,"s*pc/km"), 
@@ -61,6 +70,16 @@ unit_base={"length_unit": (1.0,"pc"),
 
 import matplotlib.pyplot as plt
 from .shiftedColorMap import *
+
+def get_scalars(ds):
+    scal_fields=[]
+    for f in ds.field_list: 
+        code,field=f
+        if field.startswith('specific_scalar'):
+            scal_fields.append(field)
+
+    return scal_fields
+
 
 def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     ds.add_field(("gas","nH"),function=_ndensity, \
@@ -88,6 +107,16 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     if mhd:
         ds.add_field(("gas","mag_pok"),function=_mag_pok, \
           units='K*cm**(-3)',display_name=r'$P_{\rm mag}/k_{\rm B}$')
+    scal_fields=ya.get_scalars(ds)
+    if len(scal_fields)>0:
+        ds.add_field(("gas","metal0"),function=_metal, \
+          units='g*cm**(-3)',display_name=r'$\rho_{\rm metal}$')
+    if len(scal_fields)>1:
+        ds.add_field(("gas","metal1"),function=_metal_cl, \
+          units='g*cm**(-3)',display_name=r'$\rho_{\rm metal,cl}$')
+    if len(scal_fields)>2:
+        ds.add_field(("gas","metal2"),function=_metal_run, \
+          units='g*cm**(-3)',display_name=r'$\rho_{\rm metal,run}$')
 
 def set_aux(model='solar',verbose=False):
     aux={}
