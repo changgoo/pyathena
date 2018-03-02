@@ -16,8 +16,8 @@ import numpy as np
 import string
 from .scatter_sp import scatter_sp
 
-def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True):
-    aux=ya.set_aux(os.path.basename(surfname))
+def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux=None):
+    if aux == None: aux=ya.set_aux(os.path.basename(surfname))
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -304,18 +304,18 @@ def plot_projection_icm(surfname,scalfname,starfname,
     else:
         return fig
 
-def plot_projection_all(surfnames,writefile=True,runaway=True):
+def plot_projection_all(surfnames,axis='y',writefile=True,runaway=True,icm_max=1.0,iscal=-1):
 
     plt.rc('font',size=16)
     plt.rc('xtick',labelsize=16)
     plt.rc('ytick',labelsize=16)
 
     nsurf=len(surfnames)
-    axis='y'
     setup=True
     for i,surfname in enumerate(surfnames):
         aux=ya.set_aux(os.path.basename(surfname))
         scalfnames=glob.glob(surfname.replace('surf.p','scal?.p'))
+        scalfnames.sort()
         starfnames=glob.glob(surfname.replace('surf/','starpar/').replace('surf.p','starpar.vtk'))+glob.glob(surfname.replace('surf/','id0/').replace('surf.p','starpar.vtk'))
         nstar=len(starfnames)
         nscal=len(scalfnames)
@@ -326,9 +326,9 @@ def plot_projection_all(surfnames,writefile=True,runaway=True):
         
         frb=pickle.load(open(surfname,'rb'))
         if nscal > 0:
-            icm=pickle.load(open(scalfnames[-1],'rb'))
-            print axis,icm[axis]['data'].min(),icm[axis]['data'].max()
-            icm[axis]['data'] /= icm[axis]['data'].max()
+            icm=pickle.load(open(scalfnames[iscal],'rb'))
+            if icm[axis]['data'].max() > (icm_max*1.1):
+                print scalfnames[iscal],icm[axis]['data'].min(),icm[axis]['data'].max()
         if setup:
             if 'time' in frb:
                 tMyr=frb['time']
@@ -336,13 +336,14 @@ def plot_projection_all(surfnames,writefile=True,runaway=True):
                 time,sp=read_starvtk(starfname,time_out=True)
                 tMyr=time*Myr
  
-            extent=np.array(frb['y']['bounds'])/1.e3
+            extent=np.array(frb[axis]['bounds'])/1.e3
             x0=extent[0]
             y0=extent[2]
             Lx=extent[1]-extent[0]
             Lz=extent[3]-extent[2]
   
-            ix=3
+            if axis == 'z': ix=6
+            else: ix=3
             iz=ix*Lz/Lx
 
             cism=plt.cm.bone_r
@@ -358,12 +359,13 @@ def plot_projection_all(surfnames,writefile=True,runaway=True):
             clim=aux['surface_density']['clim']
             cmin=clim[0]
             cmax=clim[1]
-            clim=(cmin*0.1,cmax)
+            if axis!='z': clim=(cmin*0.1,cmax)
             clim_icm=(0.0,0.5)
             norm_icm=Normalize()
 
             fig=plt.figure(0,figsize=(ix*nsurf+0.5,iz))
-            gs = gridspec.GridSpec(3,nsurf,width_ratios=[1,1,0.05],wspace=0.0)
+            width_list=[1]*nsurf+[0.05]
+            gs = gridspec.GridSpec(3,nsurf+1,width_ratios=width_list,wspace=0.0)
             setup=False
 
         ax1=plt.subplot(gs[:,i])
@@ -373,6 +375,7 @@ def plot_projection_all(surfnames,writefile=True,runaway=True):
         im1.set_clim(clim)
 
         if nscal > 0:
+            icm[axis]['data'] /= icm_max
             im11=ax1.imshow(icm[axis]['data'],norm=norm_icm,origin='lower')
             im11.set_extent(extent)
             im11.set_cmap(cicm)
@@ -411,16 +414,31 @@ def plot_projection_all(surfnames,writefile=True,runaway=True):
         s=np.sqrt(1.e5)/norm_factor,
         color='k',alpha=.8,label=r'$10^5 M_\odot$')
 
-      legend=ax1.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'),
-                        loc='lower left',fontsize='medium',frameon=True)
+      starlabels=(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$') 
+      if axis=='z':
+          legend=ax1.legend((s1,s2,s3),starlabels,
+                            loc='upper left',ncol=3,bbox_to_anchor=(0.0, 1.15),
+                            fontsize='medium',frameon=True)
+      else:
+          legend=ax1.legend((s1,s2,s3),starlabels,
+                            loc='lower left',fontsize='medium',frameon=True)
+
+
     plt.setp(axes,'xlim',(x0,x0+Lx))
     plt.setp(axes,'ylim',(y0,y0+Lz))
 
-    ax1.set_xlabel('x [kpc]')
-    ax1.set_ylabel('z [kpc]')
+    if axis=='z':
+        plt.setp(axes,'xlabel','x [kpc]')
+        ax1.set_ylabel('y [kpc]')
+    elif axis=='y':
+        plt.setp(axes,'xlabel','x [kpc]')
+        ax1.set_ylabel('z [kpc]')
+    elif axis=='x':
+        plt.setp(axes,'xlabel','y [kpc]')
+        ax1.set_ylabel('z [kpc]')
 
-    plt.setp(axes,'xlabel','x [kpc]')
-    plt.setp([ax.get_yticklabels() for ax in axes],visible=False)
+
+    plt.setp([ax.get_yticklabels() for ax in axes[1:]],visible=False)
     pngfname=surfname+'ng'
     if writefile:
         plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)

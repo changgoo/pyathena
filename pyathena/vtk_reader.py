@@ -827,7 +827,10 @@ def set_field_map(grid):
 
 		line=file.readline()
 		sp = line.strip().split()
-		#print line,sp
+		if len(sp) == 0:
+			line=file.readline()
+			sp = line.strip().split()
+		#print line,sp,len(sp)
 		field=sp[1].decode('utf-8')	
 		field_map[field] = {}
 		field_map[field]['read_table']=False
