@@ -35,7 +35,7 @@ def save_to_fits(ds,mhd=True):
         if ds.domain.has_key('Omega'):
             hdr['Omega']=(ds.domain['Omega'],'km/s/pc')
         hdu = fits.PrimaryHDU(data,header=hdr)
-        hdu.writeto(fitsname,clobber=True)
+        hdu.writeto(fitsname,overwrite=True)
 
 def get_domain(fitsname,vel=True,mhd=True):
     hdulist=fits.open(fitsname,memmap=True)
