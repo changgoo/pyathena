@@ -107,7 +107,7 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     if mhd:
         ds.add_field(("gas","mag_pok"),function=_mag_pok, \
           units='K*cm**(-3)',display_name=r'$P_{\rm mag}/k_{\rm B}$')
-    scal_fields=ya.get_scalars(ds)
+    scal_fields=get_scalars(ds)
     if len(scal_fields)>0:
         ds.add_field(("gas","metal0"),function=_metal, \
           units='g*cm**(-3)',display_name=r'$\rho_{\rm metal}$')
