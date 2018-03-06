@@ -19,7 +19,7 @@ from .scatter_sp import scatter_sp
 def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux=None):
     if aux == None: 
         aux=ya.set_aux(os.path.basename(surfname))
-        aux=aux['surfacen_density']
+        aux=aux['surface_density']
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)

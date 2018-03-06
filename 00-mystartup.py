@@ -18,6 +18,6 @@ if sysname in sysconfig:
 else:
     print '### no system is matched with %s' % sysname
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm

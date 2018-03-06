@@ -54,13 +54,13 @@ def _mag_pok(field,data):
 
 # metals
 def _metal(field,data):
-        return data["gas","specific_scalar[0]"]*data["gas","density"]
+        return data["athena","specific_scalar[0]"]*data["gas","density"]
 
 def _metal_cl(field,data):
-        return data["gas","specific_scalar[1]"]*data["gas","density"]
+        return data["athena","specific_scalar[1]"]*data["gas","density"]
 
 def _metal_run(field,data):
-        return data["gas","specific_scalar[2]"]*data["gas","density"]
+        return data["athena","specific_scalar[2]"]*data["gas","density"]
 
 unit_base={"length_unit": (1.0,"pc"), 
            "time_unit": (1.0,"s*pc/km"), 

@@ -64,4 +64,5 @@ def get_params(rstfile):
     for block in param_blocks:
         for key in par[block]:
             params[key]=float(par[block][key][0])
+    params['nscalars']=int(par['configure']['nscalars'][0])
     return params
