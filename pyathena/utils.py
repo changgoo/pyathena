@@ -211,3 +211,14 @@ def compare_files(source, output):
             return True
     else:
         return False
+
+def set_cmap_transparent(cmap):
+    cmap._init()
+    x=np.arange(cmap.N)
+    alphas=0.4*(np.tanh((x-80)/30.)+1)
+    #alphas = np.linspace(0.5, 0.5, cicm.N)
+    cmap._lut[:-3,-1] = alphas
+    cmap._lut[-3,-1] = alphas.min()
+    cmap._lut[-2,-1] = alphas.max()
+
+    return cmap
