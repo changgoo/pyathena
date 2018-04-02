@@ -179,7 +179,9 @@ def set_aux(model='solar',verbose=False):
         n_bins=256, log=False)
     aux['specific_scalar[2]']=dict(label=r'$Z_{\rm run}$', limits=(0,2), \
         n_bins=256, log=False)
-    aux['specific_scalar[3]']=dict(label=r'$Z_{\rm ICM}$', limits=(0,2), \
+    aux['specific_scalar[3]']=dict(label=r'$Z_{\rm Ia}$', limits=(0,2), \
+        n_bins=256, log=False)
+    aux['specific_scalar[4]']=dict(label=r'$C_{\rm ICM}$', limits=(0,2), \
         n_bins=256, log=False)
 
     if model.startswith('R4'):
