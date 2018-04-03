@@ -324,9 +324,6 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
 def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
                writefile=True,tstamp=True,field_label=True):
     aux=ya.set_aux(os.path.basename(slcfname))
-    plt.rc('font',size=14)
-    plt.rc('xtick',labelsize=14)
-    plt.rc('ytick',labelsize=14)
 
     slc_data=pickle.load(open(slcfname,'rb'))
     x0=slc_data[axis+'extent'][0]
