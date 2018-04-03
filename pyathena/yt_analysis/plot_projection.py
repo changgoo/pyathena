@@ -16,7 +16,7 @@ import numpy as np
 import string
 from .scatter_sp import scatter_sp
 
-def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux=None):
+def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux=None,norm_factor=2.):
     if aux == None: 
         aux=ya.set_aux(os.path.basename(surfname))
         aux=aux['surface_density']
@@ -47,13 +47,13 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     ax=plt.subplot(gs[:,0])
     im=ax.imshow(frb['data'],origin='lower')
     im.set_extent(extent)
+    if aux['log']: im.set_norm(LogNorm())
     im.set_cmap(aux['cmap'])
     im.set_clim(aux['clim'])
-    if aux['log']: im.set_norm(LogNorm())
     ax.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
 
-    if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf')
+    if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf',norm_factor=norm_factor)
 
     cax=plt.subplot(gs[0,1])
     cbar = fig.colorbar(im,cax=cax,orientation='vertical')
@@ -66,7 +66,6 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
              orientation='vertical')
       cbar.set_label(r'${\rm age [Myr]}$')
  
-      norm_factor=2.
       s1=ax.scatter(Lx*2,Lz*2,
         s=np.sqrt(1.e3)/norm_factor,color='k',
         alpha=.8,label=r'$10^3 M_\odot$')
@@ -93,13 +92,12 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     else:
         return fig
 
-def plot_projection_Z(surfname,starfname,axis='y',stars=True,writefile=True,runaway=True):
+def plot_projection_Z(surfname,starfname,axis='y',stars=True,writefile=True,runaway=True,norm_factor=2.):
     aux=ya.set_aux(os.path.basename(surfname))
 
     plt.rc('font',size=16)
     plt.rc('xtick',labelsize=16)
     plt.rc('ytick',labelsize=16)
-
 
     if stars: sp=read_starvtk(starfname)
     frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
@@ -130,7 +128,7 @@ def plot_projection_Z(surfname,starfname,axis='y',stars=True,writefile=True,runa
     im1.set_clim(clim)
     ax1.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
-    if stars: scatter_sp(sp,ax1,axis='y',runaway=runaway,type='surf')
+    if stars: scatter_sp(sp,ax1,axis='y',runaway=runaway,type='surf',norm_factor=norm_factor)
 
     ax2=plt.subplot(gs[:,1])
     im2=ax2.imshow(frb['x']['data'],norm=LogNorm(),origin='lower')
@@ -151,7 +149,6 @@ def plot_projection_Z(surfname,starfname,axis='y',stars=True,writefile=True,runa
              orientation='vertical')
       cbar.set_label(r'${\rm age [Myr]}$')
  
-      norm_factor=2.
       s1=ax1.scatter(Lx*2,Lz*2,
         s=np.sqrt(1.e3)/norm_factor,color='k',
         alpha=.8,label=r'$10^3 M_\odot$')
@@ -182,21 +179,17 @@ def plot_projection_Z(surfname,starfname,axis='y',stars=True,writefile=True,runa
         return fig
 
 def plot_projection_icm(surfname,scalfname,starfname,
-  stars=True,writefile=True,runaway=True):
+  stars=True,writefile=True,runaway=True,norm_factor=2.):
     aux=ya.set_aux(os.path.basename(surfname))
 
     plt.rc('font',size=16)
     plt.rc('xtick',labelsize=16)
     plt.rc('ytick',labelsize=16)
 
-
     if stars: sp=read_starvtk(starfname)
     frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
     icm=pickle.load(open(scalfname,'rb'))#,encoding='latin1')
-    print icm['x']['data'].min(),icm['x']['data'].max()
-    for ax in ['x','y']:
-        print ax,icm[ax]['data'].max()
-        icm[ax]['data'] /= icm[ax]['data'].max()
+
     if 'time' in frb:
         tMyr=frb['time']
     else:
@@ -244,7 +237,7 @@ def plot_projection_icm(surfname,scalfname,starfname,
 
     ax1.text(0.,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='center',va='top',**(texteffect(20)))
-    if stars: scatter_sp(sp,ax1,axis='y',runaway=runaway,type='surf')
+    if stars: scatter_sp(sp,ax1,axis='y',runaway=runaway,type='surf',norm_factor=norm_factor)
 
     ax2=plt.subplot(gs[:,1])
     im2=ax2.imshow(frb['x']['data'],norm=LogNorm(),origin='lower')
@@ -258,7 +251,7 @@ def plot_projection_icm(surfname,scalfname,starfname,
     im21.set_clim(clim_icm)
 
 
-    if stars: scatter_sp(sp,ax2,axis='x',runaway=runaway,type='surf')
+    if stars: scatter_sp(sp,ax2,axis='x',runaway=runaway,type='surf',norm_factor=norm_factor)
 
 
     cax=plt.subplot(gs[0,2])
@@ -277,7 +270,6 @@ def plot_projection_icm(surfname,scalfname,starfname,
              orientation='vertical')
       cbar.set_label(r'${\rm age [Myr]}$')
  
-      norm_factor=2.
       s1=ax1.scatter(Lx*2,Lz*2,
         s=np.sqrt(1.e3)/norm_factor,color='k',
         alpha=.8,label=r'$10^3 M_\odot$')
@@ -307,11 +299,11 @@ def plot_projection_icm(surfname,scalfname,starfname,
     else:
         return fig
 
-def plot_projection_all(surfnames,axis='y',writefile=True,runaway=True,icm_max=1.0,iscal=-1):
+def plot_projection_all(surfnames,axis='y',pngfname=None,runaway=True,icm_max=1.0,iscal=-1,norm_factor=2.):
 
-    plt.rc('font',size=16)
-    plt.rc('xtick',labelsize=16)
-    plt.rc('ytick',labelsize=16)
+    plt.rc('font',size=30)
+    plt.rc('xtick',labelsize=30)
+    plt.rc('ytick',labelsize=30)
 
     nsurf=len(surfnames)
     setup=True
@@ -332,13 +324,14 @@ def plot_projection_all(surfnames,axis='y',writefile=True,runaway=True,icm_max=1
             icm=pickle.load(open(scalfnames[iscal],'rb'))
             if icm[axis]['data'].max() > (icm_max*1.1):
                 print scalfnames[iscal],icm[axis]['data'].min(),icm[axis]['data'].max()
-        if setup:
-            if 'time' in frb:
-                tMyr=frb['time']
-            else:
-                time,sp=read_starvtk(starfname,time_out=True)
-                tMyr=time*Myr
+
+        if 'time' in frb:
+            tMyr=frb['time']
+        else:
+            time,sp=read_starvtk(starfname,time_out=True)
+            tMyr=time*Myr
  
+        if setup:
             extent=np.array(frb[axis]['bounds'])/1.e3
             x0=extent[0]
             y0=extent[2]
@@ -353,7 +346,7 @@ def plot_projection_all(surfnames,axis='y',writefile=True,runaway=True,icm_max=1
             cicm=plt.cm.Reds
             cicm._init()
             x=np.arange(cicm.N)
-            alphas=0.4*(np.tanh((x-80)/30.)+1)
+            alphas=0.4*(np.tanh((x-100)/50.)+1)
             #alphas = np.linspace(0.5, 0.5, cicm.N)
             cicm._lut[:-3,-1] = alphas
             cicm._lut[-3,-1] = alphas.min()
@@ -385,12 +378,15 @@ def plot_projection_all(surfnames,axis='y',writefile=True,runaway=True,icm_max=1
             im11.set_clim(clim_icm)
 
         if nstar > 0: 
-            scatter_sp(sp,ax1,axis=axis,runaway=runaway,type='surf')
+            scatter_sp(sp,ax1,axis=axis,runaway=runaway,type='surf',norm_factor=norm_factor)
+
+        if i==0:
+            ax1.set_title('t=%3dMyr' % tMyr,**(texteffect(30)))
+        else:
+            ax1.set_title('%3dMyr' % tMyr,**(texteffect(30)))
 
     axes=fig.axes[:nsurf]
-    ax1=axes[0]
-    ax1.text(0.,extent[3]*0.9,'t=%3d Myr' % tMyr,
-             ha='center',va='top',**(texteffect(20)))
+    ax1=axes[-1]
     cax=plt.subplot(gs[0,nsurf])
     cbar = fig.colorbar(im1,cax=cax,orientation='vertical')
     cbar.set_label(aux['surface_density']['label'])
@@ -406,7 +402,6 @@ def plot_projection_all(surfnames,axis='y',writefile=True,runaway=True,icm_max=1
              orientation='vertical')
       cbar.set_label(r'${\rm age [Myr]}$')
  
-      norm_factor=2.
       s1=ax1.scatter(Lx*2,Lz*2,
         s=np.sqrt(1.e3)/norm_factor,color='k',
         alpha=.8,label=r'$10^3 M_\odot$')
@@ -424,26 +419,31 @@ def plot_projection_all(surfnames,axis='y',writefile=True,runaway=True,icm_max=1
                             fontsize='medium',frameon=True)
       else:
           legend=ax1.legend((s1,s2,s3),starlabels,
-                            loc='lower left',fontsize='medium',frameon=True)
+                            loc='lower right',fontsize='medium',frameon=True)
 
 
     plt.setp(axes,'xlim',(x0,x0+Lx))
     plt.setp(axes,'ylim',(y0,y0+Lz))
 
+    ax1=axes[0]
     if axis=='z':
-        plt.setp(axes,'xlabel','x [kpc]')
+        #plt.setp(axes,'xlabel','x [kpc]')
+        ax1.set_xlabel('x [kpc]')
         ax1.set_ylabel('y [kpc]')
     elif axis=='y':
-        plt.setp(axes,'xlabel','x [kpc]')
+        #plt.setp(axes,'xlabel','x [kpc]')
+        ax1.set_xlabel('x [kpc]')
         ax1.set_ylabel('z [kpc]')
     elif axis=='x':
-        plt.setp(axes,'xlabel','y [kpc]')
+        #plt.setp(axes,'xlabel','y [kpc]')
+        ax1.set_ylabel('y [kpc]')
         ax1.set_ylabel('z [kpc]')
 
 
     plt.setp([ax.get_yticklabels() for ax in axes[1:]],visible=False)
-    pngfname=surfname+'ng'
-    if writefile:
+    plt.setp([ax.get_xticklabels() for ax in axes[1:]],visible=False)
+
+    if pngfname is not None:
         plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
         plt.close()
     else:
