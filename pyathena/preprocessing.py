@@ -77,7 +77,7 @@ def zprof_to_xarray(base,problem_id):
         files should have moved to zprof/
     """    
     zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_id)
-    if not os.path.dirname(zpmerge_dir): os.mkdir(zpmerge_dir)
+    if not os.path.isdir(zpmerge_dir): os.mkdir(zpmerge_dir)
     plist=['phase1','phase2','phase3','phase4','phase5','whole']
     for phase in plist:
         zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_id,problem_id,phase))
