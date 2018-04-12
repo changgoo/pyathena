@@ -82,40 +82,40 @@ def get_scalars(ds):
 
 
 def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
-    ds.add_field(("gas","nH"),function=_ndensity, \
+    ds.add_field(("gas","nH"),function=_ndensity,sampling_type='cell', \
       units='cm**(-3)',display_name=r'$n_{\rm H}$')
-    ds.add_field(("gas","ram_pok_z"),function=_ram_pok_z, \
+    ds.add_field(("gas","ram_pok_z"),function=_ram_pok_z,sampling_type='cell', \
       units='K*cm**(-3)',display_name=r'$P_{\rm turb}/k_{\rm B}$')
     if cooling:
-        ds.add_field(("gas","pok"),function=_pok, \
+        ds.add_field(("gas","pok"),function=_pok,sampling_type='cell', \
           units='K*cm**(-3)',display_name=r'$P/k_{\rm B}$')
-        ds.add_field(("gas","cs"),function=_cs, \
+        ds.add_field(("gas","cs"),function=_cs,sampling_type='cell', \
           units='km*s**(-1)',display_name=r'$c_s$')
-        ds.add_field(("gas","T1"),function=_T1, \
+        ds.add_field(("gas","T1"),function=_T1,sampling_type='cell', \
           units='K',display_name=r'$T_1$')
-        ds.add_field(("gas","mu"),function=_mu, \
+        ds.add_field(("gas","mu"),function=_mu,sampling_type='cell', \
           units='',display_name=r'$\mu$',force_override=True)
-        ds.add_field(("gas","temperature"),function=_temperature, \
+        ds.add_field(("gas","temperature"),function=_temperature,sampling_type='cell', \
           units='K',display_name=r'$T$',force_override=True)
     if rotation:
-        ds.add_field(("gas","dvelocity_y"),function=_dvelocity, \
+        ds.add_field(("gas","dvelocity_y"),function=_dvelocity,sampling_type='cell', \
           units='km/s',display_name=r'$\delta v_y$',force_override=True)
-        ds.add_field(("gas","dvelocity_magnitude"),function=_dvelocity_mag, \
+        ds.add_field(("gas","dvelocity_magnitude"),function=_dvelocity_mag,sampling_type='cell', \
           units='km/s',display_name=r'$v$',force_override=True)
-        ds.add_field(("gas","dkinetic_energy"),function=_dkinetic_energy, \
+        ds.add_field(("gas","dkinetic_energy"),function=_dkinetic_energy,sampling_type='cell', \
           units='erg/cm**3',display_name=r'$E_k$',force_override=True)
     if mhd:
-        ds.add_field(("gas","mag_pok"),function=_mag_pok, \
+        ds.add_field(("gas","mag_pok"),function=_mag_pok,sampling_type='cell', \
           units='K*cm**(-3)',display_name=r'$P_{\rm mag}/k_{\rm B}$')
     scal_fields=get_scalars(ds)
     if len(scal_fields)>0:
-        ds.add_field(("gas","metal0"),function=_metal, \
+        ds.add_field(("gas","metal0"),function=_metal,sampling_type='cell', \
           units='g*cm**(-3)',display_name=r'$\rho_{\rm metal}$')
     if len(scal_fields)>1:
-        ds.add_field(("gas","metal1"),function=_metal_cl, \
+        ds.add_field(("gas","metal1"),function=_metal_cl,sampling_type='cell', \
           units='g*cm**(-3)',display_name=r'$\rho_{\rm metal,cl}$')
     if len(scal_fields)>2:
-        ds.add_field(("gas","metal2"),function=_metal_run, \
+        ds.add_field(("gas","metal2"),function=_metal_run,sampling_type='cell', \
           units='g*cm**(-3)',display_name=r'$\rho_{\rm metal,run}$')
 
 def set_aux(model='solar',verbose=False):

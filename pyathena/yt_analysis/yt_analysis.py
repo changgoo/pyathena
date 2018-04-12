@@ -285,7 +285,7 @@ def main(force_recal=False, force_redraw=False, verbose=True, **kwargs):
                'surf':(not compare_files(f,surfname)) or force_recal,
                'phase':((not compare_files(f,phfname)) or force_recal) and do_phase,
         }
-        do_task=(tasks['slice'] and tasks['surf'] and tasks['phase'])
+        do_task=(tasks['slice'] or tasks['surf'] or tasks['phase'])
          
         if isroot and verbose: 
             print('file number: {} -- Tasks to be done ['.format(i),end='')
