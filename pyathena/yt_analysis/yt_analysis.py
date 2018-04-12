@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import ytathena as ya
 import yt
 import glob
@@ -14,7 +16,6 @@ from plot_slices import slice2 as plot_slice
 from plot_projection import plot_projection
 import numpy as np
 import string
-
 
 fields=['cell_volume','cell_mass']
 unit=set_units(muH=1.4271)
@@ -147,7 +148,6 @@ def slices(ds,slcfname,slc_fields):
         iy=ds.coordinates.y_axis[axis]
 #        res=(int(slc.width[1]/dx[ix]),int(slc.width[0]/dx[iy]))
         res=(ds.domain_dimensions[ix],ds.domain_dimensions[iy])
-        if(axis == 'y'): print res
         slc_frb = slc.data_source.to_frb(slc.width[0],
                   res,c,slc.width[1])
         extent=np.array(slc_frb.bounds)/1.e3
@@ -202,15 +202,14 @@ def plot_phase(phfname,bin_fields):
     plt.savefig(pngfname,bbox_inches='tight',num=2,dpi=150)
     plt.close()
 
-def main(**kwargs):
+def main(force_recal=False, force_redraw=False, verbose=True, **kwargs):
     global aux
-    #yt.funcs.mylog.setLevel(50) 
+    if not verbose: yt.funcs.mylog.setLevel(50) 
+    else: yt.funcs.mylog.setLevel(1) 
     dir = kwargs['base_directory']+kwargs['directory']
     fname=glob.glob(dir+'id0/'+kwargs['id']+'.????.vtk')
     fname.sort()
     aux=ya.set_aux(kwargs['id'])
-
-    if yt.is_root(): print fname[0]
 
     if kwargs['range'] != '':
         sp=kwargs['range'].split(',')
@@ -232,7 +231,7 @@ def main(**kwargs):
     else:
         nprocs = 1
         rank = 0
-    print ngrids,rank,nprocs,yt.is_root()
+    isroot= rank == 0
 
     do_phase=kwargs['phase']
 
@@ -246,11 +245,10 @@ def main(**kwargs):
       ya.Omega=ya.YTQuantity(kwargs['rotation'],'km/s/kpc')
       if kwargs['rotation']== 280: 
         aux=ya.set_aux('starburst')
-    if rank == 0:
-      print "phase plot:", do_phase
-      print "MHD:", mhd
-      print "cooling:", cooling
-      print "rotation:", rotation, ya.Omega
+    if isroot & verbose:
+        print("MHD:", mhd)
+        print("cooling:", cooling)
+        print("rotation:", rotation, ya.Omega)
 
     bin_fields=[]
     bin_fields.append(['nH','pok'])
@@ -268,40 +266,38 @@ def main(**kwargs):
     slc_fields=['nH','pok','temperature','velocity_z','ram_pok_z']
     fields_to_draw=['star_particles','nH','temperature','pok','velocity_z']
     if mhd:
-      slc_fields.append('magnetic_field_strength')
-      slc_fields.append('mag_pok')
-      fields_to_draw.append('magnetic_field_strength')
+        slc_fields.append('magnetic_field_strength')
+        slc_fields.append('mag_pok')
+        fields_to_draw.append('magnetic_field_strength')
     scal_fields=ya.get_scalars(ds)
     slc_fields+=scal_fields
 
-    if rank == 0:
+    if isroot:
         if not os.path.isdir(dir+'slice/'): os.mkdir(dir+'slice/')
         if not os.path.isdir(dir+'surf/'): os.mkdir(dir+'surf/')
         if not os.path.isdir(dir+'phase/'): os.mkdir(dir+'phase/')
     for i,f in enumerate(fname):
         slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
         surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
-        if do_phase:
-            phfname=dir+'phase/'+kwargs['id']+f[-9:-4]+'.phase.p'
-        else:
-            phfname=f
-        if rank == 0: print i,compare_files(f,slcfname),compare_files(f,surfname),compare_files(f,phfname)
-        if compare_files(f,surfname) and \
-           compare_files(f,phfname) and \
-           compare_files(f,slcfname):
-            if rank == 0: print 'all data is already there'
-        else:
+        phfname=dir+'phase/'+kwargs['id']+f[-9:-4]+'.phase.p'
+
+        tasks={'slice':(not compare_files(f,slcfname)) or force_recal,
+               'surf':(not compare_files(f,surfname)) or force_recal,
+               'phase':((not compare_files(f,phfname)) or force_recal) and do_phase,
+        }
+        do_task=(tasks['slice'] and tasks['surf'] and tasks['phase'])
+         
+        if isroot and verbose: 
+            print('file number: {} -- Tasks to be done ['.format(i),end='')
+            for k in tasks: print('{}:{} '.format(k,tasks[k]),end='')
+            print(']')
+        if do_task:
             if ngrids > nprocs: ds = yt.load(f,units_override=ya.unit_base)
             else: ds = yt.load(f,units_override=ya.unit_base, nprocs=nprocs)
             ya.add_yt_fields(ds,mhd=mhd,rotation=rotation,cooling=cooling)
-            if not compare_files(f,surfname):
-                if rank == 0: print 'projecting...'
-                projection(ds,surfname)
-            if not compare_files(f,slcfname):
-                if rank == 0: print 'slicing...'
-                slices(ds,slcfname,slc_fields)
-            if not compare_files(f,phfname) and do_phase:
-                if rank == 0: print 'binning...'
+            if tasks['surf']: projection(ds,surfname)
+            if tasks['slice']: slices(ds,slcfname,slc_fields)
+            if tasks['phase']:
                 le=np.array(ds.domain_left_edge)
                 re=np.array(ds.domain_right_edge)
                 sq=ds.box(le,re)
@@ -311,25 +307,28 @@ def main(**kwargs):
     for i,f in enumerate(fname):
         slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
         surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
+        phfname=dir+'phase/'+kwargs['id']+f[-9:-4]+'.phase.p'
+
         starpardir='id0/'
         if os.path.isdir(dir+'starpar/'): starpardir='starpar/'
         starfname=dir+starpardir+kwargs['id']+f[-9:-4]+'.starpar.vtk'
 
-        if do_phase:
-            phfname=dir+'phase/'+kwargs['id']+f[-9:-4]+'.phase.p'
-        else:
-            phfname=f
+        tasks={'slice':(not compare_files(f,slcfname+'ng')) or force_redraw,
+               'surf':(not compare_files(f,surfname+'ng')) or force_redraw,
+               'phase':((not compare_files(f,phfname+'ng')) or force_redraw) and do_phase,
+        }
+        do_task=(tasks['slice'] and tasks['surf'] and tasks['phase'])
 
+        if isroot and verbose: 
+            print('file number: {} -- Tasks to be done ['.format(i),end='')
+            for k in tasks: print('{}:{} '.format(k,tasks[k]),end='')
+            print(']')
         if i%nprocs == rank:
-          if not compare_files(surfname,surfname+'ng'):
-            print 'drawing for %s on %d' % (surfname,rank)
-            plot_projection(surfname,starfname,runaway=False)
-          if not compare_files(slcfname,slcfname+'ng'):
-            print 'drawing for %s on %d' % (slcfname,rank)
-            plot_slice(slcfname,starfname,fields_to_draw)
-          if not compare_files(phfname,phfname+'ng') and do_phase:
-            if do_phase:
-                print 'drawing for %s on %d' % (phfname,rank)
+            if tasks['surf']:
+                plot_projection(surfname,starfname,runaway=True)
+            if tasks['slice']:
+                plot_slice(slcfname,starfname,fields_to_draw)
+            if tasks['phase']:
                 plot_phase(phfname,bin_fields)
 
 

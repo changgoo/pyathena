@@ -181,6 +181,7 @@ def processing_history_dump(hst,params,hstfile):
     Omega=params['Omega']
     torb=2*np.pi/Omega*toMyr
 
+    mhd=False
     if 'x1ME' in hst: mhd=True
 
     # process history dump
@@ -244,7 +245,8 @@ def processing_zprof_dump(h,params,zprof_ds,hstfile):
     Omega=params['Omega']
     torb=2*np.pi/Omega*toMyr
 
-    if 'vA1' in h: mhd=True
+    mhd=False
+    if 'x1ME' in h: mhd=True
 
     # process zprof dump
     h_zp=pd.DataFrame()
@@ -370,7 +372,7 @@ def doall(base,problem_id,problem_dir=None,do_yt=True):
        do all preprocessing for a model
     """
     if problem_dir is None: problem_dir = problem_id
-
+    print('preparing metadata for {}...'.format(problem_id))
     done=cleanup_directory(base,problem_id,problem_dir=problem_dir)
     for k in done:
         if done[k]: print('{}.{} is moved'.format(problem_id,k)) 
@@ -395,4 +397,6 @@ def doall(base,problem_id,problem_dir=None,do_yt=True):
             'rotation':params['Omega']*1.e3,
             'range':''
         }
-        yt_analysis.main(**kwargs)
+        print('slicing and projecting using yt...')
+        yt_analysis.main(force_recal=False,force_redraw=False,verbose=False,**kwargs)
+        
