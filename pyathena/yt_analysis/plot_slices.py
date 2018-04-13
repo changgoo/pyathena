@@ -6,7 +6,7 @@ import yt
 import glob
 import argparse
 import os
-import cPickle as pickle
+import pickle as pickle
 
 import matplotlib.colorbar as colorbar
 import matplotlib.pyplot as plt
@@ -16,8 +16,6 @@ from matplotlib.colors import LogNorm,SymLogNorm,NoNorm,Normalize
 from pyathena import read_starvtk,texteffect,set_units
 import numpy as np
 import string
-
-aux=ya.set_aux('solar')
 
 fields=['cell_volume','cell_mass']
 unit=set_units(muH=1.4271)
@@ -75,7 +73,7 @@ def scatter_sp(sp,ax,axis=0,thickness=10,norm_factor=4., \
             #ax.scatter(spx.iloc[islab],spy.iloc[islab],marker='.',c='k',alpha=1.0)
             #ax.quiver(spx.iloc[islab],spy.iloc[islab],
             #      spvx.iloc[islab],spvy.iloc[islab],color='k',alpha=1.0)
-        ax.scatter(spx,spy,marker='o',color='k',alpha=1.0,s=10.0/norm_factor)
+        ax.scatter(spx,spy,marker='o',color='k',alpha=0.5,s=10.0/norm_factor)
         #ax.quiver(spx,spy,spvx,spvy,color='w',alpha=0.5)
  
       if len(sp_normal) > 0: 
@@ -95,7 +93,7 @@ def scatter_sp(sp,ax,axis=0,thickness=10,norm_factor=4., \
                 vmax=40,vmin=0,cmap=plt.cm.cool_r,alpha=1.0)
         ax.scatter(spx.iloc[iyoung],spy.iloc[iyoung],marker='o',\
             s=spm.iloc[iyoung],c=spa.iloc[iyoung],\
-            vmax=40,vmin=0,cmap=plt.cm.cool_r,alpha=0.7)
+            vmax=40,vmin=0,cmap=plt.cm.cool_r,alpha=0.5)
 
 
 def compare_files(source, output):
@@ -111,7 +109,7 @@ def compare_files(source, output):
 
 def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
                writefile=True,tstamp=True,stars=True,field_label=True):
-    global aux
+    aux=ya.set_aux(os.path.basename(slcfname))
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
@@ -130,7 +128,7 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
     gs.update(left=0.10,right=0.90,wspace=0,hspace=0)
 
     sp=read_starvtk(vtkfname[:-3]+'starpar.vtk')
-    if slc_data.has_key('time'):
+    if 'time' in slc_data:
         tMyr=slc_data['time']
     else:
         time,sp=read_starvtk(vtkfname[:-3]+'starpar.vtk',time_out=True)
@@ -163,7 +161,7 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
         cbar.set_label(aux[f]['label'])
         #cax.xaxis.tick_top()
         #cax.xaxis.set_label_position('top')
-        if aux[f].has_key('cticks'): cbar.set_ticks(aux[f]['cticks'])
+        if 'cticks' in aux[f]: cbar.set_ticks(aux[f]['cticks'])
 
     if stars:
       cax=plt.subplot(gs2[0])
@@ -204,9 +202,9 @@ def slice1(slcfname,vtkfname,fields_to_draw,zoom=1.,\
         plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
         plt.close()
 
-def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
+def slice2(slcfname,starfname,fields_to_draw,zoom=1.,\
                writefile=True,tstamp=True,stars=True,field_label=True):
-    global aux
+    aux=ya.set_aux(os.path.basename(slcfname))
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
@@ -225,11 +223,13 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
     gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
     norm_factor=2.
 
-    sp=read_starvtk(vtkfname[:-3]+'starpar.vtk')
-    if slc_data.has_key('time'):
+    if stars:
+      sp=read_starvtk(starfname)
+
+    if 'time' in slc_data:
         tMyr=slc_data['time']
     else:
-        time,sp=read_starvtk(vtkfname[:-3]+'starpar.vtk',time_out=True)
+        time,sp=read_starvtk(starfname,time_out=True)
         tMyr=time*Myr
     images=[]
     for i,axis in enumerate(['y','z']):
@@ -246,7 +246,7 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
               ax.set_aspect(1.0)
             else:
               data=slc_data[axis][f]
-              im=ax.imshow(data,origin='lower')
+              im=ax.imshow(data,origin='lower',interpolation='bilinear')
               if aux[f]['log']: im.set_norm(LogNorm()) 
               extent=slc_data[axis+'extent']
               im.set_extent(extent)
@@ -265,7 +265,7 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
         cbar.set_label(aux[f]['label'])
         cax.xaxis.tick_top()
         cax.xaxis.set_label_position('top')
-        if aux[f].has_key('cticks'): cbar.set_ticks(aux[f]['cticks'])
+        if 'cticks' in aux[f]: cbar.set_ticks(aux[f]['cticks'])
 
     ax=plt.subplot(gs[0,0])
     divider = make_axes_locatable(ax)
@@ -312,7 +312,7 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
     plt.setp([ax.get_yticklabels() for ax in axes[:2*nf:nf]], visible=True)
     plt.setp([ax.xaxis.get_majorticklabels() for ax in axes[nf:2*nf]], rotation=45 )
 
-    pngfname=slcfname+'.png'
+    pngfname=slcfname+'ng'
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
@@ -323,15 +323,12 @@ def slice2(slcfname,vtkfname,fields_to_draw,zoom=1.,\
 
 def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
                writefile=True,tstamp=True,field_label=True):
-    global aux
-    plt.rc('font',size=14)
-    plt.rc('xtick',labelsize=14)
-    plt.rc('ytick',labelsize=14)
+    aux=ya.set_aux(os.path.basename(slcfname))
 
     slc_data=pickle.load(open(slcfname,'rb'))
     x0=slc_data[axis+'extent'][0]
     y0=slc_data[axis+'extent'][2]
-    print x0,y0
+    print(x0,y0)
     Lx=slc_data[axis+'extent'][1]-slc_data[axis+'extent'][0]
     Ly=slc_data[axis+'extent'][3]-slc_data[axis+'extent'][2]
     if extent is None: extent=[x0,x0+Lx,y0,y0+Ly]
@@ -339,7 +336,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
     y0=extent[2]
     lx=extent[1]-extent[0]
     ly=extent[3]-extent[2]
-    print extent,lx,ly
+    print(extent,lx,ly)
     ix=2
     iz=ix*ly/lx
     nf=len(fields_to_draw)
@@ -348,9 +345,9 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
     gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
     norm_factor=2.
 
-    starname=slcfname.replace('slice/','id0/').replace('slice.p','starpar.vtk')
+    starname=slcfname.replace('slice/','starpar/').replace('slice.p','starpar.vtk')
     sp=read_starvtk(starname)
-    if slc_data.has_key('time'):
+    if 'time' in slc_data:
         tMyr=slc_data['time']
     else:
         time,sp=read_starvtk(starname,time_out=True)
@@ -387,7 +384,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
             cbar.set_label(aux[f]['label'])
             cax.xaxis.tick_top()
             cax.xaxis.set_label_position('top')
-            if aux[f].has_key('cticks'): cbar.set_ticks(aux[f]['cticks'])
+            if 'cticks' in aux[f]: cbar.set_ticks(aux[f]['cticks'])
 
     if star_axis != -1:
         ax=plt.subplot(gs[0,star_axis])
@@ -435,7 +432,7 @@ def slice3(slcfname,fields_to_draw,axis='y',extent=None,\
     plt.setp([ax.get_yticklabels() for ax in axes[:nf:nf]], visible=True)
     plt.setp([ax.xaxis.get_majorticklabels() for ax in axes[:nf:nf]], rotation=45 )
 
-    pngfname=slcfname+'.png'
+    pngfname=slcfname+'ng'
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:

@@ -3,58 +3,58 @@ import astropy.units as u
 import numpy as np
 
 class coolftn(object):
-	def __init__(self):
-		self.cool=cool
-		self.heat=heat
-		self.temp=temp
-		self.T1=T1
+    def __init__(self):
+        self.cool=cool
+        self.heat=heat
+        self.temp=temp
+        self.T1=T1
 
-		self.Tmin=self.T1.min()
-		self.Tmax=self.T1.max()
-		self.dT=np.log10(self.T1[1]/self.T1[0])
-		self.nT=len(self.T1)
+        self.Tmin=self.T1.min()
+        self.Tmax=self.T1.max()
+        self.dT=np.log10(self.T1[1]/self.T1[0])
+        self.nT=len(self.T1)
 
-	def get_Tidx(self,T):
-		if type(T)==np.ndarray:
-			Tidx=np.log10(T/self.Tmin)/self.dT
-			Tidx[np.where(T<self.Tmin)]=0
-			Tidx[np.where(T>=self.Tmax)]=self.nT-2
-			return Tidx.astype(int)
-		else:
-			if T < self.Tmin: return 0
-			if T >= self.Tmax: return self.nT-2
-			Tidx=np.log10(T/self.Tmin)/self.dT
-			return int(Tidx)
+    def get_Tidx(self,T):
+        if type(T)==np.ndarray:
+            Tidx=np.log10(T/self.Tmin)/self.dT
+            Tidx[np.where(T<self.Tmin)]=0
+            Tidx[np.where(T>=self.Tmax)]=self.nT-2
+            return Tidx.astype(int)
+        else:
+            if T < self.Tmin: return 0
+            if T >= self.Tmax: return self.nT-2
+            Tidx=np.log10(T/self.Tmin)/self.dT
+            return int(Tidx)
 
-	def get_temp(self,T1):
-		T1idx=self.get_Tidx(T1)
-		Ti=self.temp[T1idx]
-		Tip1=self.temp[T1idx+1]
-		T1i=self.T1[T1idx]
-		T1ip1=self.T1[T1idx+1]
-		T=Ti+(Tip1-Ti)*(T1-T1i)/(T1ip1-T1i)
+    def get_temp(self,T1):
+        T1idx=self.get_Tidx(T1)
+        Ti=self.temp[T1idx]
+        Tip1=self.temp[T1idx+1]
+        T1i=self.T1[T1idx]
+        T1ip1=self.T1[T1idx+1]
+        T=Ti+(Tip1-Ti)*(T1-T1i)/(T1ip1-T1i)
 
-		return T
+        return T
 
-	def get_cool(self,T1):
-		T1idx=self.get_Tidx(T1)
-		Li=self.cool[T1idx]
-		Lip1=self.cool[T1idx+1]
-		T1i=self.T1[T1idx]
-		T1ip1=self.T1[T1idx+1]
-		L=Li+(Lip1-Li)*(T1-T1i)/(T1ip1-T1i)
+    def get_cool(self,T1):
+        T1idx=self.get_Tidx(T1)
+        Li=self.cool[T1idx]
+        Lip1=self.cool[T1idx+1]
+        T1i=self.T1[T1idx]
+        T1ip1=self.T1[T1idx+1]
+        L=Li+(Lip1-Li)*(T1-T1i)/(T1ip1-T1i)
 
-		return L
-	
-	def get_heat(self,T1):
-		T1idx=self.get_Tidx(T1)
-		Gi=self.heat[T1idx]
-		Gip1=self.heat[T1idx+1]
-		T1i=self.T1[T1idx]
-		T1ip1=self.T1[T1idx+1]
-		G=Gi+(Gip1-Gi)*(T1-T1i)/(T1ip1-T1i)
+        return L
+    
+    def get_heat(self,T1):
+        T1idx=self.get_Tidx(T1)
+        Gi=self.heat[T1idx]
+        Gip1=self.heat[T1idx+1]
+        T1i=self.T1[T1idx]
+        T1ip1=self.T1[T1idx+1]
+        G=Gi+(Gip1-Gi)*(T1-T1i)/(T1ip1-T1i)
 
-		return G
+        return G
 
 cool=np.array([  8.27861336e-31,   9.84438083e-31,   1.16632763e-30,
          1.37686216e-30,   1.61969658e-30,   1.89882491e-30,
