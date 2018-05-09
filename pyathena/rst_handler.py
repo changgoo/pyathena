@@ -305,7 +305,7 @@ def parse_par(rstfile):
 def parse_rst(var,par,fm):
     
     starpar=False
-    if par['configure'].has_key('star particles'): 
+    if 'star particles' in par['configure']:
         if par['configure']['star particles'] == 'none':
             starpar=False
         else:

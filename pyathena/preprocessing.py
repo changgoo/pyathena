@@ -7,11 +7,12 @@ import shutil
 
 from pyathena.parse_par import write_par_from_rst
 import pyathena as pa
-from pyathena.yt_analysis import yt_analysis
 
 import astropy.constants as c
 import astropy.units as u
 import numpy as np
+
+
 
 def cleanup_directory(base,problem_id,problem_dir=None):
     """
@@ -71,16 +72,16 @@ def cleanup_directory(base,problem_id,problem_dir=None):
 
     return success
 
-def zprof_to_xarray(base,problem_id):
+def zprof_to_xarray(base,problem_dir,problem_id):
     """
         merge zprof dumps along t-axis and create netCDF files 
         files should have moved to zprof/
     """    
-    zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_id)
+    zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_dir)
     if not os.path.isdir(zpmerge_dir): os.mkdir(zpmerge_dir)
     plist=['phase1','phase2','phase3','phase4','phase5','whole']
     for phase in plist:
-        zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_id,problem_id,phase))
+        zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_dir,problem_id,phase))
         zprof_fnames.sort()
 
         taxis=[]
@@ -101,18 +102,18 @@ def zprof_to_xarray(base,problem_id):
     
         da=xr.DataArray(dfall.T,coords={'fields':fields,'zaxis':zaxis,'taxis':taxis},
                                 dims=('fields','zaxis','taxis'))
-        zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_id,problem_id,phase)
+        zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
         da.to_netcdf(zpfile)
         print('{} is created'.format(zpfile))
 
-def merge_xarray(base,problem_id):
+def merge_xarray(base,problem_dir,problem_id):
     """
         merge all phases into a single file
     """    
     plist=['phase1','phase2','phase3','phase4','phase5']
     datasets = xr.Dataset()
     for phase in plist:
-        path='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_id,problem_id,phase)
+        path='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
         with xr.open_dataarray(path) as da: da.load()
         datasets[phase]=da
     return datasets
@@ -120,11 +121,11 @@ def merge_xarray(base,problem_id):
     #datasets.to_netcdf(zpfile)
     #print('{} is created'.format(zpfile))
 
-def panel_to_xarray(base,problem_id):
+def panel_to_xarray(base,problem_dir,problem_id):
     """
         convert exsiting merged pickles for pandas Panel to netCDF for xarray DataArray
     """
-    zpfile='{}{}/zprof_merged/{}.whole.zprof.p'.format(base,problem_id,problem_id)
+    zpfile='{}{}/zprof_merged/{}.whole.zprof.p'.format(base,problem_dir,problem_id)
     if os.path.isfile(zpfile):
         print('no merged pickle files')
         return
@@ -146,13 +147,13 @@ def panel_to_xarray(base,problem_id):
             da.to_netcdf(ncfile)
             print('{} is created'.format(ncfile))
 
-def recal_rates(h,sn,base,problem_id):
+def recal_rates(h,sn,base,problem_dir,problem_id):
     import glob
     from pyathena.set_plt import units
     from pyathena.parse_par import parse_par
     import pandas as pd
     
-    par,blocks,fields,=parse_par('{}{}/{}.par'.format(base,problem_id,problem_id))
+    par,blocks,fields,=parse_par('{}{}/{}.par'.format(base,problem_dir,problem_id))
     dt=float(par['output1']['dt'][0])
     Lx=float(par['domain1']['x1max'][0])-float(par['domain1']['x1min'][0])
     Ly=float(par['domain1']['x2max'][0])-float(par['domain1']['x2min'][0])
@@ -160,7 +161,7 @@ def recal_rates(h,sn,base,problem_id):
     
     nhst=len(h.index)
     
-    starvtk=glob.glob('{}{}/starpar/{}.*.starpar.vtk'.format(base,problem_id,problem_id))
+    starvtk=glob.glob('{}{}/starpar/{}.*.starpar.vtk'.format(base,problem_dir,problem_id))
     starvtk.sort()
     sp=pa.read_starvtk(starvtk[-1])
     cl=sp[sp.mass!=0]
@@ -190,22 +191,22 @@ def recal_rates(h,sn,base,problem_id):
     rates.index=time[:-1]
     return rates
 
-def recal_history(base,problem_id):
-    parfile='{}{}/{}.par'.format(base,problem_id,problem_id)
+def recal_history(base,problem_dir,problem_id):
+    parfile='{}{}/{}.par'.format(base,problem_dir,problem_id)
     params=pa.get_params(parfile)
 
-    hstfile='{}{}/hst/{}.hst'.format(base,problem_id,problem_id)
+    hstfile='{}{}/hst/{}.hst'.format(base,problem_dir,problem_id)
     hst=pa.hst_reader(hstfile)
 
     hstrecalfile='{}_cal.p'.format(hstfile)
     h=processing_history_dump(hst,params,hstrecalfile)
 
-    snfile='{}{}/hst/{}.sn'.format(base,problem_id,problem_id)
+    snfile='{}{}/hst/{}.sn'.format(base,problem_dir,problem_id)
     sn=pa.hst_reader(snfile)
-    rates=recal_rates(h,sn,base,problem_id)
+    rates=recal_rates(h,sn,base,problem_dir,problem_id)
 
     hstzpfile='{}_zp.p'.format(hstfile)
-    zprof_ds=merge_xarray(base,problem_id)
+    zprof_ds=merge_xarray(base,problem_dir,problem_id)
     #print("zprof dataset is loaded")
     h_zp=processing_zprof_dump(h,rates,params,zprof_ds,hstzpfile)
 
@@ -509,11 +510,11 @@ def draw_history(h_zp,metadata,figfname=''):
         if f in h_zp:
             l,=plt.plot(h_zp['tMyr'],h_zp[f])
             if len(subfields)>0:
-                if labels.has_key(f): l.set_label(labels[f])
+                if f in labels: l.set_label(labels[f])
                 for sf in subfields:
                     if sf in h_zp:
                         l,=plt.plot(h_zp['tMyr'],h_zp[sf])
-                        if labels.has_key(sf): l.set_label(labels[sf])
+                        if f in labels: l.set_label(labels[sf])
                 plt.legend(bbox_to_anchor=(1.02, 1),loc=2,fontsize='small')
         plt.ylabel(ylabel)
         plt.yscale(yscale)
@@ -525,7 +526,7 @@ def draw_history(h_zp,metadata,figfname=''):
     if len(figfname) > 0:
         fig.savefig(figfname,bbox_inches='tight',dpi=150)
 
-def doall(base,problem_id,problem_dir=None,do_yt=True):
+def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True):
     """
        do all preprocessing for a model
     """
@@ -538,18 +539,18 @@ def doall(base,problem_id,problem_dir=None,do_yt=True):
     parfile='{}{}/{}.par'.format(base,problem_dir,problem_id)
     params=pa.get_params(parfile)    
 
-    zpfile='{}{}/zprof_merged/{}.whole.zprof.nc'.format(base,problem_id,problem_id)
+    zpfile='{}{}/zprof_merged/{}.whole.zprof.nc'.format(base,problem_dir,problem_id)
     from pyathena.utils import compare_files
-    zpfiles=glob.glob('{}{}/zprof/{}.*.whole.zprof'.format(base,problem_id,problem_id))
+    zpfiles=glob.glob('{}{}/zprof/{}.*.whole.zprof'.format(base,problem_dir,problem_id))
     zpfiles.sort()
-    if not compare_files(zpfiles[-1],zpfile): zprof_to_xarray(base,problem_id)
+    if not compare_files(zpfiles[-1],zpfile): zprof_to_xarray(base,problem_dir,problem_id)
     #zpfile='{}{}/zprof_merged/{}.zprof.nc'.format(base,problem_id,problem_id)
     #if not os.path.isfile(zpfile): merge_xarray(base,problem_id)
 
-    hstzpfile='{}{}/hst/{}.hst_zp.p'.format(base,problem_id,problem_id)
-    if os.path.isfile(zpfile): recal_history(base,problem_id)
+    hstzpfile='{}{}/hst/{}.hst_zp.p'.format(base,problem_dir,problem_id)
+    if os.path.isfile(zpfile): recal_history(base,problem_dir,problem_id)
 
-    if do_yt:
+    if do_pickling:
         kwargs={'base_directory':base,
             'directory':'{}/'.format(problem_dir),
             'id':problem_id,
@@ -558,6 +559,12 @@ def doall(base,problem_id,problem_dir=None,do_yt=True):
             'rotation':params['Omega']*1.e3,
             'range':''
         }
-        print('slicing and projecting using yt...')
-        yt_analysis.main(force_recal=False,force_redraw=False,verbose=False,**kwargs)
-        
+
+        if use_yt:
+            print('slicing and projecting with yt ...')
+            from pyathena.yt_analysis import yt_analysis
+            yt_analysis.main(force_recal=False,force_redraw=False,verbose=50,**kwargs)
+        else:
+            print('slicing and projecting with pyathena ...')
+            from pyathena.create_pickle import create_all_pickles
+            create_all_pickles(force_recal=False,force_redraw=False,verbose=True,**kwargs)

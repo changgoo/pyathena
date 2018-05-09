@@ -12,8 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.colors import LogNorm,SymLogNorm,NoNorm,Normalize
 from pyathena import read_starvtk,texteffect,set_units
-from plot_slices import slice2 as plot_slice
-from plot_projection import plot_projection
+from pyathena.plot_tools.plot_slices import slice2 as plot_slice
+from pyathena.plot_tools.plot_projection import plot_projection
+from pyathena.plot_tools.set_aux import set_aux
 import numpy as np
 import string
 
@@ -112,14 +113,19 @@ def phase(sq,phfname,bin_fields):
     pdfs=my_pdf(sq)
 
     for bf in bin_fields:
-        n_bins=(aux[bf[0]]['n_bins'],aux[bf[1]]['n_bins'])
+        nbin1, nbin2=128
+        if bf[0] in aux: nbin1=aux[bf[0]]['n_bins']
+        if bf[1] in aux: nbin2=aux[bf[1]]['n_bins']
+        n_bins=(nbin1, nbin2)
         logs={}
         unit={}
         extrema={}
         for b in bf: 
-            logs[b]=aux[b]['log'] 
-            if aux[b].has_key('unit'): unit[b]=aux[b]['unit'] 
-            if aux[b].has_key('limits'): extrema[b]=aux[b]['limits']
+            logs[b]=False
+            if b in aux:
+                if 'log' in aux[b]: logs[b]=aux[b]['log'] 
+                if 'unit' in aux[b]: unit[b]=aux[b]['unit'] 
+                if 'limints' in aux[b]: extrema[b]=aux[b]['limits']
         pdf=yt.create_profile(sq,bf,fields=fields,
               n_bins=n_bins,logs=logs,extrema=extrema,units=unit,
               weight_field=None,fractional=True)
@@ -140,7 +146,6 @@ def slices(ds,slcfname,slc_fields):
 
     slc_data={}
     slc_data['time']=time
-    ya.check_aux(slc_fields)
 
     for i,axis in enumerate(['x','y','z']):
         slc=yt.SlicePlot(ds,axis,slc_fields)
@@ -154,11 +159,11 @@ def slices(ds,slcfname,slc_fields):
         slc_data[axis]={} 
         slc_data[axis+'extent']=extent
         for f in slc_fields:
-            if aux[f].has_key('unit'):
-                slc_data[axis][f] = np.array(slc_frb[f].in_units(aux[f]['unit']))
-            else:
-                slc_data[axis][f] = np.array(slc_frb[f])
-            if aux[f].has_key('factor'): slc_data[axis][f] *= aux[f]['factor']
+            if f in aux:
+                if 'unit' in aux:
+                    slc_data[axis][f] = np.array(slc_frb[f].in_units(aux[f]['unit']))
+                if 'factor' in aux: slc_data[axis][f] *= aux[f]['factor']
+            slc_data[axis][f] = np.array(slc_frb[f])
 
     if yt.is_root():
         pickle.dump(slc_data,open(slcfname,'wb'),pickle.HIGHEST_PROTOCOL)
@@ -202,14 +207,13 @@ def plot_phase(phfname,bin_fields):
     plt.savefig(pngfname,bbox_inches='tight',num=2,dpi=150)
     plt.close()
 
-def main(force_recal=False, force_redraw=False, verbose=True, **kwargs):
+def main(force_recal=False, force_redraw=False, verbose=50, **kwargs):
     global aux
-    if not verbose: yt.funcs.mylog.setLevel(50) 
-    else: yt.funcs.mylog.setLevel(1) 
+    yt.funcs.mylog.setLevel(verbose) 
     dir = kwargs['base_directory']+kwargs['directory']
     fname=glob.glob(dir+'id0/'+kwargs['id']+'.????.vtk')
     fname.sort()
-    aux=ya.set_aux(kwargs['id'])
+    aux=set_aux(kwargs['id'])
 
     if kwargs['range'] != '':
         sp=kwargs['range'].split(',')
@@ -241,10 +245,7 @@ def main(force_recal=False, force_redraw=False, verbose=True, **kwargs):
     mhd=('athena','cell_centered_B_x') in ds.field_list
     cooling=('athena','pressure') in ds.field_list
     rotation=kwargs['rotation'] != 0.
-    if rotation: 
-      ya.Omega=ya.YTQuantity(kwargs['rotation'],'km/s/kpc')
-      if kwargs['rotation']== 280: 
-        aux=ya.set_aux('starburst')
+    if rotation: ya.Omega=ya.YTQuantity(kwargs['rotation'],'km/s/kpc')
     if isroot & verbose:
         print("MHD:", mhd)
         print("cooling:", cooling)
