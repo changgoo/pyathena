@@ -51,8 +51,7 @@ class my_pdf(object):
         self.pdf[key]['cell_volume']=np.array(pdf['cell_volume'])
         return
 
-def draw_pdf(ax,pdf,field='cell_mass',key='nH-pok'):
-    global aux
+def draw_pdf(ax,pdf,field='cell_mass',key='nH-pok',aux={}):
     bins=string.split(key,'-')
     xbin=pdf[key]['xbin']
     ybin=pdf[key]['ybin']
@@ -108,8 +107,7 @@ def projection(ds,surfname):
             scalfname=surfname.replace('surf.p','scal{}.p'.format(nscal))
             pickle.dump(scal_data,open(scalfname,'wb'),pickle.HIGHEST_PROTOCOL)
 
-def phase(sq,phfname,bin_fields):
-    global aux
+def phase(sq,phfname,bin_fields,aux={}):
     pdfs=my_pdf(sq)
 
     for bf in bin_fields:
@@ -133,8 +131,7 @@ def phase(sq,phfname,bin_fields):
     if yt.is_root():
         pickle.dump(pdfs,open(phfname,'wb'),pickle.HIGHEST_PROTOCOL)
 
-def slices(ds,slcfname,slc_fields):
-    global aux
+def slices(ds,slcfname,slc_fields,aux={}):
     ds.coordinates.x_axis[1]=0
     ds.coordinates.x_axis['y']=0
     ds.coordinates.y_axis[1]=2
@@ -159,18 +156,18 @@ def slices(ds,slcfname,slc_fields):
         slc_data[axis]={} 
         slc_data[axis+'extent']=extent
         for f in slc_fields:
-            if f in aux:
-                if 'unit' in aux:
-                    slc_data[axis][f] = np.array(slc_frb[f].in_units(aux[f]['unit']))
-                if 'factor' in aux: slc_data[axis][f] *= aux[f]['factor']
             slc_data[axis][f] = np.array(slc_frb[f])
+            if f in aux:
+                if 'unit' in aux[f]:
+                    slc_data[axis][f] = np.array(slc_frb[f].in_units(aux[f]['unit']))
+                    print(f,aux[f]['unit'])
+                if 'factor' in aux[f]: slc_data[axis][f] *= aux[f]['factor']
 
     if yt.is_root():
         pickle.dump(slc_data,open(slcfname,'wb'),pickle.HIGHEST_PROTOCOL)
 
 
-def plot_phase(phfname,bin_fields):
-    global aux
+def plot_phase(phfname,bin_fields,aux={}):
     plt.rc('font',size=10)
     plt.rc('xtick',labelsize=10)
     plt.rc('ytick',labelsize=10)
@@ -189,7 +186,7 @@ def plot_phase(phfname,bin_fields):
         ax=fig.add_subplot(nrow,ncol*2,j*2+i+1)
         #ax=plt.subplot(gs[j%nrow,(j/nrow)*3+i])
         im = draw_pdf(ax,pdfs.pdf,field=fields[i],
-                      key=string.join(bf,'-'))
+                      key=string.join(bf,'-'),aux=aux)
         im.set_cmap(plt.cm.cubehelix_r)
         im.set_clim(1.e-7,1.e-1)
         if j<2:
@@ -208,7 +205,6 @@ def plot_phase(phfname,bin_fields):
     plt.close()
 
 def main(force_recal=False, force_redraw=False, verbose=50, **kwargs):
-    global aux
     yt.funcs.mylog.setLevel(verbose) 
     dir = kwargs['base_directory']+kwargs['directory']
     fname=glob.glob(dir+'id0/'+kwargs['id']+'.????.vtk')
@@ -297,13 +293,13 @@ def main(force_recal=False, force_redraw=False, verbose=50, **kwargs):
             else: ds = yt.load(f,units_override=ya.unit_base, nprocs=nprocs)
             ya.add_yt_fields(ds,mhd=mhd,rotation=rotation,cooling=cooling)
             if tasks['surf']: projection(ds,surfname)
-            if tasks['slice']: slices(ds,slcfname,slc_fields)
+            if tasks['slice']: slices(ds,slcfname,slc_fields,aux=aux)
             if tasks['phase']:
                 le=np.array(ds.domain_left_edge)
                 re=np.array(ds.domain_right_edge)
                 sq=ds.box(le,re)
 
-                phase(sq,phfname,bin_fields)
+                phase(sq,phfname,bin_fields,aux=aux)
 
     for i,f in enumerate(fname):
         slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
@@ -326,11 +322,11 @@ def main(force_recal=False, force_redraw=False, verbose=50, **kwargs):
             print(']')
         if i%nprocs == rank:
             if tasks['surf']:
-                plot_projection(surfname,starfname,runaway=True)
+                plot_projection(surfname,starfname,runaway=True,aux=aux['surface_density'])
             if tasks['slice']:
-                plot_slice(slcfname,starfname,fields_to_draw)
+                plot_slice(slcfname,starfname,fields_to_draw,aux=aux)
             if tasks['phase']:
-                plot_phase(phfname,bin_fields)
+                plot_phase(phfname,bin_fields,aux=aux)
 
 
 if __name__ == '__main__':
