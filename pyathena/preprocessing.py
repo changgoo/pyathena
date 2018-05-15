@@ -528,7 +528,16 @@ def draw_history(h_zp,metadata,figfname=''):
 
 def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True):
     """
-       do all preprocessing for a model
+        This function will do following tasks: 
+        (1) reoranizing files 
+           * .hst, .sn --> hst/
+           * .zprof --> zprof/
+           * .starpar.vtk --> starpar/
+           * .rst --> rst/
+        (2) creating a parameter file from a restart header
+        (3) creating merged (along the time axis) zprof files for each thermal phase (using xarray)
+        (4) creating history data using zprof dumps, including new fields
+        (5) [if do_pickling] creating pickle files for slice and projection (will use yt [if use_yt])
     """
     if problem_dir is None: problem_dir = problem_id
     print('preparing metadata for {}...'.format(problem_id))

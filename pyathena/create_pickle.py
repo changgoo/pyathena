@@ -89,32 +89,44 @@ def create_projection(ds,proj_fname,field='density',conversion=1.0,weight_field=
         surf_data[axis]={'data':proj,'bounds':bounds}
     pickle.dump(surf_data,open(proj_fname,'wb'),pickle.HIGHEST_PROTOCOL)
 
-def create_slices(ds,slcfname,slc_fields,factors={}):
+def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
     '''
         generic function to create pickle file containing slices of fields
     
-        slc_field: list of fields name to be sliced
+        slc_field: list of field names to be sliced
         
         factors: multiplication factors for unit conversion
     '''
  
     time = ds.domain['time']*to_Myr
     dx=ds.domain['dx']
-
-    slc_data={}
-    slc_data['time']=time
     c=ds.domain['center']
     le=ds.domain['left_edge']
     re=ds.domain['right_edge']
     cidx=pa.cc_idx(ds.domain,ds.domain['center']).astype('int')
-    
-    for i,axis in enumerate(['x','y','z']):
-        bounds = np.array([le[domain_axis[proj_axis[axis][0]]],re[domain_axis[proj_axis[axis][0]]],
-                           le[domain_axis[proj_axis[axis][1]]],re[domain_axis[proj_axis[axis][1]]]])
-        slc_data[axis]={}
-        slc_data[axis+'extent']=bounds/1.e3
+ 
 
-    for f in slc_fields:
+    import copy
+    field_to_slice = copy.copy(slc_fields)
+    if os.path.isfile(slcfname) and not force_recal:
+        slc_data = pickle.load(open(slcfname,'rb'))
+        existing_fields = slc_data['z'].keys()
+        for f in existing_fields:
+            if f in field_to_slice: 
+                print('{} is already there'.format(f))
+                field_to_slice.remove(f)
+    else:
+        slc_data={}
+        slc_data['time']=time
+       
+        for i,axis in enumerate(['x','y','z']):
+            bounds = np.array([le[domain_axis[proj_axis[axis][0]]],re[domain_axis[proj_axis[axis][0]]],
+                               le[domain_axis[proj_axis[axis][1]]],re[domain_axis[proj_axis[axis][1]]]])
+            slc_data[axis]={}
+            slc_data[axis+'extent']=bounds/1.e3
+
+    for f in field_to_slice:
+        print('slicing {} ...'.format(f))
         if f is 'temperature':
             pdata=ds.read_all_data('T1')
         elif f is 'magnetic_field_strength':
@@ -207,7 +219,7 @@ def create_all_pickles(force_recal=False, force_redraw=False, verbose=True, **kw
         if do_task:
             ds = pa.AthenaDataSet(f)
             if tasks['surf']: create_projection(ds,surfname,conversion={'z':ds.domain['Lx'][2]*to_surf})
-            if tasks['slice']: create_slices(ds,slcfname,slc_fields,factors=mul_factors)
+            if tasks['slice']: create_slices(ds,slcfname,slc_fields,factors=mul_factors,force_recal=force_recal)
 
     aux=set_aux(kwargs['id'])
 
