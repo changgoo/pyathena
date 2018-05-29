@@ -526,7 +526,8 @@ def draw_history(h_zp,metadata,figfname=''):
     if len(figfname) > 0:
         fig.savefig(figfname,bbox_inches='tight',dpi=150)
 
-def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True):
+def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True,
+  force_recal=False, force_redraw=False):
     """
         This function will do following tasks: 
         (1) reoranizing files 
@@ -572,8 +573,8 @@ def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True):
         if use_yt:
             print('slicing and projecting with yt ...')
             from pyathena.yt_analysis import yt_analysis
-            yt_analysis.main(force_recal=False,force_redraw=False,verbose=50,**kwargs)
+            yt_analysis.main(force_recal=force_recal,force_redraw=force_redraw,verbose=50,**kwargs)
         else:
             print('slicing and projecting with pyathena ...')
             from pyathena.create_pickle import create_all_pickles
-            create_all_pickles(force_recal=False,force_redraw=False,verbose=True,**kwargs)
+            create_all_pickles(force_recal=force_recal,force_redraw=force_redraw,verbose=True,**kwargs)
