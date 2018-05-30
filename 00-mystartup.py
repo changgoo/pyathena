@@ -5,6 +5,7 @@ import subprocess
 sysconfig={}
 sysconfig['ccalin004']={'base':'/mnt/ceph/users/ckim/','source':'/mnt/home/ckim/Sources/pyathena-TIGRESS/'}
 sysconfig['tigressdata.princeton.edu']={'base':'/tigress/changgoo/','source':'/tigress/changgoo/pyathena-TIGRESS/'}
+sysconfig['tigressdata2.princeton.edu']={'base':'/tigress/changgoo/','source':'/tigress/changgoo/pyathena-TIGRESS/'}
 sysconfig['C02TW028HTDH']={'base':'/Users/ckim/','source':'/Users/ckim/Sources/pyathena-TIGRESS/'}
 
 uname=subprocess.check_output(['uname','-a'])

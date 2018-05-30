@@ -126,7 +126,7 @@ def panel_to_xarray(base,problem_dir,problem_id):
         convert exsiting merged pickles for pandas Panel to netCDF for xarray DataArray
     """
     zpfile='{}{}/zprof_merged/{}.whole.zprof.p'.format(base,problem_dir,problem_id)
-    if os.path.isfile(zpfile):
+    if not os.path.isfile(zpfile):
         print('no merged pickle files')
         return
 
@@ -165,10 +165,10 @@ def recal_rates(h,sn,base,problem_dir,problem_id):
     starvtk.sort()
     sp=pa.read_starvtk(starvtk[-1])
     cl=sp[sp.mass!=0]
-    cl_birth_time=(cl.time-cl.age)*units['Myr']
+    cl_birth_time=(cl.time-cl.age)#*units['Myr']
     cl_mass=cl.mass*units['Msun']
     
-    time=np.arange(nhst+1)*dt
+    time=np.arange(nhst+1)*dt+h.index[0]*units['Myr']
     Msp,t=np.histogram(cl_birth_time,bins=time,weights=cl_mass)
     sfr_inst=pd.Series(Msp/area/dt)
 
@@ -376,6 +376,16 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             field_name='massflux_{}_{}{}'.format('bd',var,ph)
             h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
 
+        for var in ['M1','M2','M3','E1','E2','E3','P']:
+            field_name_u='flux_{}_{}{}'.format('ubd',var,ph)
+            flx=zp_upper.loc['pFz{}'.format(var)]/area
+            h_zp[field_name_u]=flx
+            field_name_l='flux_{}_{}{}'.format('lbd',var,ph)
+            flx=-zp_lower.loc['mFz{}'.format(var)]/area
+            h_zp[field_name_l]=flx
+            field_name='flux_{}_{}{}'.format('bd',var,ph)
+            h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
+
         zp_upper=zp.sel(zaxis=500,method='nearest')
         zp_lower=zp.sel(zaxis=-500,method='nearest')
         h_zp['massflux_out_u5{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/area)*toflux
@@ -514,7 +524,7 @@ def draw_history(h_zp,metadata,figfname=''):
                 for sf in subfields:
                     if sf in h_zp:
                         l,=plt.plot(h_zp['tMyr'],h_zp[sf])
-                        if f in labels: l.set_label(labels[sf])
+                        if sf in labels: l.set_label(labels[sf])
                 plt.legend(bbox_to_anchor=(1.02, 1),loc=2,fontsize='small')
         plt.ylabel(ylabel)
         plt.yscale(yscale)
@@ -544,7 +554,8 @@ def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True,
     from pyathena.utils import compare_files
     zpfiles=glob.glob('{}{}/zprof/{}.*.whole.zprof'.format(base,problem_dir,problem_id))
     zpfiles.sort()
-    if not compare_files(zpfiles[-1],zpfile): zprof_to_xarray(base,problem_dir,problem_id)
+    if len(zpfiles) > 0:
+        if not compare_files(zpfiles[-1],zpfile): zprof_to_xarray(base,problem_dir,problem_id)
     #zpfile='{}{}/zprof_merged/{}.zprof.nc'.format(base,problem_id,problem_id)
     #if not os.path.isfile(zpfile): merge_xarray(base,problem_id)
 

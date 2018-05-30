@@ -169,9 +169,9 @@ def plot_projection_Z(surfname,starfname,stars=True,writefile=True,runaway=True,
 def plot_projection_icm(surfname,scalfname,starfname,
   stars=True,writefile=True,runaway=True,norm_factor=2.,aux={}):
 
-    plt.rc('font',size=16)
-    plt.rc('xtick',labelsize=16)
-    plt.rc('ytick',labelsize=16)
+    plt.rc('font',size=20)
+    plt.rc('xtick',labelsize=20)
+    plt.rc('ytick',labelsize=20)
 
     if stars: sp=read_starvtk(starfname)
     frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
@@ -276,7 +276,7 @@ def plot_projection_icm(surfname,scalfname,starfname,
 
     ax2.set_xlabel('y [kpc]')
     plt.setp(ax2.get_yticklabels(),visible=False)
-    pngfname=surfname+'ng'
+    pngfname=scalfname+'ng'
     if writefile:
         plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
         plt.close()
