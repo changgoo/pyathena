@@ -362,7 +362,7 @@ def parse_rst(var,par,fm):
         
     return 1
 
-def read_star(fp):
+def read_star(fp,nscal=0):
 # This works for MST_4pc
 #    ivars=['id','merge_history','isnew','active']
 #    dvars=['m','x1','x2','x3','v1','v2','v3','age','mage','mdot',\
@@ -378,7 +378,8 @@ def read_star(fp):
     dvars=['m','x1','x2','x3','v1','v2','v3','age','mage','mdot',\
            'x1_old','x2_old','x3_old',\
           ]
-
+    for i in range(nscal):
+        dvars += ['metal{}'.format(i)]
     star_dict={}
     dtype='i'
     for var in ivars:
@@ -400,6 +401,7 @@ def read_rst_grid(rstfile,verbose=False):
     fp.seek(par['par_end'])
     rst={}
     data_array={}
+    nscal=0
     while 1:
         l=fp.readline()
         var=l.strip()
@@ -418,7 +420,7 @@ def read_rst_grid(rstfile,verbose=False):
                 star_list=[] 
                 if nstar > 0:
                   for i in range(nstar):
-                      star_list.append(read_star(fp))
+                      star_list.append(read_star(fp,nscal=nscal))
                   if verbose: 
                       print var, nstar
                       print star_list[0]
@@ -429,6 +431,7 @@ def read_rst_grid(rstfile,verbose=False):
                 arr.shape = rst[var]['nx']
                 data_array[var]=arr
                 if verbose: print var, arr.mean(), arr.shape
+                if var.startswith('SCALAR'): nscal += 1
             fp.readline()
         else: 
             break
