@@ -160,7 +160,7 @@ def slices(ds,slcfname,slc_fields,aux={}):
             if f in aux:
                 if 'unit' in aux[f]:
                     slc_data[axis][f] = np.array(slc_frb[f].in_units(aux[f]['unit']))
-                    print(f,aux[f]['unit'])
+                    #print(f,aux[f]['unit'])
                 if 'factor' in aux[f]: slc_data[axis][f] *= aux[f]['factor']
 
     if yt.is_root():

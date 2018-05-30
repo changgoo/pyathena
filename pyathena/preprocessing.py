@@ -334,13 +334,19 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             Ekf = 'Ek{}'.format(ax)
             if ax == '2': Ekf = 'dEk2'
             h_zp['v{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields=Ekf).sum(dim='zaxis')/dphase)
+            h_zp['Ek{}{}'.format(ax,ph)] = zp.sel(fields=Ekf).sum(dim='zaxis')/Atot
             if mhd:
                 h_zp['vA{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields='PB{}'.format(ax)).sum(dim='zaxis')/dphase)
                 h_zp['dvA{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields='dPB{}'.format(ax)).sum(dim='zaxis')/dphase)
+                h_zp['EB{}{}'.format(ax,ph)] = zp.sel(fields='PB{}'.format(ax)).sum(dim='zaxis')/Atot
+                h_zp['EB{}_turb{}'.format(ax,ph)] = zp.sel(fields='dPB{}'.format(ax)).sum(dim='zaxis')/Atot
 
         h_zp['v{}'.format(ph)] = np.sqrt(h_zp['v1{}'.format(ph)]**2 + \
                                          h_zp['v2{}'.format(ph)]**2 + \
                                          h_zp['v3{}'.format(ph)]**2)
+        h_zp['Ek{}'.format(ph)] = h_zp['Ek1{}'.format(ph)] + \
+                                  h_zp['Ek2{}'.format(ph)] + \
+                                  h_zp['Ek3{}'.format(ph)]
         if mhd:
             h_zp['vA{}'.format(ph)] = np.sqrt(h_zp['vA1{}'.format(ph)]**2 + \
                                               h_zp['vA2{}'.format(ph)]**2 + \
@@ -348,9 +354,16 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             h_zp['dvA{}'.format(ph)] = np.sqrt(h_zp['dvA1{}'.format(ph)]**2 + \
                                                h_zp['dvA2{}'.format(ph)]**2 + \
                                                h_zp['dvA3{}'.format(ph)]**2)
+            h_zp['EB{}'.format(ph)] = h_zp['EB1{}'.format(ph)] + \
+                                      h_zp['EB2{}'.format(ph)] + \
+                                      h_zp['EB3{}'.format(ph)]
+            h_zp['EB_turb{}'.format(ph)] = h_zp['EB1_turb{}'.format(ph)] + \
+                                           h_zp['EB2_turb{}'.format(ph)] + \
+                                           h_zp['EB3_turb{}'.format(ph)]
 
 
         h_zp['cs{}'.format(ph)] = np.sqrt(zp.sel(fields='P').sum(dim='zaxis')/dphase)
+        h_zp['Eth{}'.format(ph)] = 1.5*zp.sel(fields='P').sum(dim='zaxis')/Atot
         h_zp['sigma_eff{}'.format(ph)] = h_zp['cs{}'.format(ph)]**2 + h_zp['v3{}'.format(ph)]**2
         if mhd:
             h_zp['sigma_eff{}'.format(ph)] += 0.5*(h_zp['vA1{}'.format(ph)]**2 + 
