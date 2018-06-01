@@ -72,39 +72,51 @@ def cleanup_directory(base,problem_id,problem_dir=None):
 
     return success
 
-def zprof_to_xarray(base,problem_dir,problem_id):
+def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True):
     """
         merge zprof dumps along t-axis and create netCDF files 
         files should have moved to zprof/
     """    
     zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_dir)
     if not os.path.isdir(zpmerge_dir): os.mkdir(zpmerge_dir)
-    plist=['phase1','phase2','phase3','phase4','phase5','whole']
+    plist=['phase1','phase2','phase3','phase4','phase5']
     for phase in plist:
         zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_dir,problem_id,phase))
         zprof_fnames.sort()
-
-        taxis=[]
-        dfall=None
-        for f in zprof_fnames:
-            fp=open(f,'r')
-            hd=fp.readline()
-            fp.close()
-            time=float(hd[hd.rfind('t=')+2:])
-            df=pd.read_csv(f,skiprows=1)
-            zaxis=np.array(df['z'])
-            fields=np.array(df.columns)
-            taxis.append(time)
-            if dfall is None:
-                dfall=np.array(df)[np.newaxis,:]
-            else:
-                dfall=np.concatenate([dfall,np.array(df)[np.newaxis,:]],axis=0)
-    
-        da=xr.DataArray(dfall.T,coords={'fields':fields,'zaxis':zaxis,'taxis':taxis},
-                                dims=('fields','zaxis','taxis'))
         zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
+        if os.path.isfile(zpfile) and concatenated: 
+            with xr.open_dataarray(zpfile) as da: da.load()
+            nfiles_in_zpmerged=len(da.taxis)
+            nappend=len(zprof_fnames)-nfiles_in_zpmerged
+            if nappend>0: 
+                da_part=read_zprof(zprof_fnames[nfiles_in_zpmerged:])
+                da=xr.concat((da,da_part),dim='taxis')
+                print('{} files have been merged. {} will be appended'.format(
+                  nfiles_in_zpmerged,nappend))
+        else:
+            da=read_zprof(zprof_fnames)
         da.to_netcdf(zpfile)
         print('{} is created'.format(zpfile))
+
+def read_zprof(zprof_fnames):
+    taxis=[]
+    dfall=None
+    for f in zprof_fnames:
+        fp=open(f,'r')
+        hd=fp.readline()
+        fp.close()
+        time=float(hd[hd.rfind('t=')+2:])
+        df=pd.read_csv(f,skiprows=1)
+        zaxis=np.array(df['z'])
+        fields=np.array(df.columns)
+        taxis.append(time)
+        if dfall is None:
+            dfall=np.array(df)[np.newaxis,:]
+        else:
+            dfall=np.concatenate([dfall,np.array(df)[np.newaxis,:]],axis=0)
+    da=xr.DataArray(dfall.T,coords={'fields':fields,'zaxis':zaxis,'taxis':taxis},
+                        dims=('fields','zaxis','taxis'))
+    return da
 
 def merge_xarray(base,problem_dir,problem_id):
     """
@@ -563,7 +575,7 @@ def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True,
     parfile='{}{}/{}.par'.format(base,problem_dir,problem_id)
     params=pa.get_params(parfile)    
 
-    zpfile='{}{}/zprof_merged/{}.whole.zprof.nc'.format(base,problem_dir,problem_id)
+    zpfile='{}{}/zprof_merged/{}.phase5.zprof.nc'.format(base,problem_dir,problem_id)
     from pyathena.utils import compare_files
     zpfiles=glob.glob('{}{}/zprof/{}.*.whole.zprof'.format(base,problem_dir,problem_id))
     zpfiles.sort()
