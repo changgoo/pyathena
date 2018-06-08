@@ -322,7 +322,7 @@ def main(force_recal=False, force_redraw=False, verbose=50, **kwargs):
             print(']')
         if i%nprocs == rank:
             if tasks['surf']:
-                plot_projection(surfname,starfname,runaway=True,aux=aux['surface_density'])
+                plot_projection(surfname,starfname,runaway=False,aux=aux['surface_density'])
             if tasks['slice']:
                 plot_slice(slcfname,starfname,fields_to_draw,aux=aux)
             if tasks['phase']:

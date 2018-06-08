@@ -282,6 +282,8 @@ def processing_history_dump(hst,params,hstfile):
     h['sfr10']=hst['sfr10']
     h['sfr40']=hst['sfr40']
     h['sfr100']=hst['sfr100']
+    h['heat_ratio']=hst['heat_ratio']
+    if 'ftau' in hst: h['ftau']=hst['ftau']
 
     h.index=hst['time']
     h.to_pickle(hstfile)
@@ -485,7 +487,7 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
         h_zp['W{}'.format(ph)]=h_zp['Wext{}'.format(ph)]+h_zp['Wsg{}'.format(ph)]
 
     # data intepolated from history dump
-    for field in ['sfr10','sfr40','sfr100','surfsp']:
+    for field in h:
         h_zp['{}_hst'.format(field)] = np.interp(zpw.taxis,h.index,h[field])
 
     for field in rates.keys():

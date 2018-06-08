@@ -228,6 +228,6 @@ def create_all_pickles(force_recal=False, force_redraw=False, verbose=True, **kw
             for k in tasks: print('{}:{} '.format(k,tasks[k]),end='')
             print(']')
         if tasks['surf']:
-            plot_projection(surfname,starfname,runaway=True,aux=aux['surface_density'])
+            plot_projection(surfname,starfname,runaway=False,aux=aux['surface_density'])
         if tasks['slice']:
             plot_slice(slcfname,starfname,fields_to_draw,aux=aux)
