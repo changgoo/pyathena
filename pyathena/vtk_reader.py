@@ -895,12 +895,22 @@ def read_starvtk(starfile,time_out=False):
     nstar=star['nstar']
     #print nstar
     fm=set_field_map(star)
-    #print fm.keys()
     id=read_field(file,fm['star_particle_id'])
     mass=read_field(file,fm['star_particle_mass'])
     age=read_field(file,fm['star_particle_age'])
     pos=read_field(file,fm['star_particle_position']).reshape(nstar,3)
     vel=read_field(file,fm['star_particle_velocity']).reshape(nstar,3)
+    misc_keys=fm.keys()
+    misc_keys.remove('star_particle_id')
+    misc_keys.remove('star_particle_mass')
+    misc_keys.remove('star_particle_age')
+    misc_keys.remove('star_particle_position')
+    misc_keys.remove('star_particle_velocity')
+    misc_data={}
+
+    for f in misc_keys:
+        misc_data[f]=read_field(file,fm[f])
+
     file.close()
     star=[]
     for i in range(nstar):
@@ -918,6 +928,9 @@ def read_starvtk(starfile,time_out=False):
         star_dict['x2']=pos[i][1]
         star_dict['x3']=pos[i][2]
         star_dict['time']=time
+        for f in misc_keys:
+            keyname=f.replace('star_particle_','').replace('[','').replace(']','')
+            star_dict[keyname]=misc_data[f][i]
 
     if time_out:
         return time,pd.DataFrame(star)
