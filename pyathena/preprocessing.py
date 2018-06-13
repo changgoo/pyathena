@@ -72,39 +72,51 @@ def cleanup_directory(base,problem_id,problem_dir=None):
 
     return success
 
-def zprof_to_xarray(base,problem_dir,problem_id):
+def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True):
     """
         merge zprof dumps along t-axis and create netCDF files 
         files should have moved to zprof/
     """    
     zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_dir)
     if not os.path.isdir(zpmerge_dir): os.mkdir(zpmerge_dir)
-    plist=['phase1','phase2','phase3','phase4','phase5','whole']
+    plist=['phase1','phase2','phase3','phase4','phase5']
     for phase in plist:
         zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_dir,problem_id,phase))
         zprof_fnames.sort()
-
-        taxis=[]
-        dfall=None
-        for f in zprof_fnames:
-            fp=open(f,'r')
-            hd=fp.readline()
-            fp.close()
-            time=float(hd[hd.rfind('t=')+2:])
-            df=pd.read_csv(f,skiprows=1)
-            zaxis=np.array(df['z'])
-            fields=np.array(df.columns)
-            taxis.append(time)
-            if dfall is None:
-                dfall=np.array(df)[np.newaxis,:]
-            else:
-                dfall=np.concatenate([dfall,np.array(df)[np.newaxis,:]],axis=0)
-    
-        da=xr.DataArray(dfall.T,coords={'fields':fields,'zaxis':zaxis,'taxis':taxis},
-                                dims=('fields','zaxis','taxis'))
         zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
+        if os.path.isfile(zpfile) and concatenated: 
+            with xr.open_dataarray(zpfile) as da: da.load()
+            nfiles_in_zpmerged=len(da.taxis)
+            nappend=len(zprof_fnames)-nfiles_in_zpmerged
+            if nappend>0: 
+                da_part=read_zprof(zprof_fnames[nfiles_in_zpmerged:])
+                da=xr.concat((da,da_part),dim='taxis')
+                print('{} files have been merged. {} will be appended'.format(
+                  nfiles_in_zpmerged,nappend))
+        else:
+            da=read_zprof(zprof_fnames)
         da.to_netcdf(zpfile)
         print('{} is created'.format(zpfile))
+
+def read_zprof(zprof_fnames):
+    taxis=[]
+    dfall=None
+    for f in zprof_fnames:
+        fp=open(f,'r')
+        hd=fp.readline()
+        fp.close()
+        time=float(hd[hd.rfind('t=')+2:])
+        df=pd.read_csv(f,skiprows=1)
+        zaxis=np.array(df['z'])
+        fields=np.array(df.columns)
+        taxis.append(time)
+        if dfall is None:
+            dfall=np.array(df)[np.newaxis,:]
+        else:
+            dfall=np.concatenate([dfall,np.array(df)[np.newaxis,:]],axis=0)
+    da=xr.DataArray(dfall.T,coords={'fields':fields,'zaxis':zaxis,'taxis':taxis},
+                        dims=('fields','zaxis','taxis'))
+    return da
 
 def merge_xarray(base,problem_dir,problem_id):
     """
@@ -126,7 +138,7 @@ def panel_to_xarray(base,problem_dir,problem_id):
         convert exsiting merged pickles for pandas Panel to netCDF for xarray DataArray
     """
     zpfile='{}{}/zprof_merged/{}.whole.zprof.p'.format(base,problem_dir,problem_id)
-    if os.path.isfile(zpfile):
+    if not os.path.isfile(zpfile):
         print('no merged pickle files')
         return
 
@@ -165,10 +177,10 @@ def recal_rates(h,sn,base,problem_dir,problem_id):
     starvtk.sort()
     sp=pa.read_starvtk(starvtk[-1])
     cl=sp[sp.mass!=0]
-    cl_birth_time=(cl.time-cl.age)*units['Myr']
+    cl_birth_time=(cl.time-cl.age)#*units['Myr']
     cl_mass=cl.mass*units['Msun']
     
-    time=np.arange(nhst+1)*dt
+    time=np.arange(nhst+1)*dt+h.index[0]*units['Myr']
     Msp,t=np.histogram(cl_birth_time,bins=time,weights=cl_mass)
     sfr_inst=pd.Series(Msp/area/dt)
 
@@ -270,6 +282,8 @@ def processing_history_dump(hst,params,hstfile):
     h['sfr10']=hst['sfr10']
     h['sfr40']=hst['sfr40']
     h['sfr100']=hst['sfr100']
+    h['heat_ratio']=hst['heat_ratio']
+    if 'ftau' in hst: h['ftau']=hst['ftau']
 
     h.index=hst['time']
     h.to_pickle(hstfile)
@@ -334,13 +348,19 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             Ekf = 'Ek{}'.format(ax)
             if ax == '2': Ekf = 'dEk2'
             h_zp['v{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields=Ekf).sum(dim='zaxis')/dphase)
+            h_zp['Ek{}{}'.format(ax,ph)] = zp.sel(fields=Ekf).sum(dim='zaxis')/Atot
             if mhd:
                 h_zp['vA{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields='PB{}'.format(ax)).sum(dim='zaxis')/dphase)
                 h_zp['dvA{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields='dPB{}'.format(ax)).sum(dim='zaxis')/dphase)
+                h_zp['EB{}{}'.format(ax,ph)] = zp.sel(fields='PB{}'.format(ax)).sum(dim='zaxis')/Atot
+                h_zp['EB{}_turb{}'.format(ax,ph)] = zp.sel(fields='dPB{}'.format(ax)).sum(dim='zaxis')/Atot
 
         h_zp['v{}'.format(ph)] = np.sqrt(h_zp['v1{}'.format(ph)]**2 + \
                                          h_zp['v2{}'.format(ph)]**2 + \
                                          h_zp['v3{}'.format(ph)]**2)
+        h_zp['Ek{}'.format(ph)] = h_zp['Ek1{}'.format(ph)] + \
+                                  h_zp['Ek2{}'.format(ph)] + \
+                                  h_zp['Ek3{}'.format(ph)]
         if mhd:
             h_zp['vA{}'.format(ph)] = np.sqrt(h_zp['vA1{}'.format(ph)]**2 + \
                                               h_zp['vA2{}'.format(ph)]**2 + \
@@ -348,9 +368,16 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             h_zp['dvA{}'.format(ph)] = np.sqrt(h_zp['dvA1{}'.format(ph)]**2 + \
                                                h_zp['dvA2{}'.format(ph)]**2 + \
                                                h_zp['dvA3{}'.format(ph)]**2)
+            h_zp['EB{}'.format(ph)] = h_zp['EB1{}'.format(ph)] + \
+                                      h_zp['EB2{}'.format(ph)] + \
+                                      h_zp['EB3{}'.format(ph)]
+            h_zp['EB_turb{}'.format(ph)] = h_zp['EB1_turb{}'.format(ph)] + \
+                                           h_zp['EB2_turb{}'.format(ph)] + \
+                                           h_zp['EB3_turb{}'.format(ph)]
 
 
         h_zp['cs{}'.format(ph)] = np.sqrt(zp.sel(fields='P').sum(dim='zaxis')/dphase)
+        h_zp['Eth{}'.format(ph)] = 1.5*zp.sel(fields='P').sum(dim='zaxis')/Atot
         h_zp['sigma_eff{}'.format(ph)] = h_zp['cs{}'.format(ph)]**2 + h_zp['v3{}'.format(ph)]**2
         if mhd:
             h_zp['sigma_eff{}'.format(ph)] += 0.5*(h_zp['vA1{}'.format(ph)]**2 + 
@@ -374,6 +401,16 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             flx=-zp_lower.loc['mFz{}'.format(var)]/area
             h_zp[field_name_l]=flx*toflux
             field_name='massflux_{}_{}{}'.format('bd',var,ph)
+            h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
+
+        for var in ['M1','M2','M3','E1','E2','E3','P']:
+            field_name_u='flux_{}_{}{}'.format('ubd',var,ph)
+            flx=zp_upper.loc['pFz{}'.format(var)]/area
+            h_zp[field_name_u]=flx
+            field_name_l='flux_{}_{}{}'.format('lbd',var,ph)
+            flx=-zp_lower.loc['mFz{}'.format(var)]/area
+            h_zp[field_name_l]=flx
+            field_name='flux_{}_{}{}'.format('bd',var,ph)
             h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
 
         zp_upper=zp.sel(zaxis=500,method='nearest')
@@ -450,7 +487,7 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
         h_zp['W{}'.format(ph)]=h_zp['Wext{}'.format(ph)]+h_zp['Wsg{}'.format(ph)]
 
     # data intepolated from history dump
-    for field in ['sfr10','sfr40','sfr100','surfsp']:
+    for field in h:
         h_zp['{}_hst'.format(field)] = np.interp(zpw.taxis,h.index,h[field])
 
     for field in rates.keys():
@@ -514,7 +551,7 @@ def draw_history(h_zp,metadata,figfname=''):
                 for sf in subfields:
                     if sf in h_zp:
                         l,=plt.plot(h_zp['tMyr'],h_zp[sf])
-                        if f in labels: l.set_label(labels[sf])
+                        if sf in labels: l.set_label(labels[sf])
                 plt.legend(bbox_to_anchor=(1.02, 1),loc=2,fontsize='small')
         plt.ylabel(ylabel)
         plt.yscale(yscale)
@@ -549,11 +586,12 @@ def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True,
     parfile='{}{}/{}.par'.format(base,problem_dir,problem_id)
     params=pa.get_params(parfile)    
 
-    zpfile='{}{}/zprof_merged/{}.whole.zprof.nc'.format(base,problem_dir,problem_id)
+    zpfile='{}{}/zprof_merged/{}.phase5.zprof.nc'.format(base,problem_dir,problem_id)
     from pyathena.utils import compare_files
     zpfiles=glob.glob('{}{}/zprof/{}.*.whole.zprof'.format(base,problem_dir,problem_id))
     zpfiles.sort()
-    if not compare_files(zpfiles[-1],zpfile): zprof_to_xarray(base,problem_dir,problem_id)
+    if len(zpfiles) > 0:
+        if not compare_files(zpfiles[-1],zpfile): zprof_to_xarray(base,problem_dir,problem_id)
     #zpfile='{}{}/zprof_merged/{}.zprof.nc'.format(base,problem_id,problem_id)
     #if not os.path.isfile(zpfile): merge_xarray(base,problem_id)
 
