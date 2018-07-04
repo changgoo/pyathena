@@ -14,7 +14,7 @@ import numpy as np
 
 
 
-def cleanup_directory(base,problem_id,problem_dir=None):
+def cleanup_directory(base,problem_id,problem_dir=None,newbase=None):
     """
        move files into separate directories
        create par files from rst or out
@@ -37,10 +37,16 @@ def cleanup_directory(base,problem_id,problem_dir=None):
 
     # move files to their directory
     nprocs=len(glob.glob('{}{}/id*'.format(base,problem_dir)))
-    for ext in ['zprof','hst','rst','starpar']:
-        subdir='{}{}/{}'.format(base,problem_dir,ext)
+    fields_to_move=['zprof','hst','rst','starpar']
+    if newbase is None: 
+        newbase = base
+    else:
+        fields_to_move += ['vtk']
+
+    for ext in fields_to_move:
+        subdir='{}{}/{}'.format(newbase,problem_dir,ext)
         success[ext]=True
-        if not os.path.isdir(subdir): os.mkdir(subdir)
+        if (not os.path.isdir(subdir)) and (not ext is 'vtk'): os.mkdir(subdir)
         if ext is 'zprof':
             files=glob.glob('{}{}/id0/{}.*.zprof'.format(base,problem_dir,problem_id))
             files+=glob.glob('{}{}/id0/{}.*.zprof.p'.format(base,problem_dir,problem_id))
@@ -51,16 +57,26 @@ def cleanup_directory(base,problem_id,problem_dir=None):
             files=glob.glob('{}{}/id0/{}.????.rst'.format(base,problem_dir,problem_id))
         elif ext is 'starpar':
             files=glob.glob('{}{}/id0/{}.????.starpar.vtk'.format(base,problem_dir,problem_id))
+        elif ext is 'star':
+            files=glob.glob('{}{}/id0/{}.?????.star'.format(base,problem_dir,problem_id))
+        elif ext is 'vtk':
+            print('moving {} files...'.format(ext))
+            files=[]
         else:
             print('{} extention specifier is not known'.format(ext))
             success[ext]=False
+
         if len(files):
             print('moving {} files...'.format(ext))
             for f in files:
+                f2=f.replace('id0/','{}/'.format(ext))
+                f2=f2.replace(base,newbase)
                 if ext is 'hst':
-                    shutil.copy2(f,f.replace('id0/','{}/'.format(ext)))
+                    shutil.copy2(f,f2)
+                    f2=f.replace(base,newbase)
+                    shutil.copy2(f,f2)
                 else:
-                    shutil.move(f,f.replace('id0/','{}/'.format(ext)))
+                    shutil.move(f,f2)
         else:
             success[ext]=False
 
@@ -68,7 +84,26 @@ def cleanup_directory(base,problem_id,problem_dir=None):
             for i in range(1,nprocs):
                 files=glob.glob('{}{}/id{}/{}-id{}.????.rst'.format(base,problem_dir,i,problem_id,i))
                 if len(files): 
-                    for f in files: shutil.move(f,f.replace('id{}/'.format(i),'rst/'))
+                    for f in files: 
+                        f2=f.replace('id{}/'.format(i),'rst/').replace(base,newbase)
+                        shutil.move(f,f2)
+
+        if ext is 'vtk':
+            files=glob.glob('{}{}/id0/{}.????.vtk'.format(base,problem_dir,problem_id))
+            if len(files): 
+                for f in files: 
+                    f2=f.replace(base,newbase)
+                    shutil.move(f,f2)
+                success[ext]=True
+            else:
+                success[ext]=False
+
+            for i in range(1,nprocs):
+                files=glob.glob('{}{}/id{}/{}-id{}.????.vtk'.format(base,problem_dir,i,problem_id,i))
+                if len(files): 
+                    for f in files: 
+                        f2=f.replace(base,newbase)
+                        shutil.move(f,f2)
 
     return success
 
@@ -413,39 +448,43 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             field_name='flux_{}_{}{}'.format('bd',var,ph)
             h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
 
-        zp_upper=zp.sel(zaxis=500,method='nearest')
-        zp_lower=zp.sel(zaxis=-500,method='nearest')
-        h_zp['massflux_out_u5{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/area)*toflux
-        h_zp['massflux_out_l5{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/area)*toflux
-        h_zp['massflux_out_5{}'.format(ph)]=h_zp['massflux_out_u5{}'.format(ph)]+ \
-                                            h_zp['massflux_out_l5{}'.format(ph)]
-        h_zp['massflux_in_u5{}'.format(ph)]=(zp_upper.sel(fields='mFzd')/area)*toflux
-        h_zp['massflux_in_l5{}'.format(ph)]=(-zp_lower.sel(fields='pFzd')/area)*toflux
-        h_zp['massflux_in_5{}'.format(ph)]=h_zp['massflux_in_u5{}'.format(ph)]+ \
-                                           h_zp['massflux_in_l5{}'.format(ph)]
-        h_zp['massflux_5{}'.format(ph)]=h_zp['massflux_out_5{}'.format(ph)]+ \
-                                         h_zp['massflux_in_5{}'.format(ph)]
-        h_zp['v3_out_u5{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/zp_upper.loc['pd'])
-        h_zp['v3_out_l5{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/zp_lower.loc['md'])
-        h_zp['v3_out_5{}'.format(ph)]=0.5*(h_zp['v3_out_u5{}'.format(ph)]+ \
-                                           h_zp['v3_out_l5{}'.format(ph)])
+        for z0 in [500,1000]:
+            zstr='{:02d}'.format(z0/100)
+            zp_upper=zp.sel(zaxis=z0,method='nearest')
+            zp_lower=zp.sel(zaxis=-z0,method='nearest')
+            for ns in range(nscal+1):
+                if ns is 0: var='d'
+                else: var='s{}'.format(ns)
+                field_name_u='massflux_out_u{}_{}{}'.format(zstr,var,ph)
+                flx=zp_upper.loc['pFz{}'.format(var)]/area
+                h_zp[field_name_u]=flx*toflux
+                field_name_l='massflux_out_l{}_{}{}'.format(zstr,var,ph)
+                flx=-zp_lower.loc['mFz{}'.format(var)]/area
+                h_zp[field_name_l]=flx*toflux
+                field_name='massflux_out_{}_{}{}'.format(zstr,var,ph)
+                h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
+ 
+                field_name_u='massflux_in_u{}_{}{}'.format(zstr,var,ph)
+                flx=zp_upper.loc['mFz{}'.format(var)]/area
+                h_zp[field_name_u]=flx*toflux
+                field_name_l='massflux_in_l{}_{}{}'.format(zstr,var,ph)
+                flx=-zp_lower.loc['pFz{}'.format(var)]/area
+                h_zp[field_name_l]=flx*toflux
+                field_name='massflux_in_{}_{}{}'.format(zstr,var,ph)
+                h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
+ 
+                field_name='massflux_{}_{}{}'.format(zstr,var,ph)
+                field_name_out='massflux_out_{}_{}{}'.format(zstr,var,ph)
+                field_name_in='massflux_in_{}_{}{}'.format(zstr,var,ph)
+                h_zp[field_name]=h_zp[field_name_out]+h_zp[field_name_in]
 
-        zp_upper=zp.sel(zaxis=1000,method='nearest')
-        zp_lower=zp.sel(zaxis=-1000,method='nearest')
-        h_zp['massflux_out_u10{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/area)*toflux
-        h_zp['massflux_out_l10{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/area)*toflux
-        h_zp['massflux_out_10{}'.format(ph)]=h_zp['massflux_out_u10{}'.format(ph)]+ \
-                                             h_zp['massflux_out_l10{}'.format(ph)]
-        h_zp['massflux_in_u10{}'.format(ph)]=(zp_upper.sel(fields='mFzd')/area)*toflux
-        h_zp['massflux_in_l10{}'.format(ph)]=(-zp_lower.sel(fields='pFzd')/area)*toflux
-        h_zp['massflux_in_10{}'.format(ph)]=h_zp['massflux_in_u10{}'.format(ph)]+ \
-                                            h_zp['massflux_in_l10{}'.format(ph)]
-        h_zp['massflux_10{}'.format(ph)]=h_zp['massflux_out_10{}'.format(ph)]+ \
-                                         h_zp['massflux_in_10{}'.format(ph)]
-        h_zp['v3_out_u10{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/zp_upper.loc['pd'])
-        h_zp['v3_out_l10{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/zp_lower.loc['md'])
-        h_zp['v3_out_10{}'.format(ph)]=0.5*(h_zp['v3_out_u10{}'.format(ph)]+ \
-                                            h_zp['v3_out_l10{}'.format(ph)])
+                h_zp['v3_out_u{}{}'.format(zstr,ph)]=\
+                  (zp_upper.sel(fields='pFzd')/zp_upper.loc['pd'])
+                h_zp['v3_out_l{}{}'.format(zstr,ph)]=\
+                  (-zp_lower.sel(fields='mFzd')/zp_lower.loc['md'])
+                h_zp['v3_out_{}{}'.format(zstr,ph)]=\
+                  0.5*(h_zp['v3_out_u{}{}'.format(zstr,ph)]+ \
+                       h_zp['v3_out_l{}{}'.format(zstr,ph)])
 
         mid_idx=np.abs(zp.zaxis) < dz
         zpmid=zp[:,mid_idx,:]
