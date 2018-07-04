@@ -503,6 +503,65 @@ def read(rstfile,grids,NGrids,parfile=None,verbose=False):
 
     return rstdata
 
+def read_part(rstfile,grids,nx,verbose=False):
+    nprocs=len(grids)
+    field_maps=[]
+    rstdata={}
+    print nx,nprocs
+
+    basename=os.path.basename(rstfile)
+    pid=basename[:-9]
+    fm,data=read_rst_grid(rstfile,verbose=verbose)
+
+    g=grids[0]
+    gis=g['is']
+    gnx=g['Nx']
+    gie=gis+gnx
+
+    print fm['DENSITY']['nx'],gnx
+
+
+    for k in fm:
+        ib,jb,kb=(0,0,0)
+        if fm[k]['vtype'] == 'ccvar':
+            rstdata[k]=np.empty(nx,dtype=fm[k]['dtype'])
+        elif fm[k]['vtype'] == 'fcvar':
+            if k.startswith('1'): ib=1
+            if k.startswith('2'): jb=1
+            if k.startswith('3'): kb=1
+            rstdata[k]=np.empty((nx[0]+kb,nx[1]+jb,nx[2]+ib),dtype=fm[k]['dtype'])
+
+    for i in range(nprocs):
+        g=grids[i]
+        gis=g['is']
+        gnx=g['Nx']
+        gie=gis+gnx
+        gid=g['id']
+        if gid > 0:
+            rstfname = fname.replace('{}.'.format(pid),'{}-id{}.'.format(pid,gid))
+        else:
+            rstfname = rstfile
+        if not os.path.isfile(rstfname):
+            rstfname = fname.replace('id{}/{}.'.format(gid,pid),
+                                     'id{}/{}-id{}.'.format(gid,pid,gid))
+
+        fm,data=read_rst_grid(rstfname)
+
+        if verbose > 1: print i,fm['DENSITY']['nx'],gnx
+
+        for k in fm:
+            ib,jb,kb=(0,0,0)
+            if fm[k]['vtype'] == 'ccvar':
+                rstdata[k][gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]]=data[k]
+            elif fm[k]['vtype'] == 'fcvar':
+                if k.startswith('1'): ib=1
+                if k.startswith('2'): jb=1
+                if k.startswith('3'): kb=1
+                rstdata[k][gis[2]:gie[2]+kb,gis[1]:gie[1]+jb,gis[0]:gie[0]+ib]=data[k]
+
+    return rstdata
+
+
 def set_xpos_with_dm(dm):
     le=np.array([dm['x1min'],dm['x2min'],dm['x3min']])
     re=np.array([dm['x1max'],dm['x2max'],dm['x3max']])
