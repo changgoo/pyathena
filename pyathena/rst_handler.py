@@ -29,10 +29,9 @@ def parse_misc_info(rstfile):
     data={}
     search_block=['par','time','star','user']
     for block in search_block:
-        #fp.seek(start[block])
-        #print fp.readline()
-        fp.seek(start[block])
-        data[block]=fp.read(size[block])
+        if block in start:
+            fp.seek(start[block])
+            data[block]=fp.read(size[block])
 
     fp.close()
     
@@ -53,7 +52,8 @@ def write_onefile(newfile,data_part,data_par):
             fp.write('\n%s\n' % f)
             fp.write(data_part[f].flatten().tobytes('C'))
     fp.write('\n')
-    for block in ['star','user']: fp.write(data_par[block])
+    for block in ['star','user']: 
+      if block in data_par: fp.write(data_par[block])
     fp.close()
 
     return
@@ -517,6 +517,7 @@ def read_part(rstfile,grids,nx,verbose=False):
     gis=g['is']
     gnx=g['Nx']
     gie=gis+gnx
+    ks=gis[2]
 
     print fm['DENSITY']['nx'],gnx
 
@@ -538,12 +539,12 @@ def read_part(rstfile,grids,nx,verbose=False):
         gie=gis+gnx
         gid=g['id']
         if gid > 0:
-            rstfname = fname.replace('{}.'.format(pid),'{}-id{}.'.format(pid,gid))
+            rstfname = rstfile.replace('{}.'.format(pid),'{}-id{}.'.format(pid,gid))
         else:
             rstfname = rstfile
         if not os.path.isfile(rstfname):
-            rstfname = fname.replace('id{}/{}.'.format(gid,pid),
-                                     'id{}/{}-id{}.'.format(gid,pid,gid))
+            rstfname = rstfile.replace('id{}/{}.'.format(gid,pid),
+                                       'id{}/{}-id{}.'.format(gid,pid,gid))
 
         fm,data=read_rst_grid(rstfname)
 
@@ -552,12 +553,12 @@ def read_part(rstfile,grids,nx,verbose=False):
         for k in fm:
             ib,jb,kb=(0,0,0)
             if fm[k]['vtype'] == 'ccvar':
-                rstdata[k][gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]]=data[k]
+                rstdata[k][gis[2]-ks:gie[2]-ks,gis[1]:gie[1],gis[0]:gie[0]]=data[k]
             elif fm[k]['vtype'] == 'fcvar':
                 if k.startswith('1'): ib=1
                 if k.startswith('2'): jb=1
                 if k.startswith('3'): kb=1
-                rstdata[k][gis[2]:gie[2]+kb,gis[1]:gie[1]+jb,gis[0]:gie[0]+ib]=data[k]
+                rstdata[k][gis[2]-ks:gie[2]-ks+kb,gis[1]:gie[1]+jb,gis[0]:gie[0]+ib]=data[k]
 
     return rstdata
 
