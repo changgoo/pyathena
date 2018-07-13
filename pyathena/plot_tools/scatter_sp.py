@@ -32,11 +32,13 @@ def projection_v(sp,axis):
     return spx,spy,spz
 
 def scatter_sp(sp,ax,axis=0,thickness=10,norm_factor=4., \
-  type='slice',kpc=True,runaway=True):
+  type='slice',kpc=True,runaway=True,active=True):
     unit=set_units(muH=1.4271)
     Msun=unit['mass'].to('Msun').value
     Myr=unit['time'].to('Myr').value
     #print len(sp)
+    if 'flag' in sp and active:
+      sp=sp[sp['flag'] > -2]
     if len(sp) >0:
       runaways=(sp['mass'] == 0.0)
       sp_runaway=sp[runaways]

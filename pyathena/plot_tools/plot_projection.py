@@ -12,7 +12,7 @@ import string
 from .scatter_sp import scatter_sp
 import cPickle as pickle
 
-def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux={},norm_factor=2.):
+def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux={},norm_factor=2.,active=False):
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -46,7 +46,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     ax.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
 
-    if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf',norm_factor=norm_factor)
+    if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf',norm_factor=norm_factor,active=active)
 
     cax=plt.subplot(gs[0,1])
     cbar = fig.colorbar(im,cax=cax,orientation='vertical')

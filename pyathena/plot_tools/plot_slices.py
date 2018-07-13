@@ -121,8 +121,8 @@ def slice(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
-        plt.close()
+        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.close(1)
     else:
         return fig
 
@@ -236,7 +236,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
-        plt.close()
+        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.close(1)
     else:
         return fig

@@ -115,4 +115,5 @@ units={'massflux':(unit['density']*unit['velocity']).to('Msun*pc^(-2)*Myr^(-1)')
        'B3':unit['magnetic_field'].value,
        'Myr':unit['time'].to('Myr').value,
        'Msun':unit['mass'].to('Msun').value,
+       'energyflux':(unit['density']*unit['velocity']**3).to('erg*Myr^(-1)*pc^(-2)').value,
       }
