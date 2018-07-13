@@ -111,7 +111,7 @@ def phase(sq,phfname,bin_fields,aux={}):
     pdfs=my_pdf(sq)
 
     for bf in bin_fields:
-        nbin1, nbin2=128
+        nbin1, nbin2=(128, 128)
         if bf[0] in aux: nbin1=aux[bf[0]]['n_bins']
         if bf[1] in aux: nbin2=aux[bf[1]]['n_bins']
         n_bins=(nbin1, nbin2)

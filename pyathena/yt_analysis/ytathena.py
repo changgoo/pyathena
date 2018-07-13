@@ -18,6 +18,9 @@ def _ndensity(field, data):
 def _ram_pok_z(field,data):
         return data["gas","density"]*data["gas","velocity_z"]**2/kboltz
 
+def _turb_pok_z(field,data):
+        return data["gas","density"]*data["gas","velocity_magnitude"]**2/kboltz
+
 # thermodynamics quantities
 def _pok(field, data):
         return data["gas","pressure"]/kboltz
@@ -62,6 +65,23 @@ def _metal_cl(field,data):
 def _metal_run(field,data):
         return data["athena","specific_scalar[2]"]*data["gas","density"]
 
+def _radius(field, data):
+    return np.sqrt(data['x']**2+data['y']**2+data['z']**2)
+
+def _velocity_r(field, data):
+    return data['velocity_x']*data['x']/data['radius']+\
+           data['velocity_y']*data['y']/data['radius']+\
+           data['velocity_z']*data['z']/data['radius']
+
+def _momentum_r(field, data):
+    return data["cell_mass"]*data["velocity_r"]
+
+def _kinetic_energy(field, data):
+    return 0.5*data["cell_mass"]*data["velocity_magnitude"]**2
+
+def _magnetic_energy(field, data):
+    return data["magnetic_field_magnitude"]**2*data["cell_volume"]/8.0/np.pi
+
 unit_base={"length_unit": (1.0,"pc"), 
            "time_unit": (1.0,"s*pc/km"), 
            "mass_unit": (2.38858753789e-24,"g/cm**3*pc**3"), 
@@ -82,7 +102,19 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     ds.add_field(("gas","nH"),function=_ndensity,sampling_type='cell', \
       units='cm**(-3)',display_name=r'$n_{\rm H}$')
     ds.add_field(("gas","ram_pok_z"),function=_ram_pok_z,sampling_type='cell', \
+      units='K*cm**(-3)',display_name=r'$P_{\rm turb,z}/k_{\rm B}$')
+    ds.add_field(("gas","turb_pok_z"),function=_turb_pok_z,sampling_type='cell', \
       units='K*cm**(-3)',display_name=r'$P_{\rm turb}/k_{\rm B}$')
+    ds.add_field(("gas","radius"), function=_radius, \
+      sampling_type='cell',units='pc', \
+      display_name=r'$r$',force_override=True)
+    ds.add_field(("gas","kinetic_energy"), function=_kinetic_energy, \
+      sampling_type='cell',units='erg', \
+      display_name=r'$E_{\rm kin}$',force_override=True)
+    ds.add_field(("gas","velocity_r"), function=_velocity_r, \
+      sampling_type='cell',units='km/s', display_name=r'$v_r$')
+    ds.add_field(("gas","momentum_r"), function=_momentum_r, \
+      sampling_type='cell',units='Msun*km/s', display_name=r'$p_r$')
     if cooling:
         ds.add_field(("gas","pok"),function=_pok,sampling_type='cell', \
           units='K*cm**(-3)',display_name=r'$P/k_{\rm B}$')
@@ -104,6 +136,10 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     if mhd:
         ds.add_field(("gas","mag_pok"),function=_mag_pok,sampling_type='cell', \
           units='K*cm**(-3)',display_name=r'$P_{\rm mag}/k_{\rm B}$')
+        ds.add_field(("gas","magnetic_energy"), function=_magnetic_energy, \
+          sampling_type='cell', \
+          units='erg', display_name=r'$E_{\rm mag}$',force_override=True)
+
     scal_fields=get_scalars(ds)
     if len(scal_fields)>0:
         ds.add_field(("gas","metal0"),function=_metal,sampling_type='cell', \
