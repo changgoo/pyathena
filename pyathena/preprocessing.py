@@ -73,8 +73,9 @@ def cleanup_directory(base,problem_id,problem_dir=None,newbase=None):
                 f2=f2.replace(base,newbase)
                 if ext is 'hst':
                     shutil.copy2(f,f2)
-                    f2=f.replace(base,newbase)
-                    shutil.copy2(f,f2)
+                    if base != base: 
+                        f2=f.replace(base,newbase)
+                        shutil.copy2(f,f2)
                 else:
                     shutil.move(f,f2)
         else:

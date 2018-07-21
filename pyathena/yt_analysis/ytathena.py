@@ -18,7 +18,7 @@ def _ndensity(field, data):
 def _ram_pok_z(field,data):
         return data["gas","density"]*data["gas","velocity_z"]**2/kboltz
 
-def _turb_pok_z(field,data):
+def _turb_pok(field,data):
         return data["gas","density"]*data["gas","velocity_magnitude"]**2/kboltz
 
 # thermodynamics quantities
@@ -76,10 +76,10 @@ def _velocity_r(field, data):
 def _momentum_r(field, data):
     return data["cell_mass"]*data["velocity_r"]
 
-def _kinetic_energy(field, data):
+def _total_kinetic_energy(field, data):
     return 0.5*data["cell_mass"]*data["velocity_magnitude"]**2
 
-def _magnetic_energy(field, data):
+def _total_magnetic_energy(field, data):
     return data["magnetic_field_magnitude"]**2*data["cell_volume"]/8.0/np.pi
 
 unit_base={"length_unit": (1.0,"pc"), 
@@ -103,12 +103,12 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
       units='cm**(-3)',display_name=r'$n_{\rm H}$')
     ds.add_field(("gas","ram_pok_z"),function=_ram_pok_z,sampling_type='cell', \
       units='K*cm**(-3)',display_name=r'$P_{\rm turb,z}/k_{\rm B}$')
-    ds.add_field(("gas","turb_pok_z"),function=_turb_pok_z,sampling_type='cell', \
+    ds.add_field(("gas","turb_pok"),function=_turb_pok,sampling_type='cell', \
       units='K*cm**(-3)',display_name=r'$P_{\rm turb}/k_{\rm B}$')
     ds.add_field(("gas","radius"), function=_radius, \
       sampling_type='cell',units='pc', \
       display_name=r'$r$',force_override=True)
-    ds.add_field(("gas","kinetic_energy"), function=_kinetic_energy, \
+    ds.add_field(("gas","total_kinetic_energy"), function=_total_kinetic_energy, \
       sampling_type='cell',units='erg', \
       display_name=r'$E_{\rm kin}$',force_override=True)
     ds.add_field(("gas","velocity_r"), function=_velocity_r, \
@@ -136,7 +136,7 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     if mhd:
         ds.add_field(("gas","mag_pok"),function=_mag_pok,sampling_type='cell', \
           units='K*cm**(-3)',display_name=r'$P_{\rm mag}/k_{\rm B}$')
-        ds.add_field(("gas","magnetic_energy"), function=_magnetic_energy, \
+        ds.add_field(("gas","total_magnetic_energy"), function=_total_magnetic_energy, \
           sampling_type='cell', \
           units='erg', display_name=r'$E_{\rm mag}$',force_override=True)
 
