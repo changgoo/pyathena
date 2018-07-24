@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib.cm import register_cmap
 def shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shiftedcmap'):
     '''
     Function to offset the "center" of a colormap. Useful for
@@ -48,7 +48,7 @@ def shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shiftedcmap'):
         cdict['alpha'].append((si, a, a))
 
     newcmap = matplotlib.colors.LinearSegmentedColormap(name, cdict)
-    plt.register_cmap(cmap=newcmap)
+    register_cmap(cmap=newcmap)
 
     return newcmap
 
