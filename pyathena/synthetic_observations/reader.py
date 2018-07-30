@@ -1,7 +1,8 @@
 import pyathena as pa
 import glob
+import numpy as np
 
-def reader(fname,vel=True,mhd=True):
+def data_reader(fname,vel=True,mhd=True):
     coolftn=pa.coolftn()
     dir, id, step, ext, mpi = pa.parse_filename(fname)
     ds=pa.AthenaDataSet(fname)
@@ -82,3 +83,26 @@ def read_data(ds,field,domain):
         data = ds.read_all_data(field)
     
     return data
+
+def select_phase(ds,domain,density,phase='warm'):
+
+    T1=5050.
+    T2=2.e4
+    dmax=50
+    temperature = read_data(ds,'temperature',domain)
+    if phase is 'warm': 
+        idx = (temperature < T1) | (temperature > T2)
+
+    if phase is 'cold': 
+        idx = (temperature >= T1) 
+
+    if phase is '2p': 
+        idx = (temperature > T2) 
+
+    if phase is 'lowd': 
+        idx = (temperature > T2) | (density > dmax)
+    
+    dnew = np.copy(density)
+    dnew[idx] = 0.0
+
+    return dnew
