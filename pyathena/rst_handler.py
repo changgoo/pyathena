@@ -379,8 +379,13 @@ def read_star(fp,nscal=0):
     dvars=['m','x1','x2','x3','v1','v2','v3','age','mage','mdot',\
            'x1_old','x2_old','x3_old',\
           ]
+# additional fields depending on the version
     for i in range(nscal):
         dvars += ['metal{}'.format(i)]
+    dvars += ['mghost','M1ghost','M2ghost','M3ghost']
+    for i in range(nscal):
+        dvars += ['Sghost{}'.format(i)]
+
     star_dict={}
     dtype='i'
     for var in ivars:

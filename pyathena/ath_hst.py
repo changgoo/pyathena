@@ -57,7 +57,8 @@ def read_w_pandas(filename,silent=False,snfile=False,write=True):
         hst = pd.read_pickle(filename+'.p')
         if not silent: print("Reading a history file:" + filename+'.p')
     else: 
-        hst = pd.read_table(filename,skiprows=nheader,names=varlist,sep='\s*',comment='#')
+        hst = pd.read_table(filename,skiprows=nheader,names=varlist,
+                            sep='\s*',engine='python',comment='#')
         if not silent: print("Reading a history file:" + filename)
         hst.to_pickle(filename+'.p') 
 
