@@ -2,6 +2,7 @@ from parse_par import *
 from vtk_reader import parse_filename
 from utils import compare_files
 import subprocess
+import shutil
 import numpy as np
 import string
 import glob
@@ -77,14 +78,12 @@ def main(**kwargs):
     src_hst_name='%s/id0/%s.hst' % (fpath,fbase)
     dst_name='%s/hst/%s.hst' % (newbase,newid)
     if os.path.isfile(src_hst_name):
-        command=['cp',src_hst_name,dst_name]
-        subprocess.call(string.join(command),shell=True)
+        shutil.copy2(src_hst_name,dst_name)
 
     src_hst_name='%s/id0/%s.sn' % (fpath,fbase)
     dst_name='%s/hst/%s.sn' % (newbase,newid)
     if os.path.isfile(src_hst_name):
-        command=['cp',src_hst_name,dst_name]
-        subprocess.call(string.join(command),shell=True)
+        shutil.copy2(src_hst_name,dst_name)
 
     for f in files:
         print(f)
@@ -121,8 +120,7 @@ def main(**kwargs):
         src_starpar_name='%s/id0/%s.%s.starpar.vtk' % (fpath,fbase,fstep)
         dst_name='%s/starpar/%s.%s.starpar.vtk' % (newbase,newid,fstep)
         if os.path.isfile(src_starpar_name): 
-            command=['mv',src_starpar_name,dst_name]
-            subprocess.call(string.join(command),shell=True)
+            shutil.move(src_starpar_name,dst_name)
 
 # move zprof
         src_zprof_names=glob.glob('%s/id0/%s.%s.*.zprof' % (fpath,fbase,fstep))
@@ -130,8 +128,7 @@ def main(**kwargs):
             dst_name=f.replace(fpath,newbase).replace('id0/','zprof/').replace(fbase,newid)
             print dst_name
             if os.path.isfile(f):
-                command=['mv',f,dst_name]
-                subprocess.call(string.join(command),shell=True)
+                shutil.move(f,dst_name)
     subprocess.call('find %s/id* -name *.rst -exec mv {} %s/rst/ \;' % (fpath,newbase),shell=True)
     subprocess.call('rename %s %s %s/rst/*' % (id,newid,newbase),shell=True)
 

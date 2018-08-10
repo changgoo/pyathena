@@ -159,7 +159,7 @@ def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
 
     pickle.dump(slc_data,open(slcfname,'wb'),pickle.HIGHEST_PROTOCOL)
 
-def create_all_pickles(force_recal=False, force_redraw=False, verbose=True, **kwargs):
+def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, verbose=True, **kwargs):
     dir = kwargs['base_directory']+kwargs['directory']
     fname=glob.glob(dir+'id0/'+kwargs['id']+'.????.vtk')
     fname.sort()
@@ -223,23 +223,25 @@ def create_all_pickles(force_recal=False, force_redraw=False, verbose=True, **kw
 
     aux=set_aux(kwargs['id'])
 
-    for i,f in enumerate(fname):
-        slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
-        surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
+    if do_drawing:
+        for i,f in enumerate(fname):
+            slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
+            surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
 
-        starpardir='id0/'
-        if os.path.isdir(dir+'starpar/'): starpardir='starpar/'
-        starfname=dir+starpardir+kwargs['id']+f[-9:-4]+'.starpar.vtk'
+            starpardir='id0/'
+            if os.path.isdir(dir+'starpar/'): starpardir='starpar/'
+            starfname=dir+starpardir+kwargs['id']+f[-9:-4]+'.starpar.vtk'
 
-        tasks={'slice':(not compare_files(f,slcfname+'ng')) or force_redraw,
-               'surf':(not compare_files(f,surfname+'ng')) or force_redraw,
-        }
-        do_task=(tasks['slice'] and tasks['surf'])
-        if verbose: 
-            print('file number: {} -- Tasks to be done ['.format(i),end='')
-            for k in tasks: print('{}:{} '.format(k,tasks[k]),end='')
-            print(']')
-        if tasks['surf']:
-            plot_projection(surfname,starfname,runaway=False,aux=aux['surface_density'])
-        if tasks['slice']:
-            plot_slice(slcfname,starfname,fields_to_draw,aux=aux)
+            tasks={'slice':(not compare_files(f,slcfname+'ng')) or force_redraw,
+                   'surf':(not compare_files(f,surfname+'ng')) or force_redraw,
+            }
+            do_task=(tasks['slice'] and tasks['surf'])
+
+            if verbose:
+                print('file number: {} -- Tasks to be done ['.format(i),end='')
+                for k in tasks: print('{}:{} '.format(k,tasks[k]),end='')
+                print(']')
+            if tasks['surf']:
+                plot_projection(surfname,starfname,runaway=False,aux=aux['surface_density'])
+            if tasks['slice']:
+                plot_slice(slcfname,starfname,fields_to_draw,aux=aux)

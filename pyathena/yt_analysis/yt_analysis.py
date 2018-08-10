@@ -204,7 +204,7 @@ def plot_phase(phfname,bin_fields,aux={}):
     plt.savefig(pngfname,bbox_inches='tight',num=2,dpi=150)
     plt.close()
 
-def main(force_recal=False, force_redraw=False, verbose=50, **kwargs):
+def main(do_drawing=False, force_recal=False, force_redraw=False, verbose=50, **kwargs):
     yt.funcs.mylog.setLevel(verbose) 
     dir = kwargs['base_directory']+kwargs['directory']
     fname=glob.glob(dir+'id0/'+kwargs['id']+'.????.vtk')
@@ -301,32 +301,33 @@ def main(force_recal=False, force_redraw=False, verbose=50, **kwargs):
 
                 phase(sq,phfname,bin_fields,aux=aux)
 
-    for i,f in enumerate(fname):
-        slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
-        surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
-        phfname=dir+'phase/'+kwargs['id']+f[-9:-4]+'.phase.p'
+    if do_drawing:
+        for i,f in enumerate(fname):
+            slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
+            surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
+            phfname=dir+'phase/'+kwargs['id']+f[-9:-4]+'.phase.p'
 
-        starpardir='id0/'
-        if os.path.isdir(dir+'starpar/'): starpardir='starpar/'
-        starfname=dir+starpardir+kwargs['id']+f[-9:-4]+'.starpar.vtk'
+            starpardir='id0/'
+            if os.path.isdir(dir+'starpar/'): starpardir='starpar/'
+            starfname=dir+starpardir+kwargs['id']+f[-9:-4]+'.starpar.vtk'
 
-        tasks={'slice':(not compare_files(f,slcfname+'ng')) or force_redraw,
-               'surf':(not compare_files(f,surfname+'ng')) or force_redraw,
-               'phase':((not compare_files(f,phfname+'ng')) or force_redraw) and do_phase,
-        }
-        do_task=(tasks['slice'] and tasks['surf'] and tasks['phase'])
+            tasks={'slice':(not compare_files(f,slcfname+'ng')) or force_redraw,
+                   'surf':(not compare_files(f,surfname+'ng')) or force_redraw,
+                   'phase':((not compare_files(f,phfname+'ng')) or force_redraw) and do_phase,
+            }
+            do_task=(tasks['slice'] and tasks['surf'] and tasks['phase'])
 
-        if isroot and verbose: 
-            print('file number: {} -- Tasks to be done ['.format(i),end='')
-            for k in tasks: print('{}:{} '.format(k,tasks[k]),end='')
-            print(']')
-        if i%nprocs == rank:
-            if tasks['surf']:
-                plot_projection(surfname,starfname,runaway=False,aux=aux['surface_density'])
-            if tasks['slice']:
-                plot_slice(slcfname,starfname,fields_to_draw,aux=aux)
-            if tasks['phase']:
-                plot_phase(phfname,bin_fields,aux=aux)
+            if isroot and verbose:
+                print('file number: {} -- Tasks to be done ['.format(i),end='')
+                for k in tasks: print('{}:{} '.format(k,tasks[k]),end='')
+                print(']')
+            if i%nprocs == rank:
+                if tasks['surf']:
+                    plot_projection(surfname,starfname,runaway=False,aux=aux['surface_density'])
+                if tasks['slice']:
+                    plot_slice(slcfname,starfname,fields_to_draw,aux=aux)
+                if tasks['phase']:
+                    plot_phase(phfname,bin_fields,aux=aux)
 
 
 if __name__ == '__main__':
