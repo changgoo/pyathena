@@ -56,6 +56,17 @@ class coolftn(object):
 
         return G
 
+    def get_table(self,T1,table):
+        T1idx=self.get_Tidx(T1)
+        Gi=table[T1idx]
+        Gip1=table[T1idx+1]
+        T1i=self.T1[T1idx]
+        T1ip1=self.T1[T1idx+1]
+        G=Gi+(Gip1-Gi)*(T1-T1i)/(T1ip1-T1i)
+
+        return G
+
+
 cool=np.array([  8.27861336e-31,   9.84438083e-31,   1.16632763e-30,
          1.37686216e-30,   1.61969658e-30,   1.89882491e-30,
          2.21859583e-30,   2.58372726e-30,   2.99931983e-30,
