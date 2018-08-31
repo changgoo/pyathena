@@ -1,5 +1,6 @@
 from .los_to_dustpol import los_to_dustpol
 from .tools import get_hat,get_joffset
+from .reader import select_phase
 import healpy as hp
 import pandas as pd
 import numpy as np
@@ -58,7 +59,8 @@ def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap,srange=None,Trange=None):
         Qmap[ipix]=Q
         Umap[ipix]=U
 
-def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],recal=False,file_write=False):
+def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],
+    phase='whole',recal=False,file_write=False):
     
     losdir=domain['losdir']
     step=domain['step']
@@ -79,6 +81,11 @@ def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],recal=False,file_write=Fa
     else:
         outfile='%s/%s%s' % (outdir,'density','.npy')
         nH=np.load(outfile)
+        if phase != 'whole':
+            outfile='%s/%s%s' % (outdir,'temperature','.npy')
+            if os.path.isfile(outfile):
+                temperature=np.load(outfile)
+                nH=select_phase(temperature,nH,phase=phase)    
         outfile='%s/%s%s' % (outdir,'magnetic_field1','.npy')
         B1=np.load(outfile)
         outfile='%s/%s%s' % (outdir,'magnetic_field2','.npy')
@@ -101,7 +108,7 @@ def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],recal=False,file_write=Fa
         Bperp2=Bx*Bx+By*By
         B2=Bperp2+Bz*Bz
         cos2phi=(By*By-Bx*Bx)/Bperp2
-        sin2phi=-Bx*By/Bperp2
+        sin2phi=-Bx*By/Bperp2 # factor 2 is missing here
         cosgam2=Bperp2/B2
  
         ds=deltas*3.085677581467192e+18
