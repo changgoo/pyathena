@@ -1,6 +1,8 @@
 import pyathena as pa
 import matplotlib.pyplot as plt
 from pyathena.plot_tools.scatter_sp import scatter_sp
+import numpy as np
+from matplotlib.colors import LogNorm,SymLogNorm,NoNorm,Normalize
 
 def get_proj_ims(ds,slab_range=None,test=False):
     if slab_range is None:
@@ -16,7 +18,7 @@ def get_proj_ims(ds,slab_range=None,test=False):
     x3min=ds.domain['right_edge'][2]
     x3max=ds.domain['left_edge'][2]
     for ns in range(ns_start,ns_end):
-        g=ds._get_slab_grid(slab=ns,verbose=True)
+        g=ds._get_slab_grid(slab=ns,verbose=test)
         x3min=min(x3min,g[0]['left_edge'][2])
         x3max=max(x3max,g[0]['right_edge'][2])
     extent=(x2min,x2max,x3min,x3max)
