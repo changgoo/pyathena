@@ -32,7 +32,7 @@ def projection_v(sp,axis):
     return spx,spy,spz
 
 def scatter_sp(sp,ax,axis=0,thickness=10,norm_factor=4., \
-  type='slice',kpc=True,runaway=True,active=True):
+  type='slice',kpc=True,runaway=True,active=True,scale_func=np.sqrt):
     unit=set_units(muH=1.4271)
     Msun=unit['mass'].to('Msun').value
     Myr=unit['time'].to('Myr').value
@@ -64,7 +64,7 @@ def scatter_sp(sp,ax,axis=0,thickness=10,norm_factor=4., \
             spx = spx/1.e3
             spy = spy/1.e3
         if type == 'slice': xbool=abs(spz) < thickness
-        spm=np.sqrt(sp_normal['mass']*Msun)/norm_factor
+        spm=scale_func(sp_normal['mass']*Msun)/norm_factor
         spa=sp_normal['age']*Myr
         iyoung=np.where(spa < 40.)
         #print len(iyoung[0])

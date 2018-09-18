@@ -12,7 +12,7 @@ import string
 from .scatter_sp import scatter_sp
 import cPickle as pickle
 
-def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux={},norm_factor=2.,active=False):
+def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux={},norm_factor=2.,active=False,scale_func=np.sqrt):
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -46,7 +46,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     ax.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
 
-    if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf',norm_factor=norm_factor,active=active)
+    if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf',norm_factor=norm_factor,active=active,scale_func=scale_func)
 
     cax=plt.subplot(gs[0,1])
     cbar = fig.colorbar(im,cax=cax,orientation='vertical')
@@ -60,13 +60,13 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
       cbar.set_label(r'${\rm age [Myr]}$')
  
       s1=ax.scatter(Lx*2,Lz*2,
-        s=np.sqrt(1.e3)/norm_factor,color='k',
+        s=scale_func(1.e3)/norm_factor,color='k',
         alpha=.8,label=r'$10^3 M_\odot$')
       s2=ax.scatter(Lx*2,Lz*2,
-        s=np.sqrt(1.e4)/norm_factor,color='k',
+        s=scale_func(1.e4)/norm_factor,color='k',
         alpha=.8,label=r'$10^4 M_\odot$')
       s3=ax.scatter(Lx*2,Lz*2,
-        s=np.sqrt(1.e5)/norm_factor,
+        s=scale_func(1.e5)/norm_factor,
         color='k',alpha=.8,label=r'$10^5 M_\odot$')
 
       ax.set_xlim(x0,x0+Lx)
