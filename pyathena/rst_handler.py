@@ -159,9 +159,12 @@ def degrade(rstdata,scalar=0):
     cc_varnames=['DENSITY','1-MOMENTUM','2-MOMENTUM','3-MOMENTUM',\
                  'ENERGY','POTENTIAL']
     fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
+
     scalar_varnames=[]
     for ns in range(scalar):
         scalar_varnames.append('SCALAR %d' % ns)
+    if scalar: cc_varnames += scalar_varnames
+
     rstdata_new={}
     for f in cc_varnames:
         if f is 'ENERGY':
