@@ -84,23 +84,24 @@ def read_data(ds,field,domain):
     
     return data
 
-def select_phase(ds,domain,density,phase='warm'):
+def select_phase(temperature,density,phase='warm'):
 
     T1=5050.
     T2=2.e4
     dmax=50
-    temperature = read_data(ds,'temperature',domain)
-    if phase is 'warm': 
+    if phase is 'whole': 
+        return density
+    elif phase is 'warm':
         idx = (temperature < T1) | (temperature > T2)
-
-    if phase is 'cold': 
+    elif phase is 'cold': 
         idx = (temperature >= T1) 
-
-    if phase is '2p': 
+    elif phase is '2p': 
         idx = (temperature > T2) 
-
-    if phase is 'lowd': 
+    elif phase is 'lowd': 
         idx = (temperature > T2) | (density > dmax)
+    else:
+        print("{} is not supported".format(phase))
+        return -1
     
     dnew = np.copy(density)
     dnew[idx] = 0.0

@@ -416,9 +416,10 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
         h_zp['Eth{}'.format(ph)] = 1.5*zp.sel(fields='P').sum(dim='zaxis')/Atot
         h_zp['sigma_eff{}'.format(ph)] = h_zp['cs{}'.format(ph)]**2 + h_zp['v3{}'.format(ph)]**2
         if mhd:
-            h_zp['sigma_eff{}'.format(ph)] += 0.5*(h_zp['vA1{}'.format(ph)]**2 + 
-                                                   h_zp['vA2{}'.format(ph)]**2 - 
-                                                   h_zp['vA3{}'.format(ph)]**2)
+            h_zp['sigma_eff{}'.format(ph)] = h_zp['sigma_eff{}'.format(ph)] + \
+                                             0.5*(h_zp['vA1{}'.format(ph)]**2 + 
+                                                  h_zp['vA2{}'.format(ph)]**2 - 
+                                                  h_zp['vA3{}'.format(ph)]**2)
         h_zp['sigma_eff{}'.format(ph)] = np.sqrt(h_zp['sigma_eff{}'.format(ph)])
 
         zp_upper=zp[:,-1,:]
@@ -496,20 +497,22 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
         h_zp['Pmid{}'.format(ph)] = h_zp['Pth_mid{}'.format(ph)]+h_zp['Pturb_mid{}'.format(ph)]
         if mhd:
             oPmag = 0.5*(zpmid.loc['B1']/zpmid.loc['A'])**2
-            oPmag += 0.5*(zpmid.loc['B2']/zpmid.loc['A'])**2
-            oPmag += 0.5*(zpmid.loc['B3']/zpmid.loc['A'])**2
+            oPmag = oPmag + 0.5*(zpmid.loc['B2']/zpmid.loc['A'])**2
+            oPmag = oPmag + 0.5*(zpmid.loc['B3']/zpmid.loc['A'])**2
             h_zp['Pmag_mean_mid{}'.format(ph)] = oPmag.mean(axis=0)*toPok
-            oPmag -= (zpmid.loc['B3']/zpmid.loc['A'])**2
+            oPmag = oPmag - (zpmid.loc['B3']/zpmid.loc['A'])**2
             h_zp['Pimag_mean_mid{}'.format(ph)] = oPmag.mean(axis=0)*toPok
-            h_zp['Pmid{}'.format(ph)] += h_zp['Pimag_mean_mid{}'.format(ph)]
+            h_zp['Pmid{}'.format(ph)] = h_zp['Pmid{}'.format(ph)] + \
+                                        h_zp['Pimag_mean_mid{}'.format(ph)]
 
             tPmag = (zpmid.loc['dPB1']/zpmid.loc['A'])
-            tPmag += (zpmid.loc['dPB2']/zpmid.loc['A'])
-            tPmag += (zpmid.loc['dPB3']/zpmid.loc['A'])
+            tPmag = tPmag + (zpmid.loc['dPB2']/zpmid.loc['A'])
+            tPmag = tPmag + (zpmid.loc['dPB3']/zpmid.loc['A'])
             h_zp['Pmag_turb_mid{}'.format(ph)] = tPmag.mean(axis=0)*toPok
-            tPmag -= 2.0*(zpmid.loc['dPB3']/zpmid.loc['A'])
+            tPmag = tPmag - 2.0*(zpmid.loc['dPB3']/zpmid.loc['A'])
             h_zp['Pimag_turb_mid{}'.format(ph)] = tPmag.mean(axis=0)*toPok
-            h_zp['Pmid{}'.format(ph)] += h_zp['Pimag_turb_mid{}'.format(ph)]
+            h_zp['Pmid{}'.format(ph)] = h_zp['Pmid{}'.format(ph)] + \
+                                        h_zp['Pimag_turb_mid{}'.format(ph)]
 
 
         dWext=zp.sel(fields='dWext')/zpw.sel(fields='A')
