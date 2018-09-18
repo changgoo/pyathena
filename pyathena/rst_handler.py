@@ -73,18 +73,17 @@ def write_allfile(pardata,rstdata,grids,id='newrst',dname='/tigress/changgoo/rst
                  'ENERGY','POTENTIAL']
     fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
 
-    for i in range(ngrids):
+    for g in grids:
+        i=g['id']
         if i == 0:
           fname=id+'.%4.4d.rst' % itime
         else:
           fname=id+'-id%d.%4.4d.rst' % (i,itime)
 
-        g=grids[i]
         gis=g['is']
         gnx=g['Nx']
         gie=gis+gnx
 
-        #print g['filename'].split('.'),gis,gie,fname
         data={}
         for f in cc_varnames:
             if f in fields:
@@ -102,6 +101,7 @@ def write_allfile(pardata,rstdata,grids,id='newrst',dname='/tigress/changgoo/rst
             f='SCALAR %d' % ns
             if f in fields:
                 data[f]=rstdata[f][gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]]
+        if verbose: dname+fname
         write_onefile(dname+fname,data,pardata)
 
     return

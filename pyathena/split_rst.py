@@ -5,7 +5,7 @@ import argparse
 
 import rst_handler as rh
 
-def merge(**kwargs):
+def split(**kwargs):
     f_lowres=kwargs['file']
     dir=kwargs['dir']
     id=kwargs['id']
@@ -31,7 +31,7 @@ def merge(**kwargs):
     par=pardata_low['par']
 
     new_Nx=Nx
-    new_NB=Nx
+    new_NB=[64,64,64]
     new_grids,new_NG=rh.calculate_grid(new_Nx,new_NB)
 
     par=par.replace('NGrid_x1      = %d' % NG[0],'NGrid_x1      = %d' % new_NG[0])
@@ -54,7 +54,5 @@ if __name__ == '__main__':
                         help='dir of new dataset')
     parser.add_argument('-ns','--noscalar',action='store_true',help='noscalar')
     args = parser.parse_args()
-    merge(**vars(args))
+
     split(**vars(args))
-    refine(**vars(args))
-    degrade(**vars(args))

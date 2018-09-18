@@ -5,14 +5,14 @@ import argparse
 
 import rst_handler as rh
 
-def merge(**kwargs):
-    f_lowres=kwargs['file']
+def degrade(**kwargs):
+    f_orig=kwargs['file']
     dir=kwargs['dir']
     id=kwargs['id']
-    itime=int(f_lowres[-8:-4])
-    print f_lowres,dir,id,itime
+    itime=int(f_orig[-8:-4])
+    print f_orig,dir,id,itime
 
-    par=rh.parse_par(f_lowres)
+    par=rh.parse_par(f_orig)
     dm=par['domain1']
     Nx=np.array([dm['Nx1'],dm['Nx2'],dm['Nx3']])
     Ng=np.array([dm['NGrid_x1'],dm['NGrid_x2'],dm['NGrid_x3']])
@@ -20,27 +20,28 @@ def merge(**kwargs):
 
     grids,NG=rh.calculate_grid(Nx,Nb)
 
-    rstdata_low=rh.read(f_lowres,grids,NG,verbose=True)
+    rstdata=rh.read(f_orig,grids,NG,verbose=True)
     ns=0
-    for f in rstdata_low:
+    for f in rstdata:
         if f.startswith('SCALAR'): ns+=1
     if kwargs['noscalar']: ns=0
     print 'nscalars:',ns
     
-    pardata_low=rh.parse_misc_info(f_lowres)
-    par=pardata_low['par']
+    rstdata_degrade=rh.degrade(rstdata,scalar=ns)
+    grids_deg,NG_deg=rh.calculate_grid(Nx/2,[32,32,64])
 
-    new_Nx=Nx
-    new_NB=Nx
-    new_grids,new_NG=rh.calculate_grid(new_Nx,new_NB)
-
-    par=par.replace('NGrid_x1      = %d' % NG[0],'NGrid_x1      = %d' % new_NG[0])
-    par=par.replace('NGrid_x2      = %d' % NG[1],'NGrid_x2      = %d' % new_NG[1])
-    par=par.replace('NGrid_x3      = %d' % NG[2],'NGrid_x3      = %d' % new_NG[2])
+    pardata=rh.parse_misc_info(f_orig)
+    par=pardata['par']
+    par=par.replace('Nx1           = %d' % Nx[0],'Nx1           = %d' % (Nx[0]/2))
+    par=par.replace('Nx2           = %d' % Nx[1],'Nx2           = %d' % (Nx[1]/2))
+    par=par.replace('Nx3           = %d' % Nx[2],'Nx3           = %d' % (Nx[2]/2))
+    par=par.replace('NGrid_x1      = %d' % NG[0],'NGrid_x1      = %d' % NG_deg[0])
+    par=par.replace('NGrid_x2      = %d' % NG[1],'NGrid_x2      = %d' % NG_deg[1])
+    par=par.replace('NGrid_x3      = %d' % NG[2],'NGrid_x3      = %d' % NG_deg[2])
     par=par.replace('AutoWithNProc = %d' % NG[0]*NG[1]*NG[2],'AutoWithNProc = 0')
-    pardata_low['par']=par
+    pardata['par']=par
 
-    rh.write_allfile(pardata_low,rstdata_low,new_grids,\
+    rh.write_allfile(pardata,rstdata_degrade,grids_deg,\
         dname=dir,id=id,itime=itime,verbose=True,scalar=ns)
 
 if __name__ == '__main__':
@@ -54,7 +55,4 @@ if __name__ == '__main__':
                         help='dir of new dataset')
     parser.add_argument('-ns','--noscalar',action='store_true',help='noscalar')
     args = parser.parse_args()
-    merge(**vars(args))
-    split(**vars(args))
-    refine(**vars(args))
     degrade(**vars(args))
