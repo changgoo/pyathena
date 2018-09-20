@@ -382,7 +382,7 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
         h_zp['H{}'.format(ph)]=np.sqrt((zp.sel(fields='d')*zp.zaxis**2).sum(dim='zaxis')/dphase)
         for ax in ['1','2','3']:
             Ekf = 'Ek{}'.format(ax)
-            if (ax == '2') and ('dEk2' in zp.fields): Ekf = 'dEk2'
+            if (ax == '2') and ('dEk2' in np.array(zp.fields)): Ekf = 'dEk2'
             h_zp['v{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields=Ekf).sum(dim='zaxis')/dphase)
             h_zp['Ek{}{}'.format(ax,ph)] = zp.sel(fields=Ekf).sum(dim='zaxis')/Atot
             if mhd:

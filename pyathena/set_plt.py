@@ -95,6 +95,11 @@ labels={'density':r'$n_H$',
         'massflux_bd_s3_2p':r'$\dot{\Sigma}_{\rm Z,run,2p}(|z|=L_z/2$)',
         'massflux_out_5_h':r'$\dot{\Sigma}_{\rm hot}(|z|=500{\rm \,pc})$',
         'massflux_out_10_h':r'$\dot{\Sigma}_{\rm hot}(|z|=1{\rm \,kpc})$',
+        'massfrac':'Fraction of Gas',
+        'mf_2p':'two phase',
+        'mf_c':'cold',
+        'mf_u':'unstable',
+        'mf_w':'warm',
        }
 
 unit=set_units(muH=1.4271)
