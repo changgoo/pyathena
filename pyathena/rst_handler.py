@@ -366,7 +366,7 @@ def parse_rst(var,par,fm):
         
     return 1
 
-def read_star(fp,nscal=0):
+def read_star(fp,nscal=0,ghost=True):
 # This works for MST_4pc
 #    ivars=['id','merge_history','isnew','active']
 #    dvars=['m','x1','x2','x3','v1','v2','v3','age','mage','mdot',\
@@ -385,9 +385,11 @@ def read_star(fp,nscal=0):
 # additional fields depending on the version
     for i in range(nscal):
         dvars += ['metal{}'.format(i)]
-    dvars += ['mghost','M1ghost','M2ghost','M3ghost']
-    for i in range(nscal):
-        dvars += ['Sghost{}'.format(i)]
+
+    if ghost:
+        dvars += ['mghost','M1ghost','M2ghost','M3ghost']
+        for i in range(nscal):
+            dvars += ['Sghost{}'.format(i)]
 
     star_dict={}
     dtype='i'
@@ -402,7 +404,7 @@ def read_star(fp,nscal=0):
 
     return star_dict
 
-def read_rst_grid(rstfile,verbose=False):
+def read_rst_grid(rstfile,verbose=False,starghost=True):
     
     par=parse_par(rstfile)
 
@@ -429,7 +431,7 @@ def read_rst_grid(rstfile,verbose=False):
                 star_list=[] 
                 if nstar > 0:
                   for i in range(nstar):
-                      star_list.append(read_star(fp,nscal=nscal))
+                      star_list.append(read_star(fp,nscal=nscal,ghost=starghost))
                   if verbose: 
                       print var, nstar
                       print star_list[0]
@@ -449,7 +451,7 @@ def read_rst_grid(rstfile,verbose=False):
 
     return rst,data_array
 
-def read(rstfile,grids,NGrids,parfile=None,verbose=False):
+def read(rstfile,grids,NGrids,parfile=None,verbose=False,starghost=True):
     if parfile==None: par=parse_par(rstfile)
     else: par=parse_par(parfile)
     nprocs=len(grids)#par['domain1']['AutoWithNProc']
@@ -462,7 +464,7 @@ def read(rstfile,grids,NGrids,parfile=None,verbose=False):
     dirname=os.path.dirname(rstfile)
     basename=os.path.basename(rstfile)
 
-    fm,data=read_rst_grid(rstfile,verbose=verbose)
+    fm,data=read_rst_grid(rstfile,verbose=verbose,starghost=starghost)
 
     g=grids[0]
     gis=g['is']
@@ -495,7 +497,7 @@ def read(rstfile,grids,NGrids,parfile=None,verbose=False):
         rstfname = '%s/%s-id%d%s' % (dirname,basename[:-9],i,basename[-9:])
         if not os.path.isfile(rstfname):
             rstfname = '%s/../id%d/%s-id%d%s' % (dirname,i,basename[:-9],i,basename[-9:])
-        fm,data=read_rst_grid(rstfname)
+        fm,data=read_rst_grid(rstfname,starghost=starghost)
 
         if verbose > 1: print i,fm['DENSITY']['nx'],gnx
 
