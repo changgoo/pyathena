@@ -1,10 +1,13 @@
 import matplotlib as mpl
 mpl.use('agg')
-from pyathena import preprocessing
-from pyathena.set_plt import *
+
 import glob
 import sys,os,shutil
 import pandas as pd
+
+sys.path.insert(0,'../')
+from pyathena import preprocessing
+from pyathena.set_plt import *
 
 narg=len(sys.argv)
 system='tigress'

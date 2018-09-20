@@ -28,6 +28,12 @@ def degrade(**kwargs):
     print 'nscalars:',ns
     
     rstdata_degrade=rh.degrade(rstdata,scalar=ns)
+    if kwargs['hydro']:
+        fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
+        for f in fc_varnames:
+            if f in rstdata_degrade: 
+                print 'removing {}'.format(f)
+                del rstdata_degrade[f]
     grids_deg,NG_deg=rh.calculate_grid(Nx/2,[32,32,64])
 
     pardata=rh.parse_misc_info(f_orig)
@@ -54,5 +60,6 @@ if __name__ == '__main__':
     parser.add_argument('-d','--dir',type=str,
                         help='dir of new dataset')
     parser.add_argument('-ns','--noscalar',action='store_true',help='noscalar')
+    parser.add_argument('-hd','--hydro',action='store_true',help='hydro')
     args = parser.parse_args()
     degrade(**vars(args))

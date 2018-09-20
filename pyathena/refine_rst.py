@@ -62,6 +62,13 @@ def refine(**kwargs):
                 #print g
                 grids_part.append(g_new)
         rstdata_refine=rh.refine(rstdata,scalar=ns)
+        if kwargs['hydro']:
+            fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
+            for f in fc_varnames:
+                if f in rstdata_refine: 
+                    print 'removing {}'.format(f)
+                    del rstdata_refine[f]
+
         rh.write_allfile(pardata,rstdata_refine,grids_part,\
                       id=id,dname=dir,\
                       itime=itime,verbose=True,scalar=ns)
@@ -76,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('-d','--dir',type=str,
                         help='dir of new dataset')
     parser.add_argument('-ns','--noscalar',action='store_true',help='noscalar')
+    parser.add_argument('-hd','--hydro',action='store_true',help='hydro')
     args = parser.parse_args()
 
     refine(**vars(args))
