@@ -26,14 +26,9 @@ if narg > 2:
 else:
     dirs=glob.glob('{}/*'.format(base))
 ids=[]
-do_pickling = False
 for dd in dirs:
     if os.path.isdir(dd):
-        if os.path.isdir(dd+'/id0/'):
-            do_pickling = True
-        else:
-            do_pickling = False
-        if os.path.isdir(dd+'/hst/'):
+        if os.path.isdir(dd+'/slice/'):
             ids.append(os.path.basename(dd))
 
 for pid in ids:
