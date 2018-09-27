@@ -58,7 +58,8 @@ def write_onefile(newfile,data_part,data_par):
 
     return
 
-def write_allfile(pardata,rstdata,grids,id='newrst',dname='/tigress/changgoo/rst/',itime=0,verbose=False,scalar=0):
+def write_allfile(pardata,rstdata,grids,grid_disp=np.array([0,0,0]),
+  id='newrst',dname='/tigress/changgoo/rst/',itime=0,verbose=False,scalar=0):
     ngrids=len(grids)
 #    if not (ds.domain['Nx'][::-1] == rstdata['DENSITY'].shape).all():
 #       print 'mismatch in DIMENSIONS!!'
@@ -80,7 +81,7 @@ def write_allfile(pardata,rstdata,grids,id='newrst',dname='/tigress/changgoo/rst
         else:
           fname=id+'-id%d.%4.4d.rst' % (i,itime)
 
-        gis=g['is']
+        gis=g['is']-grid_disp
         gnx=g['Nx']
         gie=gis+gnx
 
