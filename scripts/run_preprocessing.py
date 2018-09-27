@@ -18,6 +18,8 @@ if narg > 1:
         base='/u/ckim14/'
     elif system =='tigress':
         base='/tigress/changgoo/'
+    elif system =='perseus':
+        base='/perseus/scratch/gpfs/changgoo/'
     else:
         print '{} is not supported'.format(system)
         sys.exit()
@@ -30,6 +32,7 @@ do_pickling = False
 for dd in dirs:
     if os.path.isdir(dd):
         if os.path.isdir(dd+'/id0/'):
+            ids.append(os.path.basename(dd))
             do_pickling = True
         else:
             do_pickling = False
@@ -39,7 +42,7 @@ for dd in dirs:
 if narg > 3:
     do_pickling = eval(sys.argv[3])
 
-print system,ids,do_pickling
+print system,base,dd,ids,do_pickling
 for problem_id in ids: 
     preprocessing.doall(base,problem_id,do_pickling=do_pickling)
 
