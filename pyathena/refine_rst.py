@@ -69,7 +69,7 @@ def refine(**kwargs):
                     print 'removing {}'.format(f)
                     del rstdata_refine[f]
 
-        rh.write_allfile(pardata,rstdata_refine,grids_part,\
+        rh.write_allfile(pardata,rstdata_refine,grids_part,grid_disp=is_refine,\
                       id=id,dname=dir,\
                       itime=itime,verbose=True,scalar=ns)
 
