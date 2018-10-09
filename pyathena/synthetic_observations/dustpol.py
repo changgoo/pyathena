@@ -43,7 +43,7 @@ def make_pol_map(los_all,pix_arr,domain,Imap,Umap,Qmap,srange=None,Trange=None):
     los=los_all[0]
     if srange != None: sidx=(los.index >= srange[0]) & (los.index <= srange[1])
 
-    args={'Bnu':41495.876171482356, 'sigma':1.e-26, 'p0':0.2, 'attenuation': 0}
+    args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
 
     for ipix,los in list(zip(pix_arr,los_all)):
         if srange != None: los=los[sidx]
@@ -100,7 +100,7 @@ def make_map(domain,deltas,smax,Nside=4,center=[0,0,0],
         Bx=hat['X'][0][:,np.newaxis]*B1+hat['X'][1][:,np.newaxis]*B2+hat['X'][2][:,np.newaxis]*B3
         By=hat['Y'][0][:,np.newaxis]*B1+hat['Y'][1][:,np.newaxis]*B2 #+hat['Y'][2]*B3 -- this is zer
  
-        args={'Bnu':41495.876171482356, 'sigma':1.e-26, 'p0':0.2, 'attenuation': 0}
+        args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
         Bnu=args['Bnu']
         p0=args['p0']
         sigma=args['sigma']
@@ -140,7 +140,7 @@ def make_map_from_v(domain,deltas,smax,Nside=4,center=[0,0,0],srange=None,Trange
             los.append(np.load(outfile))
     nH,Bx,By,Bz,=los
 
-    args={'Bnu':41495.876171482356, 'sigma':1.e-26, 'p0':0.2, 'attenuation': 0}
+    args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
     Bnu=args['Bnu']
     p0=args['p0']
     sigma=args['sigma']
@@ -149,6 +149,34 @@ def make_map_from_v(domain,deltas,smax,Nside=4,center=[0,0,0],srange=None,Trange
     B2=Bperp2+Bz*Bz
     cos2phi=(By*By-Bx*Bx)/Bperp2
     sin2phi=-Bx*By/Bperp2
+    cosgam2=Bperp2/B2
+
+    ds=deltas*3.085677581467192e+18
+    dtau=sigma*nH*ds
+
+    I=Bnu*(1.0-p0*(cosgam2-2./3.0))*dtau
+    Q=p0*Bnu*cos2phi*cosgam2*dtau
+    U=p0*Bnu*sin2phi*cosgam2*dtau
+
+    return I,Q,U
+
+def calc_IQU_XY(losdata,domain,deltas):
+
+    nH,B1,B2,B3=losdata
+    
+    Bz=B3
+    Bx=B1
+    By=B2
+
+    args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
+    Bnu=args['Bnu']
+    p0=args['p0']
+    sigma=args['sigma']
+
+    Bperp2=Bx*Bx+By*By
+    B2=Bperp2+Bz*Bz
+    cos2phi=(By*By-Bx*Bx)/Bperp2
+    sin2phi=-2.0*Bx*By/Bperp2
     cosgam2=Bperp2/B2
 
     ds=deltas*3.085677581467192e+18
