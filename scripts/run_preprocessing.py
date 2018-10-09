@@ -36,8 +36,8 @@ for dd in dirs:
             do_pickling = True
         else:
             do_pickling = False
-        if os.path.isdir(dd+'/hst/'):
-            ids.append(os.path.basename(dd))
+            if os.path.isdir(dd+'/hst/'):
+                ids.append(os.path.basename(dd))
 
 if narg > 3:
     do_pickling = eval(sys.argv[3])
