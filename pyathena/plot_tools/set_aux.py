@@ -33,6 +33,16 @@ def set_aux(model='solar',verbose=False):
         cmap=cm.RdBu_r,clim=(-200,200), \
         cticks=(-100,0,100), \
         n_bins=256, norm=Normalize())
+    aux['velocity_x']=dict(label=r'$v_x\;[{\rm km/s}]$', \
+        unit='km/s', limits=(-1500,1500), \
+        cmap=cm.RdBu_r,clim=(-200,200), \
+        cticks=(-100,0,100), \
+        n_bins=256, norm=Normalize())
+    aux['velocity_y']=dict(label=r'$v_y\;[{\rm km/s}]$', \
+        unit='km/s', limits=(-1500,1500), \
+        cmap=cm.RdBu_r,clim=(-200,200), \
+        cticks=(-100,0,100), \
+        n_bins=256, norm=Normalize())
     aux['magnetic_field_strength']=dict(label=r'$B\;[\mu{\rm G}]$', \
         unit='uG', \
         cmap=cm.viridis,clim=(0.01,10),factor=1, \

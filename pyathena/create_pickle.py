@@ -137,6 +137,10 @@ def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
             pdata=ds.read_all_data('pressure')
         elif f is 'velocity_z':
             pdata=ds.read_all_data('velocity3')
+        elif f is 'velocity_y':
+            pdata=ds.read_all_data('velocity2')
+        elif f is 'velocity_x':
+            pdata=ds.read_all_data('velocity1')
         elif f is 'mag_pok':
             pdata=ds.read_all_data('magnetic_pressure')
         elif f is 'nH':

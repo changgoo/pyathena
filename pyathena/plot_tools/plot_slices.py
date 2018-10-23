@@ -134,15 +134,20 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
 
     slc_data=pickle.load(open(slcfname,'rb'))
     x0=slc_data['yextent'][0]
-    y0=slc_data['yextent'][3]
+    y0=slc_data['zextent'][2]
+    z0=slc_data['yextent'][2]
     Lx=slc_data['yextent'][1]-slc_data['yextent'][0]
+    Ly=slc_data['zextent'][3]-slc_data['zextent'][2]
     Lz=slc_data['yextent'][3]-slc_data['yextent'][2]
+    print Lx,Ly,Lz
+    print x0,y0,z0
     Lz=Lz/zoom
     ix=2
+    iy=ix*Ly/Lx
     iz=ix*Lz/Lx
     nf=len(fields_to_draw)
-    fig=plt.figure(1,figsize=(ix*nf,iz+ix*1.2))
-    gs = gridspec.GridSpec(2,nf,height_ratios=[iz,ix])
+    fig=plt.figure(1,figsize=(ix*nf,iz+iy*1.2))
+    gs = gridspec.GridSpec(2,nf,height_ratios=[iz,iy])
     gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
 
     if stars:
@@ -158,13 +163,13 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
         for j,f in enumerate(fields_to_draw):
             ax=plt.subplot(gs[i,j])
             if f is 'star_particles': 
-                scatter_sp(sp,ax,axis=axis,norm_factor=norm_factor,type='surf')
+                scatter_sp(sp,ax,axis=axis,norm_factor=norm_factor,type='surf',active=False)
                 if axis is 'y': 
                     ax.set_xlim(x0,x0+Lx)
-                    ax.set_ylim(y0,y0+Lz);
+                    ax.set_ylim(z0,z0+Lz);
                 if axis is 'z': 
                     ax.set_xlim(x0,x0+Lx)
-                    ax.set_ylim(x0,x0+Lx)
+                    ax.set_ylim(y0,y0+Ly)
                 ax.set_aspect(1.0)
             else:
                 data=slc_data[axis][f]
@@ -212,7 +217,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
       color='k',alpha=.8,label=r'$10^5 M_\odot$')
 
     ax.set_xlim(x0,x0+Lx)
-    ax.set_ylim(y0,y0+Lz);
+    ax.set_ylim(z0,z0+Lz);
     legend=ax.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'), 
                      scatterpoints = 1, loc='lower left',fontsize='medium',frameon=True)
 
