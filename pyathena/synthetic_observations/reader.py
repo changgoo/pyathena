@@ -69,16 +69,17 @@ def setup_domain(fname,vel=True,mhd=True,shear=True):
     return ds,domain
 
 
-def read_data(ds,field,domain):
+def read_data(ds,field,domain,vy0_subtract=True):
 
     if field is 'temperature':
         coolftn=pa.coolftn()
         data=coolftn.get_temp(ds.read_all_data('T1'))
     elif field is 'velocity2':
-        r3d,x3d,y3d,z3d=pa.pos3d(domain)
-        vy0=-domain['qshear']*domain['Omega']*x3d
         data = ds.read_all_data(field)
-        data -= vy0
+        if vy0_subtract:
+            r3d,x3d,y3d,z3d=pa.pos3d(domain)
+            vy0=-domain['qshear']*domain['Omega']*x3d
+            data -= vy0
     else:
         data = ds.read_all_data(field)
     

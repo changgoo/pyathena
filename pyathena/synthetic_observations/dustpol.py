@@ -165,8 +165,64 @@ def calc_IQU_XY(losdata,domain,deltas):
     nH,B1,B2,B3=losdata
     
     Bz=B3
-    Bx=B1
+    Bx=-B2
+    By=B1
+
+    args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
+    Bnu=args['Bnu']
+    p0=args['p0']
+    sigma=args['sigma']
+
+    Bperp2=Bx*Bx+By*By
+    B2=Bperp2+Bz*Bz
+    cos2phi=(By*By-Bx*Bx)/Bperp2
+    sin2phi=-2.0*Bx*By/Bperp2
+    cosgam2=Bperp2/B2
+
+    ds=deltas*3.085677581467192e+18
+    dtau=sigma*nH*ds
+
+    I=Bnu*(1.0-p0*(cosgam2-2./3.0))*dtau
+    Q=p0*Bnu*cos2phi*cosgam2*dtau
+    U=p0*Bnu*sin2phi*cosgam2*dtau
+
+    return I,Q,U
+
+def calc_IQU_YZ(losdata,domain,deltas):
+
+    nH,B1,B2,B3=losdata
+    
+    Bz=-B1
+    Bx=-B3
     By=B2
+
+    args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
+    Bnu=args['Bnu']
+    p0=args['p0']
+    sigma=args['sigma']
+
+    Bperp2=Bx*Bx+By*By
+    B2=Bperp2+Bz*Bz
+    cos2phi=(By*By-Bx*Bx)/Bperp2
+    sin2phi=-2.0*Bx*By/Bperp2
+    cosgam2=Bperp2/B2
+
+    ds=deltas*3.085677581467192e+18
+    dtau=sigma*nH*ds
+
+    I=Bnu*(1.0-p0*(cosgam2-2./3.0))*dtau
+    Q=p0*Bnu*cos2phi*cosgam2*dtau
+    U=p0*Bnu*sin2phi*cosgam2*dtau
+
+    return I,Q,U
+
+def calc_IQU_XZ(losdata,domain,deltas):
+
+    nH,B1,B2,B3=losdata
+    
+    Bz=B2
+    Bx=-B3
+    By=B1
 
     args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
     Bnu=args['Bnu']
