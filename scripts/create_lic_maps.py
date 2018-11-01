@@ -1,9 +1,18 @@
-import healpy as hp
+from __future__ import print_function
+import matplotlib as mpl
+mpl.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import healpy as hp
+from matplotlib.colors import LogNorm
 
 import pyathena as pa
 import pyathena.synthetic_observations as syn
+
+import glob,os
+
+base='/tigress/changgoo/'
+sourcedir='../'
 cmap=syn.load_planck_cmap('{}/misc/Planck_Parchment_RGB.txt'.format(sourcedir))
 cmap.set_bad('white',1.)
 plt.register_cmap(cmap=cmap)
@@ -22,7 +31,6 @@ from astropy.wcs import WCS
 
 from reproject import reproject_from_healpix, reproject_to_healpix, reproject_interp
 
-map_ex_warm='/Users/ckim/Research/TIGRESS//MHD_4pc_new/maps/warm/MHD_4pc_new.0364.Nside128-x0y-256z0.fits'
 
 car_header = fits.Header.fromstring("""
 NAXIS   =                    2
@@ -81,7 +89,6 @@ def calc_lic(psi):
     Bx=np.sin(psi+np.pi/2)
     sz=np.shape(psi)
     length=int(0.1*sz[0])
-    print length
     licmap=lic(Bx, By, length=length, niter=2)
     
     return licmap
@@ -110,7 +117,7 @@ def IQU_to_lic(fitsname):
 
 def draw_lic_maps(lic_fitsname):
     hdul=fits.open(lic_fitsname)
-    fig = plt.figure(figsize=(8,8))
+    fig = plt.figure(0,figsize=(8,8))
     ax1 = plt.subplot(211,projection=WCS(hdul[1].header))
     licmap=hdul[2].data
     limits = np.nanmean(licmap.flatten()) + np.array([-1,1])*2*np.nanstd(licmap.flatten())
@@ -123,7 +130,20 @@ def draw_lic_maps(lic_fitsname):
     ax1.imshow(hdul[4].data, origin='lower', alpha=0.2, cmap='binary', clim=limits)
     ax1.coords.frame.set_color('none')
 
-    return fig
+    fig.savefig(lic_fitsname.replace('fits','png'),dpi=100,bbox_inches='tight')
 
-IQU_to_lic(map_ex_warm)
-fig=draw_lic_maps(map_ex_warm.replace('.fits','.lic.fits'))
+base='/tigress/changgoo/'
+pid='MHD_4pc_new'
+fitsfiles=glob.glob('{}/{}/maps/s40_875/{}.03??.Nside128-x0y0z0.fits'.format(base,pid,pid))
+fitsfiles.sort()
+#fitsname='{}/{}/maps/s40_875/{}.0300.Nside128-x0y0z0.fits'.format(base,pid,pid)
+
+for fitsname in fitsfiles:
+    if not os.path.isfile(fitsname.replace('.fits','.lic.fits')):
+        print('*** Calculating LIC map for {} ***'.format(fitsname))
+        IQU_to_lic(fitsname)
+    else:
+        print('*** Skipping LIC map for {} ***'.format(fitsname))
+
+    print('*** Drwaing for {} ***'.format(fitsname))
+    draw_lic_maps(fitsname.replace('.fits','.lic.fits'))

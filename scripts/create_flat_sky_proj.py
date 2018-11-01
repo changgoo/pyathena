@@ -267,6 +267,96 @@ def flat_sky_proj_midplane(pid,base='/tigress/changgoo/',istart=300,iend=301):
         hdul_sim.writeto(fitsname,overwrite=True)
         print('*** DONE: synthesized Z projections for {} ***'.format(pid))
 
+def to_fits_midplane(pid,base='/tigress/changgoo/',istart=300,iend=301):
+    proj_dir='{}{}/maps-XZproj/'.format(base,pid)
+
+    if not os.path.isdir(proj_dir): os.mkdir(proj_dir)
+
+    for itime in range(istart,iend,1):
+        fname='%s%s/id0/%s.%4.4d.vtk' % (base,pid,pid,itime)
+        print('*** Reading data from {} ***'.format(fname))
+        ds,domain=syn.setup_domain(fname,vel=False)
+        x,y,z,=pa.cc_arr(domain)
+
+        fields=['density','temperature',
+                'magnetic_field1','magnetic_field2','magnetic_field3',
+                'velocity1','velocity2','velocity3']
+
+        hNz=domain['Nx'][2]/2
+        hNy=domain['Nx'][1]/2
+        hNx=domain['Nx'][0]/2
+        hLz=domain['Lx'][2]/2.
+        dx=domain['dx'][0]
+        dy=domain['dx'][1]
+        dz=domain['dx'][2]
+        zcut=z[hNz-hNx:hNz+hNx]
+        domain['left_edge'][2] = zcut[0]-dz/2
+        domain['right_edge'][2] = zcut[-1]+dz/2
+
+        losdata=[]
+        for f in fields:
+            data=syn.read_data(ds,f,domain,vy0_subtract=False)[hNz-hNx:hNz+hNx,:,:]
+            print('*** reading {} ...'.format(f))
+            losdata.append(data)
+
+        # save nT data
+        print('*** saving nH and T for {} ...'.format(pid))
+        hdul_sim = fits.HDUList()
+        hdu_sim = create_fits(domain)
+
+        hdul_sim.append(hdu_sim)
+        for fdata,label in zip(losdata[:2],['nH','Temp']):
+            hdul_sim.append(fits.ImageHDU(name=label,data=fdata))
+
+        hdr_sim=hdu_sim.header
+        for hdu_sim in hdul_sim:
+            add_header_for_glue(hdu_sim,hdr_sim,axis='xyz')
+
+        fbase = os.path.basename(fname)
+
+        fitsname=proj_dir+fbase.replace('vtk','nT.fits')
+        hdul_sim.writeto(fitsname,overwrite=True)
+
+        # save B data
+        print('*** saving B for {} ...'.format(pid))
+        hdul_sim = fits.HDUList()
+        hdu_sim = create_fits(domain)
+
+        hdul_sim.append(hdu_sim)
+        for fdata,label in zip(losdata[2:5],['Bx','By','Bz']):
+            hdul_sim.append(fits.ImageHDU(name=label,data=fdata))
+
+        hdr_sim=hdu_sim.header
+        for hdu_sim in hdul_sim:
+            add_header_for_glue(hdu_sim,hdr_sim,axis='xyz')
+
+        fbase = os.path.basename(fname)
+
+        fitsname=proj_dir+fbase.replace('vtk','B.fits')
+        hdul_sim.writeto(fitsname,overwrite=True)
+
+        # save v data
+        print('*** saving V for {} ...'.format(pid))
+        hdul_sim = fits.HDUList()
+        hdu_sim = create_fits(domain)
+
+        hdul_sim.append(hdu_sim)
+        for fdata,label in zip(losdata[5:8],['vx','vy','vz']):
+            hdul_sim.append(fits.ImageHDU(name=label,data=fdata))
+
+        hdr_sim=hdu_sim.header
+        for hdu_sim in hdul_sim:
+            add_header_for_glue(hdu_sim,hdr_sim,axis='xyz')
+
+        fbase = os.path.basename(fname)
+
+        fitsname=proj_dir+fbase.replace('vtk','V.fits')
+        hdul_sim.writeto(fitsname,overwrite=True)
+        print('*** DONE ***')
+
+
+
+
 base='/tigress/changgoo/'
 pid=sys.argv[1]
 
@@ -281,5 +371,6 @@ istart=rank*dt+tstart
 iend=(rank+1)*dt+tstart
 iend=301
 
-flat_sky_proj_kmin(pid,base=base,istart=istart,iend=iend)
-flat_sky_proj_midplane(pid,base=base,istart=istart,iend=iend)
+#flat_sky_proj_kmin(pid,base=base,istart=istart,iend=iend)
+#flat_sky_proj_midplane(pid,base=base,istart=istart,iend=iend)
+to_fits_midplane(pid,base=base,istart=istart,iend=iend)
