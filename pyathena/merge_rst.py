@@ -55,6 +55,3 @@ if __name__ == '__main__':
     parser.add_argument('-ns','--noscalar',action='store_true',help='noscalar')
     args = parser.parse_args()
     merge(**vars(args))
-    split(**vars(args))
-    refine(**vars(args))
-    degrade(**vars(args))
