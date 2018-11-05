@@ -93,7 +93,7 @@ def calc_lic(psi):
     
     return licmap
 
-def IQU_to_lic(fitsname):
+def IQU_to_lic(fitsname,licfname):
     I,Q,U=hp.read_map(fitsname,field=[0,1,2])
     U = U*2
     psi=np.arctan2(-U,Q)*0.5
@@ -113,37 +113,57 @@ def IQU_to_lic(fitsname):
     hdul.append(fits.ImageHDU(name='Imap',data=I_car[:,::-1],header=car_header))
     hdul.append(fits.ImageHDU(name='LIC',data=licmap_car[:,::-1],header=car_header))
 
-    hdul.writeto(fitsname.replace('.fits','.lic.fits'),overwrite=True)
+    hdul.writeto(licfname,overwrite=True)
 
 def draw_lic_maps(lic_fitsname):
     hdul=fits.open(lic_fitsname)
-    fig = plt.figure(0,figsize=(8,8))
+    fig = plt.figure(0,figsize=(10,10))
     ax1 = plt.subplot(211,projection=WCS(hdul[1].header))
     licmap=hdul[2].data
     limits = np.nanmean(licmap.flatten()) + np.array([-1,1])*2*np.nanstd(licmap.flatten())
-    im=ax1.imshow(hdul[1].data, origin='lower', cmap='planck',norm=LogNorm())
+    im=ax1.imshow(hdul[1].data, origin='lower', cmap='planck',norm=LogNorm(vmin=1.e-2,vmax=1.e1))
     ax1.imshow(hdul[2].data, origin='lower', alpha=0.2, cmap='binary', clim=limits)
     ax1.coords.frame.set_color('none')
+    fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+    cbar = fig.colorbar(im)
+    cbar.set_label(r'$I_{\rm 353} [{\rm MJy/sr}]$')
     
     ax1 = plt.subplot(212,projection=WCS(hdul[3].header))
-    im=ax1.imshow(hdul[3].data, origin='lower', cmap='planck',norm=LogNorm())
+    im=ax1.imshow(hdul[3].data, origin='lower', cmap='planck',norm=LogNorm(vmin=1.e-2,vmax=1.e1))
     ax1.imshow(hdul[4].data, origin='lower', alpha=0.2, cmap='binary', clim=limits)
     ax1.coords.frame.set_color('none')
 
-    fig.savefig(lic_fitsname.replace('fits','png'),dpi=100,bbox_inches='tight')
+    fig.savefig(lic_fitsname.replace('fits','png'),dpi=150,bbox_inches='tight')
+
+def draw_lic_maps_one(lic_fitsname):
+    hdul=fits.open(lic_fitsname)
+    fig = plt.figure(0,figsize=(15,6))
+    ax1 = plt.subplot(111,projection=WCS(hdul[1].header))
+    licmap=hdul[2].data
+    limits = np.nanmean(licmap.flatten()) + np.array([-1,1])*2*np.nanstd(licmap.flatten())
+    im=ax1.imshow(hdul[1].data, origin='lower', cmap='planck',norm=LogNorm(vmin=1.e-2,vmax=1.e1))
+    ax1.imshow(hdul[2].data, origin='lower', alpha=0.2, cmap='binary', clim=limits)
+    ax1.coords.frame.set_color('none')
+    fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+    cbar = fig.colorbar(im)
+    cbar.set_label(r'$I_{\rm 353} [{\rm MJy/sr}]$')
+    fig.savefig(f.replace('fits','mol.png'),dpi=200,bbox_inches='tight')
 
 base='/tigress/changgoo/'
+#pid='R8_8pc_rst'
 pid='MHD_4pc_new'
-fitsfiles=glob.glob('{}/{}/maps/s40_875/{}.03??.Nside128-x0y0z0.fits'.format(base,pid,pid))
+fitsfiles=glob.glob('{}/{}/maps/s40_875/{}.03??.*.fits'.format(base,pid,pid))
 fitsfiles.sort()
 #fitsname='{}/{}/maps/s40_875/{}.0300.Nside128-x0y0z0.fits'.format(base,pid,pid)
 
 for fitsname in fitsfiles:
-    if not os.path.isfile(fitsname.replace('.fits','.lic.fits')):
+    licfname=fitsname.replace('.fts','.lic.fits').replace('s40_875/','lic/')
+    if not os.path.isfile(licfname):
         print('*** Calculating LIC map for {} ***'.format(fitsname))
-        IQU_to_lic(fitsname)
+        IQU_to_lic(fitsname,licfname)
     else:
         print('*** Skipping LIC map for {} ***'.format(fitsname))
 
-    print('*** Drwaing for {} ***'.format(fitsname))
-    draw_lic_maps(fitsname.replace('.fits','.lic.fits'))
+    print('*** Drwaing for {} ***'.format(licfname))
+    draw_lic_maps(licfname)
+    draw_lic_maps_one(licfname)

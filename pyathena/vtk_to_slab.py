@@ -111,6 +111,10 @@ def main(**kwargs):
             else:
                 print('%s is newer than %s' % (outfile, vtkfile))
                 remove_flag=False
+
+            if not os.path.isfile(outfile):
+                print('join to %s is failed' % (outfile)) 
+                remove_flag=False
 # delete originals
         file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
         if (len(file_originals) > 0) and remove_flag: 
