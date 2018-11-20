@@ -20,6 +20,8 @@ if narg > 1:
         base='/tigress/changgoo/'
     elif system =='perseus':
         base='/perseus/scratch/gpfs/changgoo/'
+    elif system =='cori':
+        base='/global/cscratch1/sd/changgoo/'
     else:
         print '{} is not supported'.format(system)
         sys.exit()
@@ -44,7 +46,7 @@ if narg > 3:
 
 print system,base,dd,ids,do_pickling
 for problem_id in ids: 
-    preprocessing.doall(base,problem_id,do_pickling=do_pickling)
+    preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False)
 
 for problem_id in ids:
     print 'drawing {} ...'.format(problem_id)

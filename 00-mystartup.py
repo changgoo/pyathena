@@ -7,6 +7,7 @@ sysconfig['ccalin004']={'base':'/mnt/ceph/users/ckim/','source':'/mnt/home/ckim/
 sysconfig['tigressdata.princeton.edu']={'base':'/tigress/changgoo/','source':'/tigress/changgoo/pyathena-TIGRESS/'}
 sysconfig['tigressdata2.princeton.edu']={'base':'/tigress/changgoo/','source':'/tigress/changgoo/pyathena-TIGRESS/'}
 sysconfig['C02TW028HTDH']={'base':'/Users/ckim/','source':'/Users/ckim/Sources/pyathena-TIGRESS/'}
+sysconfig['cori']={'base':'/global/cscratch1/sd/changgoo/','source':'/global/u2/c/changgoo/pyathena/'}
 
 uname=subprocess.check_output(['uname','-a'])
 sysname=uname.split(' ')[1]
