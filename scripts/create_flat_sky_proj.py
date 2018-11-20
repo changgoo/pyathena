@@ -267,8 +267,11 @@ def flat_sky_proj_midplane(pid,base='/tigress/changgoo/',istart=300,iend=301):
         hdul_sim.writeto(fitsname,overwrite=True)
         print('*** DONE: synthesized Z projections for {} ***'.format(pid))
 
-def to_fits_midplane(pid,base='/tigress/changgoo/',istart=300,iend=301):
-    proj_dir='{}{}/maps-XZproj/'.format(base,pid)
+def to_fits(pid,base='/tigress/changgoo/',istart=300,iend=301,midplane_cut=True):
+    if midplane_cut:
+        proj_dir='{}{}/fits-midplane/'.format(base,pid)
+    else:
+        proj_dir='{}{}/fits/'.format(base,pid)
 
     if not os.path.isdir(proj_dir): os.mkdir(proj_dir)
 
@@ -289,13 +292,16 @@ def to_fits_midplane(pid,base='/tigress/changgoo/',istart=300,iend=301):
         dx=domain['dx'][0]
         dy=domain['dx'][1]
         dz=domain['dx'][2]
-        zcut=z[hNz-hNx:hNz+hNx]
-        domain['left_edge'][2] = zcut[0]-dz/2
-        domain['right_edge'][2] = zcut[-1]+dz/2
+        if midplane_cut:
+            zcut=z[hNz-hNx:hNz+hNx]
+            domain['left_edge'][2] = zcut[0]-dz/2
+            domain['right_edge'][2] = zcut[-1]+dz/2
 
         losdata=[]
         for f in fields:
-            data=syn.read_data(ds,f,domain,vy0_subtract=False)[hNz-hNx:hNz+hNx,:,:]
+            data=syn.read_data(ds,f,domain,vy0_subtract=False)
+            if midplane_cut:
+                data=data[hNz-hNx:hNz+hNx,:,:]
             print('*** reading {} ...'.format(f))
             losdata.append(data)
 
@@ -373,4 +379,4 @@ iend=301
 
 #flat_sky_proj_kmin(pid,base=base,istart=istart,iend=iend)
 #flat_sky_proj_midplane(pid,base=base,istart=istart,iend=iend)
-to_fits_midplane(pid,base=base,istart=istart,iend=iend)
+to_fits(pid,base=base,istart=istart,iend=iend,midplane_cut=False)

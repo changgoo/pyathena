@@ -1,6 +1,6 @@
-from parse_par import *
-from vtk_reader import parse_filename
-from utils import compare_files
+from pyathena.parse_par import *
+from pyathena.vtk_reader import parse_filename
+from pyathena.utils import compare_files
 import subprocess
 import shutil
 import numpy as np

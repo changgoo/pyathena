@@ -147,7 +147,7 @@ def draw_lic_maps_one(lic_fitsname):
     fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
     cbar = fig.colorbar(im)
     cbar.set_label(r'$I_{\rm 353} [{\rm MJy/sr}]$')
-    fig.savefig(f.replace('fits','mol.png'),dpi=200,bbox_inches='tight')
+    fig.savefig(lic_fitsname.replace('fits','mol.png'),dpi=200,bbox_inches='tight')
 
 base='/tigress/changgoo/'
 #pid='R8_8pc_rst'
@@ -157,7 +157,7 @@ fitsfiles.sort()
 #fitsname='{}/{}/maps/s40_875/{}.0300.Nside128-x0y0z0.fits'.format(base,pid,pid)
 
 for fitsname in fitsfiles:
-    licfname=fitsname.replace('.fts','.lic.fits').replace('s40_875/','lic/')
+    licfname=fitsname.replace('.fits','.lic.fits').replace('s40_875/','lic/')
     if not os.path.isfile(licfname):
         print('*** Calculating LIC map for {} ***'.format(fitsname))
         IQU_to_lic(fitsname,licfname)
