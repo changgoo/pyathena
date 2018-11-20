@@ -19,7 +19,11 @@ def refine(**kwargs):
     nf=len(files)
 
     par=rh.parse_par(f_lowres)
+    sghost=kwargs['starghost']
     ns=int(par['configure']['nscalars'])
+    if kwargs['nscalars'] >= 0: ns=kwargs['nscalars']
+    print sghost,ns 
+
     dm=par['domain1']
     Nx=np.array([dm['Nx1'],dm['Nx2'],dm['Nx3']])
     Ng=np.array([dm['NGrid_x1'],dm['NGrid_x2'],dm['NGrid_x3']])
@@ -51,7 +55,7 @@ def refine(**kwargs):
         else:
             fname_orig='{}{}-id{}.{:04d}.rst'.format(pdir,pid,g_orig['id'],itime)
         print fname_orig
-        fm,rstdata=rh.read_rst_grid(fname_orig)
+        fm,rstdata=rh.read_rst_grid(fname_orig,starghost=sghost)
 
         is_refine=g_orig['is']*2
         ie_refine=is_refine+g_orig['Nx']*2
@@ -82,8 +86,10 @@ if __name__ == '__main__':
                         help='id of new dataset')
     parser.add_argument('-d','--dir',type=str,
                         help='dir of new dataset')
-    parser.add_argument('-ns','--noscalar',action='store_true',help='noscalar')
+    parser.add_argument('-ns','--nscalars',type=int,help='number of scalar',default=-1)
     parser.add_argument('-hd','--hydro',action='store_true',help='hydro')
+    parser.add_argument('-sg','--starghost',action='store_false',
+                        default=True,help='starghost')
     args = parser.parse_args()
 
     refine(**vars(args))

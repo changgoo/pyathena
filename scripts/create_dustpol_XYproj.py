@@ -19,9 +19,8 @@ def to_map(IQU,kmin=0,kmax=-1):
           IQU[2][kmin:kmax,:,:].sum(axis=0),)
     return maps
 
-def create_fits(data,domain,fieldname):
+def create_fits(domain):
     hdr = fits.Header()
-    hdr['field']=fieldname
     hdr['time']=domain['time']
     hdr['xmin']=(domain['left_edge'][0],'pc')
     hdr['xmax']=(domain['right_edge'][0],'pc')
@@ -32,11 +31,12 @@ def create_fits(data,domain,fieldname):
     hdr['dx']=(domain['dx'][0],'pc')
     hdr['dy']=(domain['dx'][1],'pc')
     hdr['dz']=(domain['dx'][2],'pc')
-    hdu = fits.PrimaryHDU(data,header=hdr)
+    hdu = fits.PrimaryHDU(header=hdr)
     return hdu
 
 base='/mnt/ceph/users/ckim/'
-pid='MHD_4pc_new'
+base='/tigress/changgoo/'
+pid='R8_4pc_newacc'
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
@@ -46,6 +46,7 @@ tstart=300
 dt=100/size
 istart=rank*dt+tstart
 iend=(rank+1)*dt+tstart
+iend=301
 
 proj_dir='{}{}/maps-XYproj/'.format(base,pid)
 
@@ -70,14 +71,19 @@ for itime in range(istart,iend,1):
 
     IQU=syn.calc_IQU_XY(losdata,domain,dz)
 
-    for kmin in range(hNz,hNz+1024/int(dz)+1,128/int(dz)):
+    for kmin in range(hNz,hNz+1024/int(dz)+1,64/int(dz)):
         z0=kmin*dz-hLz
         I,Q,U=to_map(IQU,kmin=kmin)
         domain['left_edge'][2] = z0
         proj_dir_zmin='{}/zmin{:d}/'.format(proj_dir,int(z0))
         if not os.path.isdir(proj_dir_zmin): os.mkdir(proj_dir_zmin)
-        for field, fdata in zip(['I','Q','U'],[I,Q,U]):
-            hdu = create_fits(fdata,domain,field)
-            fbase = os.path.basename(fname)
-            fitsname=proj_dir_zmin+fbase.replace('vtk','{}.fits'.format(field))
-            hdu.writeto(fitsname,overwrite=True)
+
+        hdul = fits.HDUList()
+        hdu = create_fits(domain)
+        hdul.append(hdu)
+        for fdata in [I,Q,U]:
+        hdul.append(fits.ImageHDU(data=fdata))
+
+        fbase = os.path.basename(fname)
+        fitsname=proj_dir_zmin+fbase.replace('vtk','fits')
+        hdul.writeto(fitsname,overwrite=True)

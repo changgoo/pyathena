@@ -41,7 +41,9 @@ def write_onefile(newfile,data_part,data_par):
 
     fp=open(newfile,'wb')
     fields=['DENSITY', '1-MOMENTUM', '2-MOMENTUM', '3-MOMENTUM', 'ENERGY','POTENTIAL',
-        '1-FIELD', '2-FIELD', '3-FIELD', 'SCALAR 0','SCALAR 1','SCALAR 2']
+            '1-FIELD', '2-FIELD', '3-FIELD',
+            'SCALAR 0','SCALAR 1','SCALAR 2','SCALAR 3','SCALAR 4',
+            'SCALAR 5','SCALAR 6','SCALAR 7','SCALAR 8','SCALAR 9']
     for block in ['par','time']: fp.write(data_par[block])
 
     fp.write('DENSITY\n')

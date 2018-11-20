@@ -10,5 +10,5 @@ if len(sys.argv) == 1:
     print "please specify filename"
 else:
     filename=sys.argv[1]
-    for sghost in [True,False]:
+    for sghost in [False,True]:
         fm,data=rh.read_rst_grid(filename,verbose=True,starghost=sghost)

@@ -38,7 +38,7 @@ def los_to_HI(dens,temp,vel,vchannel,deltas=1.,WF=False):
     tau_v=np.nansum(kappa_v*ds,axis=1) # dimensionless
     return TB,tau_v,TBthin
 
-def los_to_HI_small_mem(dens,temp,vel,vchannel,deltas=1.,WF=False):
+def los_to_HI_small_mem(dens,temp,vel,vchannel,deltas=1.,WF=False,los_axis=1,verbose=False):
     """
         inputs:
             dens: number density of hydrogen in units of 1/cm^3
@@ -68,14 +68,15 @@ def los_to_HI_small_mem(dens,temp,vel,vchannel,deltas=1.,WF=False):
     TB=[]
     tau_v=[]
     for vch in vchannel:
+        if verbose: print vch
         phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
               (vch-vlos)/v_L)**2) # time
         kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
         tau_los=kappa_v*ds # dimensionless
 
-        tau_cumul=tau_los.cumsum(axis=1)
-        TB.append(np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=1)) # same unit with Tspin
-        tau_v.append(np.nansum(kappa_v*ds,axis=1)) # dimensionless
+        tau_cumul=tau_los.cumsum(axis=los_axis)
+        TB.append(np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=los_axis)) # same unit with Tspin
+        tau_v.append(np.nansum(kappa_v*ds,axis=los_axis)) # dimensionless
         
     return np.array(TB),np.array(tau_v)
 

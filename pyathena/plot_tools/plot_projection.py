@@ -18,8 +18,6 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     plt.rc('xtick',labelsize=11)
     plt.rc('ytick',labelsize=11)
 
-    fig=plt.figure(0,figsize=(5.5,5))
-    gs = gridspec.GridSpec(2,2,width_ratios=[1,0.03],wspace=0.0)
 
     if stars: sp=read_starvtk(starfname)
     frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
@@ -37,6 +35,11 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     Lx=extent[1]-extent[0]
     Lz=extent[3]-extent[2]
  
+    ix=5
+    iz=ix*Lz/Lx
+    fig=plt.figure(0,figsize=(ix+0.5,iz))
+
+    gs = gridspec.GridSpec(2,2,width_ratios=[1,0.03],wspace=0.0)
     ax=plt.subplot(gs[:,0])
     im=ax.imshow(frb['data'],origin='lower')
     im.set_extent(extent)
@@ -72,7 +75,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
       ax.set_xlim(x0,x0+Lx)
       ax.set_ylim(y0,y0+Lz);
       legend=ax.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'), 
-                        loc=2,ncol=3,bbox_to_anchor=(0.0, 1.15),
+                        loc=2,ncol=3,bbox_to_anchor=(0.0, 1.0+0.15*Lx/Lz),
                         fontsize='medium',frameon=True)
 
     ax.set_xlabel('x [kpc]')

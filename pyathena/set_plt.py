@@ -10,6 +10,8 @@ plt.rcParams['figure.dpi'] = 150
 plt.rcParams['font.size'] = 18
 plt.rcParams['font.weight'] = 300
 
+plt.rcParams['savefig.bbox']='tight'
+
 label_units={'density':r'$\,[{\rm cm}^{-3}]$',
         'pressure':r'$\,[{\rm cm}^{-3}\,{\rm K}]$',
         'massflux':r'$\,[M_\odot\, {\rm pc^{-2}\, Myr^{-1}}]$',
