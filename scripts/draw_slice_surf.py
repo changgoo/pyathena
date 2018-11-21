@@ -19,6 +19,8 @@ if narg > 1:
         base='/u/ckim14/'
     elif system =='tigress':
         base='/tigress/changgoo/'
+    elif system =='cori':
+        base='/global/cscratch1/sd/changgoo/'
     else:
         print '{} is not supported'.format(system)
         sys.exit()
