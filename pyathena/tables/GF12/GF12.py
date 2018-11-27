@@ -1,6 +1,22 @@
 import periodictable as pt
 import pandas as pd
-import matplotlib.pyplot as plt
+import numpy as np
+
+def int_to_roman(input):
+    """ Convert an integer to a Roman numeral. """
+
+    if not isinstance(input, type(1)):
+        raise TypeError, "expected integer, got %s" % type(input)
+    if not 0 < input < 4000:
+        raise ValueError, "Argument must be between 1 and 3999"
+    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
+    nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+    result = []
+    for i in range(len(ints)):
+        count = int(input / ints[i])
+        result.append(nums[i] * count)
+        input -= ints[i] * count
+    return ''.join(result)
 
 class GF12_table(object):
     def __init__(self):
@@ -28,7 +44,7 @@ class GF12_table(object):
             self.cie_cooling_per_ion[ion_name]=cie_cooling_ion
         return self.cie_cooling[ion_name]
     
-    def read_ion_abundance_table_(self,ion_abundance_file='./apjs420150t2_ascii.txt'):
+    def read_ion_abundance_table_(self,ion_abundance_file='./data/apjs420150t2_ascii.txt'):
 
         fp=open(ion_abundance_file,'r')
         lines=fp.readlines()[4:-2]
@@ -46,7 +62,7 @@ class GF12_table(object):
 
         return pd.DataFrame(element).T.sort_values('number')
     
-    def read_ion_frac_table_(self,ion_frac_file='tab2.txt'):
+    def read_ion_frac_table_(self,ion_frac_file='data/tab2.txt'):
         #ion_frac=pd.read_table(ion_frac_file,skiprows=125,delimiter=' ',)
         fp=open(ion_frac_file,'r')
         lines=fp.readlines()
