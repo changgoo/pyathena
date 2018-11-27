@@ -29,10 +29,10 @@ class GF12_table(object):
     def get_total_cie_cooling(self,elements=['H','He','C','N','O','Ne','Mg','Si','S','Fe']):
         total_cooling = np.zeros_like(self.temp)
         for ion_name in elements:
-            element=tbl.elements.loc[ion_name]
+            element=self.elements.loc[ion_name]
             nion=element['number']+1
             A=element['abundance']
-            total_cooling+=tbl.get_cie_cooling(ion_name)*A
+            total_cooling+=self.get_cie_cooling(ion_name)*A
             
         return total_cooling
             

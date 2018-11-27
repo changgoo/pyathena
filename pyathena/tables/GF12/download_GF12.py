@@ -21,7 +21,7 @@ url = ['http://iopscience.iop.org/0067-0049/199/1/20/suppdata/apjs420150t2_ascii
 for url_ in url:
     r = requests.get(url_)
     if r.status_code == 200:
-        filename=os.path.basename(url_)
+        filename='./data/'+os.path.basename(url_)
         with open(filename, 'wb') as f:
             f.write(r.content)
             print('Downloading... {}'.format(filename))

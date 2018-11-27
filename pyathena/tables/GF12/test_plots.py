@@ -22,8 +22,8 @@ def plot_cie_cooling_ion(tbl,ion_name,ion_by_ion=True,noplot=False):
             for i in range(nion):
                 cie_cooling_ion=A*tbl.cie_cooling_per_ion[ion_name][:,i]*tbl.ion_frac['{}{}'.format(ion_name,i)]
                 plt.loglog(tbl.temp,cie_cooling_ion,color=l.get_color(),ls=':')
-            plt.ylabel(r'$\Lamba_{{CIE,{}}} [{{\rm erg s^{{-1}} cm^{{3}}}}]$'.format(ion_name))
-            plt.ylim(total_cooling.min()*0.1)
+            plt.ylabel(r'$\Lambda_{{CIE,{}}} [{{\rm erg s^{{-1}} cm^{{3}}}}]$'.format(ion_name))
+            plt.ylim(total_cooling.min()*0.1*A)
     return total_cooling*A
     
 def plot_cie_cooling_element(tbl,elements=['H','He','C','N','O','Ne','Mg','Si','S','Fe'],ion_by_ion=True):
@@ -32,14 +32,18 @@ def plot_cie_cooling_element(tbl,elements=['H','He','C','N','O','Ne','Mg','Si','
         total_cooling+=plot_cie_cooling_ion(tbl,ion_name,ion_by_ion=ion_by_ion)
     plt.plot(tbl.temp,total_cooling)
     if not ion_by_ion: plt.legend()
-    plt.ylabel(r'$\Lamba_{{CIE}} [{{\rm erg s^{{-1}} cm^{{3}}}}]$')
+    plt.ylabel(r'$\Lambda_{{CIE}} [{{\rm erg s^{{-1}} cm^{{3}}}}]$')
 
 tbl=GF12_table()
 plot_ion_frac(tbl,'O')
+plt.show()
 plot_cie_cooling_ion(tbl,'O');
+plt.show()
 plot_cie_cooling_element(tbl,ion_by_ion=False)
 plt.ylim(1.e-26,1.e-21)
+plt.show()
 total_cooling=tbl.get_total_cie_cooling()
 plt.loglog(tbl.temp,total_cooling)
 total_cooling=tbl.get_total_cie_cooling(elements=tbl.elements.index)
 plt.loglog(tbl.temp,total_cooling)
+plt.show()
