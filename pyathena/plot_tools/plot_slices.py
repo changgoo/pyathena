@@ -139,8 +139,6 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     Lx=slc_data['yextent'][1]-slc_data['yextent'][0]
     Ly=slc_data['zextent'][3]-slc_data['zextent'][2]
     Lz=slc_data['yextent'][3]-slc_data['yextent'][2]
-    print Lx,Ly,Lz
-    print x0,y0,z0
     Lz=Lz/zoom
     ix=2
     iy=ix*Ly/Lx

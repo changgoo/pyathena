@@ -47,6 +47,7 @@ for pid in ids:
     if 'magnetic_field_strength' in slcdata['x']:
         field_list += ['magnetic_field_strength']
     for slcname in slc_files:
+        print slcname
         starname=slcname.replace('slice.p','starpar.vtk').replace('slice','starpar')
         projname=slcname.replace('slice','surf')
         if not compare_files(slcname,slcname+'ng'):
