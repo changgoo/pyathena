@@ -19,7 +19,8 @@ def int_to_roman(input):
     return ''.join(result)
 
 class GF12_table(object):
-    def __init__(self):
+    def __init__(self,data_path='./data/'):
+        self.data_path=data_path
         self.elements = self.read_ion_abundance_table_()
         self.ion_frac = self.read_ion_frac_table_()
         self.temp = self.ion_frac['temp']
@@ -44,7 +45,8 @@ class GF12_table(object):
             self.cie_cooling_per_ion[ion_name]=cie_cooling_ion
         return self.cie_cooling[ion_name]
     
-    def read_ion_abundance_table_(self,ion_abundance_file='./data/apjs420150t2_ascii.txt'):
+    def read_ion_abundance_table_(self):
+        ion_abundance_file=self.data_path+'apjs420150t2_ascii.txt'
 
         fp=open(ion_abundance_file,'r')
         lines=fp.readlines()[4:-2]
@@ -58,11 +60,12 @@ class GF12_table(object):
             element[ename.symbol]['abundance']=eval(sp[3].replace(' x 10^','e'))
             element[ename.symbol]['number']=ename.number
             element[ename.symbol]['mass']=ename.mass
-            element[ename.symbol]['datafile']='./data/datafile{}.txt'.format(sp[2])
+            element[ename.symbol]['datafile']='{}datafile{}.txt'.format(self.data_path,sp[2])
 
         return pd.DataFrame(element).T.sort_values('number')
     
-    def read_ion_frac_table_(self,ion_frac_file='data/tab2.txt'):
+    def read_ion_frac_table_(self):
+        ion_frac_file=self.data_path+'tab2.txt'
         #ion_frac=pd.read_table(ion_frac_file,skiprows=125,delimiter=' ',)
         fp=open(ion_frac_file,'r')
         lines=fp.readlines()
