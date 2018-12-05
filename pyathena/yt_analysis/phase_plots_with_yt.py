@@ -38,6 +38,7 @@ class phase_parameters(object):
         #bin_fields.append(['nH','temperature'])
         bin_fields.append(['velocity_magnitude','sound_speed'])
         bin_fields.append(['nH','velocity_divergence'])
+        bin_fields.append(['temperature','metallicity'])
         #bin_fields.append(['nH','velocity_magnitude'])
         #bin_fields.append(['radius','velocity_magnitude'])
         #bin_fields.append(['radius','temperature'])
@@ -62,6 +63,7 @@ class phase_parameters(object):
         extrema['total_kinetic_energy']=(1.e38,1.e48)
         extrema['total_magnetic_energy']=(1.e38,1.e48)
         extrema['velocity_divergence']=(-30,30)
+        extrema['metallicity']=(0.02,0.2)
  
         logs={}
         logs['radius']=False
@@ -348,7 +350,9 @@ def plot_joint_PDFs_slab(base,pid,itime,fields,pdir=None,slab_index=None,both=Tr
     
     filenames = glob.glob('{}zu??/{}'.format(basedir,basename))
     Nslab=len(filenames)
-    
+    if Nslab == 0:
+        print(filenames)
+        print('cannot find files for {}'.format(basename))
     if slab_index is None: 
         slab_index=range(1,Nslab+1)
     else:

@@ -56,6 +56,9 @@ def _mag_pok(field,data):
         return data["gas","magnetic_pressure"]/kboltz
 
 # metals
+def _metallicity(field,data):
+        return data["athena","specific_scalar[0]"]
+
 def _metal(field,data):
         return data["athena","specific_scalar[0]"]*data["gas","density"]
 
@@ -142,6 +145,8 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
 
     scal_fields=get_scalars(ds)
     if len(scal_fields)>0:
+        ds.add_field(("gas","metallicity"),function=_metallicity,sampling_type='cell', \
+          units='dimensionless',display_name=r'$Z$')
         ds.add_field(("gas","metal0"),function=_metal,sampling_type='cell', \
           units='g*cm**(-3)',display_name=r'$\rho_{\rm metal}$')
     if len(scal_fields)>1:
