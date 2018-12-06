@@ -22,6 +22,8 @@ if narg > 1:
         base='/perseus/scratch/gpfs/changgoo/'
     elif system =='cori':
         base='/global/cscratch1/sd/changgoo/'
+    elif system =='rusty':
+        base='/mnt/ceph/users/ckim/'
     else:
         print '{} is not supported'.format(system)
         sys.exit()
