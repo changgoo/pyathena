@@ -6,7 +6,7 @@ from matplotlib.colors import LogNorm
 import glob,os
 
 class phase_parameters(object):
-    def __init__(self):
+    def __init__(self,Sigma_factor=1,nbins=128):
         ''' 
         set global parameters
 
@@ -51,19 +51,20 @@ class phase_parameters(object):
         #bin_fields.append(['total_kinetic_energy','total_magnetic_energy'])
  
         extrema={}
-        extrema['nH']=(1.e-5,1.e4)
-        extrema['pok']=(1,1.e8)
+       
+        extrema['nH']=(1.e-6*Sigma_factor,1.e4*Sigma_factor)
+        extrema['pok']=(1.e-2*Sigma_factor,1.e8*Sigma_factor)
         extrema['temperature']=(1,1.e9)
-        extrema['velocity_magnitude']=(1.e-1,1.e4)
+        extrema['velocity_magnitude']=(0.1,1.e4)
         extrema['sound_speed']=(0.1,1.e4)
-        extrema['alfven_speed']=(1.e-1,1.e4)
-        extrema['mag_pok']=(1,1.e8)
-        extrema['ram_pok_z']=(1,1.e8)
+        extrema['alfven_speed']=(0.1,1.e4)
+        extrema['mag_pok']=extrema['pok']
+        extrema['ram_pok_z']=extrema['pok']
         extrema['magnetic_field_magnitude']=(1.e-4,1.e2)
         extrema['total_kinetic_energy']=(1.e38,1.e48)
         extrema['total_magnetic_energy']=(1.e38,1.e48)
-        extrema['velocity_divergence']=(-30,30)
         extrema['metallicity']=(0.02,0.2)
+        extrema['velocity_divergence']=(-20,20)
  
         logs={}
         logs['radius']=False
@@ -73,6 +74,7 @@ class phase_parameters(object):
         self.extrema = extrema
         self.logs = logs
         self.unit_system = tigress_unit_system
+        self.nbins = nbins
 
 def phase_by_region(filename,params=None,out_dir='',region='midplane',overwrite=False):
     '''
@@ -226,6 +228,7 @@ def phase_part(ds,region,out_dir,params,overwrite=False):
     logs = params.logs
     extrema = params.extrema
     bin_fields = params.bin_fields
+    nbins = params.nbins
 
     if not os.path.isdir(out_dir): os.mkdir(out_dir)
 
@@ -236,7 +239,7 @@ def phase_part(ds,region,out_dir,params,overwrite=False):
             pdf=yt.create_profile(region,bf,['cell_mass','cell_volume'],
                                   extrema=extrema,
                                   logs=logs,
-                                  n_bins=128,weight_field=None)
+                                  n_bins=nbins,weight_field=None)
             pdf.save_as_dataset(outhead1)
 
 def draw_joint_PDFs(pdfs,pdf_ds):
