@@ -19,6 +19,8 @@ if narg > 1:
         base='/u/ckim14/'
     elif system =='tigress':
         base='/tigress/changgoo/'
+    elif system =='tigress_arm':
+        base='/tigress/changgoo/ARM/'
     elif system =='cori':
         base='/global/cscratch1/sd/changgoo/'
     else:
