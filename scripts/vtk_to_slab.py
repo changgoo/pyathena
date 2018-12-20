@@ -1,3 +1,4 @@
+import pyathena as pa
 from pyathena.parse_par import *
 from pyathena.vtk_reader import parse_filename
 from pyathena.utils import compare_files
@@ -62,9 +63,11 @@ def main(**kwargs):
             write_par_from_rst(rstfiles[0],parfile)
     par=get_params(parfile)
 
-    NGrids=[int(par['NGrid_x1']),\
-            int(par['NGrid_x2']),\
-            int(par['NGrid_x3'])]
+    ds = pa.AthenaDataSet(files[0],serial=True)
+
+    NGrids=[int(par['Nx1']/ds.domain['Nx'][0]),\
+            int(par['Nx2']/ds.domain['Nx'][1]),\
+            int(par['Nx3']/ds.domain['Nx'][2])]
     Nslab=NGrids[2]
     Nproc=np.prod(NGrids)
     Nproc_h=NGrids[0]*NGrids[1]

@@ -48,7 +48,11 @@ if narg > 3:
 
 print system,base,dd,ids,do_pickling
 for problem_id in ids: 
-    preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False)
+    if system == 'cori':
+        preprocessing.doall(base,problem_id,problem_dir='{}/slab/'.format(problem_id),\
+                            do_pickling=do_pickling,use_yt=False)
+    else:
+        preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False)
 
 for problem_id in ids:
     print 'drawing {} ...'.format(problem_id)
