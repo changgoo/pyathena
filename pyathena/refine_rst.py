@@ -33,14 +33,18 @@ def refine(**kwargs):
         return
 
     grids,NG=rh.calculate_grid(Nx,Nb)
-    grids_refine,NG_refine=rh.calculate_grid(Nx*2,[64,64,64])
+    if kwargs['split']: # just to split restart files 
+        grids_refine,NG_refine=rh.calculate_grid(Nx,[Nb[0]/2,Nb[1],Nb[2]])
+    else: # refine (2x higher resolution)
+        grids_refine,NG_refine=rh.calculate_grid(Nx*2,[64,64,64])
 
     pardata=rh.parse_misc_info(f_lowres)
 
     par=pardata['par']
-    par=par.replace('Nx1           = %d' % Nx[0],'Nx1           = %d' % (Nx[0]*2))
-    par=par.replace('Nx2           = %d' % Nx[1],'Nx2           = %d' % (Nx[1]*2))
-    par=par.replace('Nx3           = %d' % Nx[2],'Nx3           = %d' % (Nx[2]*2))
+    if not kwargs['split']:
+        par=par.replace('Nx1           = %d' % Nx[0],'Nx1           = %d' % (Nx[0]*2))
+        par=par.replace('Nx2           = %d' % Nx[1],'Nx2           = %d' % (Nx[1]*2))
+        par=par.replace('Nx3           = %d' % Nx[2],'Nx3           = %d' % (Nx[2]*2))
     par=par.replace('NGrid_x1      = %d' % NG[0],'NGrid_x1      = %d' % NG_refine[0])
     par=par.replace('NGrid_x2      = %d' % NG[1],'NGrid_x2      = %d' % NG_refine[1])
     par=par.replace('NGrid_x3      = %d' % NG[2],'NGrid_x3      = %d' % NG_refine[2])
@@ -57,15 +61,22 @@ def refine(**kwargs):
         print fname_orig
         fm,rstdata=rh.read_rst_grid(fname_orig,starghost=sghost)
 
-        is_refine=g_orig['is']*2
-        ie_refine=is_refine+g_orig['Nx']*2
+        if kwargs['split']:
+            is_refine=g_orig['is']
+            ie_refine=is_refine+g_orig['Nx']
+        else:
+            is_refine=g_orig['is']*2
+            ie_refine=is_refine+g_orig['Nx']*2
 
         grids_part=[]
         for g_new in grids_refine:
             if ((g_new['is']-is_refine+1)*(g_new['is']-ie_refine+1) <=0).all():
                 #print g
                 grids_part.append(g_new)
-        rstdata_refine=rh.refine(rstdata,scalar=ns)
+        if kwargs['split']: 
+            rstdata_refine=rstdata
+        else:
+            rstdata_refine=rh.refine(rstdata,scalar=ns)
         if kwargs['hydro']:
             fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
             for f in fc_varnames:
@@ -88,6 +99,7 @@ if __name__ == '__main__':
                         help='dir of new dataset')
     parser.add_argument('-ns','--nscalars',type=int,help='number of scalar',default=-1)
     parser.add_argument('-hd','--hydro',action='store_true',help='hydro')
+    parser.add_argument('-sp','--split',action='store_true',help='split')
     parser.add_argument('-sg','--starghost',action='store_false',
                         default=True,help='starghost')
     args = parser.parse_args()
