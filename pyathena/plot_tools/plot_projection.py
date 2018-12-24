@@ -12,7 +12,11 @@ import string
 from .scatter_sp import scatter_sp
 import cPickle as pickle
 
-def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,aux={},norm_factor=2.,active=False,scale_func=np.sqrt):
+unit=set_units(muH=1.4271)
+Myr=unit['time'].to('Myr').value
+
+def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
+  aux={},norm_factor=2.,active=False,scale_func=np.sqrt, vy0=0.):
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -33,15 +37,25 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
     x0=extent[0]
     y0=extent[2]
     Lx=extent[1]-extent[0]
-    Lz=extent[3]-extent[2]
+    Ly=extent[3]-extent[2]
  
     ix=5
-    iz=ix*Lz/Lx
+    iz=ix*Ly/Lx
     fig=plt.figure(0,figsize=(ix+0.5,iz))
 
     gs = gridspec.GridSpec(2,2,width_ratios=[1,0.03],wspace=0.0)
     ax=plt.subplot(gs[:,0])
-    im=ax.imshow(frb['data'],origin='lower')
+    data=frb['data']
+    if (vy0 != 0.):
+        import scipy.ndimage as sciim
+        yshift=np.mod(vy0*tMyr/Myr,Ly*1.e3)
+        Ny,Nx=data.shape
+        jshift=yshift/(Ly*1.e3)*Ny
+        data=sciim.interpolation.shift(data,(-jshift,0), mode='wrap')
+        sp['x2'] -= yshift
+        sp['x2'][sp['x2']<0] += Ly*1.e3
+        print tMyr,yshift,Ly,Ny,jshift
+    im=ax.imshow(data,origin='lower')
     im.set_extent(extent)
     if 'norm' in aux: im.set_norm(aux['norm'])
     if 'cmap' in aux: im.set_cmap(aux['cmap'])
@@ -62,20 +76,20 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,au
              orientation='vertical')
       cbar.set_label(r'${\rm age [Myr]}$')
  
-      s1=ax.scatter(Lx*2,Lz*2,
+      s1=ax.scatter(Lx*2,Ly*2,
         s=scale_func(1.e3)/norm_factor,color='k',
         alpha=.8,label=r'$10^3 M_\odot$')
-      s2=ax.scatter(Lx*2,Lz*2,
+      s2=ax.scatter(Lx*2,Ly*2,
         s=scale_func(1.e4)/norm_factor,color='k',
         alpha=.8,label=r'$10^4 M_\odot$')
-      s3=ax.scatter(Lx*2,Lz*2,
+      s3=ax.scatter(Lx*2,Ly*2,
         s=scale_func(1.e5)/norm_factor,
         color='k',alpha=.8,label=r'$10^5 M_\odot$')
 
       ax.set_xlim(x0,x0+Lx)
-      ax.set_ylim(y0,y0+Lz);
+      ax.set_ylim(y0,y0+Ly);
       legend=ax.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'), 
-                        loc=2,ncol=3,bbox_to_anchor=(0.0, 1.0+0.15*Lx/Lz),
+                        loc=2,ncol=3,bbox_to_anchor=(0.0, 1.0+0.15*Lx/Ly),
                         fontsize='medium',frameon=True)
 
     ax.set_xlabel('x [kpc]')

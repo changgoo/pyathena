@@ -14,7 +14,7 @@ from .scatter_sp import scatter_sp
 import cPickle as pickle
 
 unit=set_units(muH=1.4271)
-to_Myr=unit['time'].to('Myr').value
+Myr=unit['time'].to('Myr').value
 
 def slice(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
                writefile=True,tstamp=True,stars=True,field_label=True,norm_factor=2):
@@ -126,7 +126,7 @@ def slice(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     else:
         return fig
 
-def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
+def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.,\
                writefile=True,tstamp=True,stars=True,field_label=True,norm_factor=2):
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
@@ -156,6 +156,16 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     else:
         time,sp=read_starvtk(starfname,time_out=True)
         tMyr=time*Myr
+
+    if (vy0 != 0):
+        import scipy.ndimage as sciim
+        yshift=np.mod(vy0*tMyr/Myr,Ly*1.e3)
+        Ny,Nx=slc_data['z']['nH'].shape
+        jshift=yshift/(Ly*1.e3)*Ny
+        sp['x2'] -= yshift
+        sp['x2'][sp['x2']<0] += Ly*1.e3
+
+
     images=[]
     for i,axis in enumerate(['y','z']):
         for j,f in enumerate(fields_to_draw):
@@ -171,6 +181,9 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
                 ax.set_aspect(1.0)
             else:
                 data=slc_data[axis][f]
+                if (vy0 != 0) and (axis =='z'):
+                    data=sciim.interpolation.shift(data,(-jshift,0), mode='wrap')
+
                 im=ax.imshow(data,origin='lower',interpolation='bilinear')
                 if f in aux:
                     if 'norm' in aux[f]: im.set_norm(aux[f]['norm']) 

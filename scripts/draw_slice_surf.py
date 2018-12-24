@@ -6,6 +6,7 @@ import sys,os,shutil
 import pandas as pd
 
 sys.path.insert(0,'../')
+from pyathena import get_params
 from pyathena.plot_tools import plot_slices,plot_projection,set_aux
 from pyathena.utils import compare_files
 import cPickle as p
@@ -38,15 +39,25 @@ for dd in dirs:
         if os.path.isdir(dd+'/slice/'):
             ids.append(os.path.basename(dd))
 
+if narg > 3:
+    overwrite = eval(sys.argv[3])
+else:
+    overwrite = False
+
 for pid in ids:
     print pid
+    par = get_params('{}{}/{}.par'.format(base,pid,pid))
+    if 'pattern' in par:
+        vy0 = par['Omega']*(1.0-par['pattern'])*par['R0']
+        print 'v_y,circ = {}'.format(vy0)
+    else:
+        vy0 = 0.0
     slc_files=glob.glob('{}{}/slice/{}.????.slice.p'.format(base,pid,pid))
     slc_files.sort()
     nf=len(slc_files)
     aux=set_aux.set_aux(pid)
     aux_surf=aux['surface_density']
-    field_list=['star_particles','nH','temperature','pok',
-           'velocity_z']
+    field_list=['star_particles','nH','temperature','pok','velocity_z']
     slcdata=p.load(open(slc_files[0]))
     if 'magnetic_field_strength' in slcdata['x']:
         field_list += ['magnetic_field_strength']
@@ -54,7 +65,8 @@ for pid in ids:
         print slcname
         starname=slcname.replace('slice.p','starpar.vtk').replace('slice','starpar')
         projname=slcname.replace('slice','surf')
-        if not compare_files(slcname,slcname+'ng'):
-            plot_slices.slice2(slcname,starname,field_list,aux=aux)
-        if not compare_files(projname,projname+'ng'):
-            plot_projection.plot_projection(projname,starname,runaway=False,aux=aux_surf)
+        if not compare_files(slcname,slcname+'ng') or overwrite:
+            plot_slices.slice2(slcname,starname,field_list,aux=aux,vy0=vy0)
+        if not compare_files(projname,projname+'ng') or overwrite:
+            plot_projection.plot_projection(projname,starname,
+              runaway=False,aux=aux_surf,vy0=vy0)
