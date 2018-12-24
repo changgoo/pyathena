@@ -223,14 +223,15 @@ def recal_rates(h,sn,base,problem_dir,problem_id):
     rates=pd.DataFrame()
     rates['sfr']=sfr_inst
 
+    typeIa=sn[sn.runaway==2]
     runaway=sn[sn.runaway==1]
     cluster=sn[sn.runaway==0]
-    sn_time=sn.time*units['Myr']
-    for lab,sndata in zip(['','_run','_cl'],[sn,runaway,cluster]):
+    for lab,sndata in zip(['','_run','_cl','_Ia'],[sn,runaway,cluster,typeIa]):
+        sn_time=sndata.time*units['Myr']
         NSN,t=np.histogram(sn_time,bins=time)
         rates['snr{}'.format(lab)]=NSN/dt/area
 
-    for rinst_key in ['sfr','snr','snr_run','snr_cl']:
+    for rinst_key in ['sfr','snr','snr_run','snr_cl','snr_Ia']:
         rinst=rates[rinst_key] 
         for tbin in [1.,10.,40.,100.]:
             window=int(tbin/dt)
