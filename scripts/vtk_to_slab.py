@@ -106,6 +106,19 @@ def main(**kwargs):
         print(f)
         fpath,fbase,fstep,fext,mpi=parse_filename(f)
         remove_flag=True
+
+        ds = pa.AthenaDataSet(f,serial=True)
+
+        NGrids=[int(par['Nx1']/ds.domain['Nx'][0]),\
+                int(par['Nx2']/ds.domain['Nx'][1]),\
+                int(par['Nx3']/ds.domain['Nx'][2])]
+        Nslab=NGrids[2]
+        Nproc=np.prod(NGrids)
+        Nproc_h=NGrids[0]*NGrids[1]
+        gid=np.arange(Nproc)
+
+        print(f,Nproc,NGrids)
+
         for islab in range(Nslab):
             print('%d of %d' % (islab, Nslab))
             grids=gid[gid/Nproc_h == islab]
@@ -113,15 +126,23 @@ def main(**kwargs):
             else: baseid='%s-id%d' %(newid,islab)
             if not os.path.isdir('%s/id%d' % (newbase,islab)):
                 os.mkdir('%s/id%d' % (newbase,islab))
-            command=[join_vtk]
             outfile='%s/id%d/%s.%s.vtk' % (newbase,islab,baseid,fstep)
-            command.append('-o %s' % outfile)
+            if len(grids) > 1:
+                command=[join_vtk]
+                command.append('-o %s' % outfile)
+            else:
+                print('%s is already merged' % (outfile)) 
+                command=['mv']
             for gidx in grids:
                 if gidx == 0: 
                     vtkfile='%s%s/id%d/%s.%s.%s' % (base,dir,gidx,id,fstep,fext)
                 else:
                     vtkfile='%s%s/id%d/%s-id%d.%s.%s' % (base,dir,gidx,id,gidx,fstep,fext)
                 command.append(vtkfile)
+            if len(grids) == 1:
+                command.append(outfile)
+                remove_flag=False
+
             #print command
             if not compare_files(vtkfile,outfile) or kwargs['overwrite']:
                 subprocess.call(string.join(command),shell=True)
