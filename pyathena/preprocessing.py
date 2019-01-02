@@ -223,7 +223,7 @@ def recal_rates(h,sn,base,problem_dir,problem_id):
     rates=pd.DataFrame()
     rates['sfr']=sfr_inst
 
-    typeIa=sn[sn.runaway==2]
+    typeIa=sn[(sn.runaway==2) | (sn.runaway==-1)]
     runaway=sn[sn.runaway==1]
     cluster=sn[sn.runaway==0]
     for lab,sndata in zip(['','_run','_cl','_Ia'],[sn,runaway,cluster,typeIa]):

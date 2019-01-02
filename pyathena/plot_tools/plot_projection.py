@@ -54,7 +54,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
         data=sciim.interpolation.shift(data,(-jshift,0), mode='wrap')
         sp['x2'] -= yshift
         sp['x2'][sp['x2']<0] += Ly*1.e3
-        print tMyr,yshift,Ly,Ny,jshift
+        #print tMyr,yshift,Ly,Ny,jshift
     im=ax.imshow(data,origin='lower')
     im.set_extent(extent)
     if 'norm' in aux: im.set_norm(aux['norm'])
@@ -76,20 +76,24 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
              orientation='vertical')
       cbar.set_label(r'${\rm age [Myr]}$')
  
-      s1=ax.scatter(Lx*2,Ly*2,
+      s0=ax.scatter(Lx*2,Ly*2,
         s=scale_func(1.e3)/norm_factor,color='k',
         alpha=.8,label=r'$10^3 M_\odot$')
-      s2=ax.scatter(Lx*2,Ly*2,
+      s1=ax.scatter(Lx*2,Ly*2,
         s=scale_func(1.e4)/norm_factor,color='k',
         alpha=.8,label=r'$10^4 M_\odot$')
+      s2=ax.scatter(Lx*2,Ly*2,
+        s=scale_func(1.e5)/norm_factor,color='k',
+        alpha=.8,label=r'$10^5 M_\odot$')
       s3=ax.scatter(Lx*2,Ly*2,
-        s=scale_func(1.e5)/norm_factor,
-        color='k',alpha=.8,label=r'$10^5 M_\odot$')
+        s=scale_func(1.e6)/norm_factor,
+        color='k',alpha=.8,label=r'$10^6 M_\odot$')
 
       ax.set_xlim(x0,x0+Lx)
       ax.set_ylim(y0,y0+Ly);
-      legend=ax.legend((s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',r'$10^5 M_\odot$'), 
-                        loc=2,ncol=3,bbox_to_anchor=(0.0, 1.0+0.15*Lx/Ly),
+      legend=ax.legend((s0,s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',
+                        r'$10^5 M_\odot$',r'$10^6 M_\odot$'), 
+                        loc=2,ncol=4,bbox_to_anchor=(-0.1, 1.0+0.15*Lx/Ly),
                         fontsize='medium',frameon=True)
 
     ax.set_xlabel('x [kpc]')

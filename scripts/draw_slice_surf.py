@@ -4,10 +4,12 @@ mpl.use('agg')
 import glob
 import sys,os,shutil
 import pandas as pd
+import numpy as np
 
 sys.path.insert(0,'../')
 from pyathena import get_params
 from pyathena.plot_tools import plot_slices,plot_projection,set_aux
+import pyathena.plot_tools.movie as movie
 from pyathena.utils import compare_files
 import cPickle as p
 
@@ -57,7 +59,7 @@ for pid in ids:
     nf=len(slc_files)
     aux=set_aux.set_aux(pid)
     aux_surf=aux['surface_density']
-    field_list=['star_particles','nH','temperature','pok','velocity_z']
+    field_list=['star_particles','surface_density','nH','temperature','pok','velocity_z']
     slcdata=p.load(open(slc_files[0]))
     if 'magnetic_field_strength' in slcdata['x']:
         field_list += ['magnetic_field_strength']
@@ -65,8 +67,19 @@ for pid in ids:
         print slcname
         starname=slcname.replace('slice.p','starpar.vtk').replace('slice','starpar')
         projname=slcname.replace('slice','surf')
-        if not compare_files(slcname,slcname+'ng') or overwrite:
-            plot_slices.slice2(slcname,starname,field_list,aux=aux,vy0=vy0)
-        if not compare_files(projname,projname+'ng') or overwrite:
+        if not compare_files(slcname,slcname.replace('.p','_proj.png')) or overwrite:
+            #plot_slices.slice2(slcname,starname,field_list,aux=aux,vy0=vy0)
+            plot_slices.slice_proj(slcname,projname,starname,field_list,aux=aux,vy0=vy0)
+        #if not compare_files(projname,projname+'ng') or overwrite:
             plot_projection.plot_projection(projname,starname,
-              runaway=False,aux=aux_surf,vy0=vy0)
+              scale_func=np.cbrt,runaway=False,aux=aux_surf,vy0=vy0)
+
+    if (system == 'tigress') | (system == 'tigress_arm'):
+        basedir1='{}{}/'.format(base,pid)
+        basedir2='{}public_html/temporary_moveis/'.format(base)
+        ffig = os.path.join(basedir1,'slice/*.slice_proj.png')
+        fmp4 = os.path.join(basedir2,'{}_slice_proj.mp4'.format(pid))
+        movie.make_movie(ffig, fmp4)
+        ffig = os.path.join(basedir1,'surf/*.surf.png')
+        fmp4 = os.path.join(basedir2,'{}_surf.mp4'.format(pid))
+        movie.make_movie(ffig, fmp4)
