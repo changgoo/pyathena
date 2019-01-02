@@ -88,6 +88,20 @@ def main(**kwargs):
     if os.path.isfile(src_hst_name):
         shutil.copy2(src_hst_name,dst_name)
 
+    if fpath != newbase:
+        if not os.path.isdir('%s/id0' % (newbase)):
+            os.mkdir('%s/id0' % (newbase))
+        src_hst_name='%s/id0/%s.hst' % (fpath,fbase)
+        dst_name='%s/id0/%s.hst' % (newbase,newid)
+        if os.path.isfile(src_hst_name):
+            shutil.copy2(src_hst_name,dst_name)
+ 
+        src_hst_name='%s/id0/%s.sn' % (fpath,fbase)
+        dst_name='%s/id0/%s.sn' % (newbase,newid)
+        if os.path.isfile(src_hst_name):
+            shutil.copy2(src_hst_name,dst_name)
+
+
     for f in files:
         print(f)
         fpath,fbase,fstep,fext,mpi=parse_filename(f)

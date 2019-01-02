@@ -48,15 +48,19 @@ if narg > 3:
 
 print system,base,dd,ids,do_pickling
 for problem_id in ids: 
-    if system == 'cori':
+    if (system == 'cori') | (system == 'rusty'):
         preprocessing.doall(base,problem_id,problem_dir='{}/slab/'.format(problem_id),\
                             do_pickling=do_pickling,use_yt=False)
     else:
         preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False)
 
 for problem_id in ids:
+    if (system == 'cori') | (system == 'rusty'):
+        problem_dir='{}/slab/'.format(problem_id)
+    else:
+        problem_dir='{}/'.format(problem_id)
     print 'drawing {} ...'.format(problem_id)
-    h_zp=pd.read_pickle('{}{}/hst/{}.hst_zp.p'.format(base,problem_id,problem_id))
+    h_zp=pd.read_pickle('{}{}hst/{}.hst_zp.p'.format(base,problem_dir,problem_id))
     sfrmean=h_zp['sfr10'].mean()
     snrmean=h_zp['snr10'].mean()
     Pmidmean=h_zp['Pmid_2p'].mean()
@@ -78,9 +82,9 @@ for problem_id in ids:
             ('mf_c',labels['massfrac'],'linear',
              ['mf_u','mf_w'],None,None),
              ]
-    figdir='{}{}/figures/'.format(base,problem_id)
+    figdir='{}{}/figures/'.format(base,problem_dir)
     if not os.path.isdir(figdir): os.mkdir(figdir)
-    figfname='{}{}/figures/{}-history.png'.format(base,problem_id,problem_id)
+    figfname='{}{}/figures/{}-history.png'.format(base,problem_dir,problem_id)
     preprocessing.draw_history(h_zp,metadata,figfname)
     if system == 'tigress':
         figdir_tigress='{}/public_html/TIGRESS_figures/history/'.format(base)
