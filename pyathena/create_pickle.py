@@ -30,6 +30,7 @@ def get_scalars(ds):
         if f.startswith('specific_scalar'):
             scal_fields.append(f)
 
+    scal_fields.sort()
     return scal_fields
 
 def create_surface_density(ds,surf_fname):
@@ -209,12 +210,14 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
     for i,f in enumerate(fname):
         slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
         surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
+        scalfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.scal0.p'
 
         tasks={'slice':(not compare_files(f,slcfname)) or force_recal,
                'surf':(not compare_files(f,surfname)) or force_recal,
+               'scal':(not compare_files(f,scalfname)) or force_recal,
         }
 
-        do_task=(tasks['slice'] or tasks['surf'])
+        do_task=(tasks['slice'] or tasks['surf'] or tasks['scal'])
          
         if verbose: 
             print('file number: {} -- Tasks to be done ['.format(i),end='')
@@ -224,6 +227,10 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
             ds = pa.AthenaDataSet(f)
             if tasks['surf']: create_projection(ds,surfname,conversion={'z':ds.domain['Lx'][2]*to_surf})
             if tasks['slice']: create_slices(ds,slcfname,slc_fields,factors=mul_factors,force_recal=force_recal)
+            if tasks['scal']: 
+                for nscal,sf in enumerate(scal_fields):
+                    nscalfname=scalfname.replace('scal0','scal{}'.format(nscal))
+                    create_projection(ds,nscalfname,field=sf,weight_field='density')
 
     aux=set_aux(kwargs['id'])
 
