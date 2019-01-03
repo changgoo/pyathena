@@ -76,7 +76,7 @@ for pid in ids:
 
     if (system == 'tigress') | (system == 'tigress_arm'):
         basedir1='{}{}/'.format(base,pid)
-        basedir2='{}public_html/temporary_moveis/'.format(base)
+        basedir2='{}public_html/temporary_movies/'.format(base)
         ffig = os.path.join(basedir1,'slice/*.slice_proj.png')
         fmp4 = os.path.join(basedir2,'{}_slice_proj.mp4'.format(pid))
         movie.make_movie(ffig, fmp4)
