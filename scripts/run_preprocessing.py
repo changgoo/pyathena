@@ -47,12 +47,15 @@ if narg > 3:
     do_pickling = eval(sys.argv[3])
 
 print system,base,dd,ids,do_pickling
+
 for problem_id in ids: 
     if (system == 'cori') | (system == 'rusty'):
-        preprocessing.doall(base,problem_id,problem_dir='{}/slab/'.format(problem_id),\
-                            do_pickling=do_pickling,use_yt=False)
+        problem_dir='{}/slab/'.format(problem_id)
     else:
-        preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False)
+        problem_dir='{}/'.format(problem_id)
+
+    preprocessing.doall(base,problem_id,problem_dir=problem_dir,\
+                            do_pickling=do_pickling,use_yt=False)
 
 for problem_id in ids:
     if (system == 'cori') | (system == 'rusty'):

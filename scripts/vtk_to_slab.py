@@ -63,17 +63,17 @@ def main(**kwargs):
             write_par_from_rst(rstfiles[0],parfile)
     par=get_params(parfile)
 
-    ds = pa.AthenaDataSet(files[0],serial=True)
-
-    NGrids=[int(par['Nx1']/ds.domain['Nx'][0]),\
-            int(par['Nx2']/ds.domain['Nx'][1]),\
-            int(par['Nx3']/ds.domain['Nx'][2])]
-    Nslab=NGrids[2]
-    Nproc=np.prod(NGrids)
-    Nproc_h=NGrids[0]*NGrids[1]
-    gid=np.arange(Nproc)
-
-    print(Nproc,NGrids)
+#    ds = pa.AthenaDataSet(files[0],serial=True)
+#
+#    NGrids=[int(par['Nx1']/ds.domain['Nx'][0]),\
+#            int(par['Nx2']/ds.domain['Nx'][1]),\
+#            int(par['Nx3']/ds.domain['Nx'][2])]
+#    Nslab=NGrids[2]
+#    Nproc=np.prod(NGrids)
+#    Nproc_h=NGrids[0]*NGrids[1]
+#    gid=np.arange(Nproc)
+#
+#    print(Nproc,NGrids)
 
 # copy history
     fpath,fbase,fstep,fext,mpi=parse_filename(files[0])

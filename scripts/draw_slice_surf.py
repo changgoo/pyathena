@@ -40,6 +40,8 @@ for dd in dirs:
     if os.path.isdir(dd):
         if os.path.isdir(dd+'/slice/'):
             ids.append(os.path.basename(dd))
+        elif os.path.isdir(dd+'/slab/slice/'):
+            ids.append(os.path.basename(dd))
 
 if narg > 3:
     overwrite = eval(sys.argv[3])
@@ -47,14 +49,19 @@ else:
     overwrite = False
 
 for pid in ids:
-    print pid
-    par = get_params('{}{}/{}.par'.format(base,pid,pid))
+    if (system == 'cori') | (system == 'rusty'):
+        pdir='{}/slab/'.format(pid)
+    else:
+        pdir='{}/'.format(pid)
+
+    print pdir,pid
+    par = get_params('{}{}/{}.par'.format(base,pdir,pid))
     if 'pattern' in par:
         vy0 = par['Omega']*(1.0-par['pattern'])*par['R0']
         print 'v_y,circ = {}'.format(vy0)
     else:
         vy0 = 0.0
-    slc_files=glob.glob('{}{}/slice/{}.????.slice.p'.format(base,pid,pid))
+    slc_files=glob.glob('{}{}/slice/{}.????.slice.p'.format(base,pdir,pid))
     slc_files.sort()
     nf=len(slc_files)
     aux=set_aux.set_aux(pid)
