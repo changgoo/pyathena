@@ -121,7 +121,7 @@ def slice(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.savefig(pngfname,num=1,dpi=150)
         plt.close(1)
     else:
         return fig
@@ -254,7 +254,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.,\
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.savefig(pngfname,num=1,dpi=150)
         plt.close(1)
     else:
         return fig
@@ -279,9 +279,9 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
     iy=ix*Ly/Lx
     iz=ix*Lz/Lx
     nf=len(fields_to_draw)
-    fig=plt.figure(1,figsize=(ix*(nf+1),iz+iy*1.2))
-    gs = gridspec.GridSpec(2,nf+1,height_ratios=[iz,iy])
-    gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
+    fig=plt.figure(1,figsize=(ix*nf,iz+iy*1.2))
+    gs = gridspec.GridSpec(2,nf,height_ratios=[iz,iy])
+    gs.update(top=0.95,left=0.08,bottom=0.05,right=0.98,wspace=0.05,hspace=0)
 
     if stars:
         sp=read_starvtk(starfname)
@@ -409,7 +409,7 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
 
     pngfname=slcfname.replace('.p','_proj.png')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.savefig(pngfname,num=1,dpi=150)
         plt.close(1)
     else:
         return fig

@@ -76,10 +76,13 @@ for pid in ids:
 
     if (system == 'tigress') | (system == 'tigress_arm'):
         basedir1='{}{}/'.format(base,pid)
-        basedir2='{}public_html/temporary_movies/'.format(base)
+        basedir2='/tigress/changgoo/public_html/TIGRESS_figures/movies/'
+        if system == 'tigress_arm': basedir2 += 'ARM/'
         ffig = os.path.join(basedir1,'slice/*.slice_proj.png')
-        fmp4 = os.path.join(basedir2,'{}_slice_proj.mp4'.format(pid))
+        fmp4 = os.path.join(basedir1,'slice/{}_slice_proj.mp4'.format(pid))
         movie.make_movie(ffig, fmp4)
+        shutil.copy2(fmp4,basedir2)
         ffig = os.path.join(basedir1,'surf/*.surf.png')
-        fmp4 = os.path.join(basedir2,'{}_surf.mp4'.format(pid))
+        fmp4 = os.path.join(basedir1,'slice/{}_surf.mp4'.format(pid))
         movie.make_movie(ffig, fmp4)
+        shutil.copy2(fmp4,basedir2)
