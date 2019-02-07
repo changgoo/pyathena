@@ -22,6 +22,8 @@ if narg > 1:
         base='/u/ckim14/'
     elif system =='tigress':
         base='/tigress/changgoo/'
+    elif system =='tigress_rps':
+        base='/tigress/changgoo/'
     elif system =='tigress_arm':
         base='/tigress/changgoo/ARM/'
     elif system =='rusty':
@@ -59,7 +61,10 @@ for pid in ids:
     nf=len(slc_files)
     aux=set_aux.set_aux(pid)
     aux_surf=aux['surface_density']
-    field_list=['star_particles','surface_density','nH','temperature','pok','velocity_z']
+    if system == 'tigress_rps':
+        field_list=['star_particles','surface_density','specific_scalar3_proj','nH','specific_scalar3','temperature','pok','velocity_z']
+    else:
+        field_list=['star_particles','surface_density','nH','temperature','pok','velocity_z']
     slcdata=p.load(open(slc_files[0]))
     if 'magnetic_field_strength' in slcdata['x']:
         field_list += ['magnetic_field_strength']

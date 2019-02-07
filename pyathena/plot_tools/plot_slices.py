@@ -334,6 +334,23 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
                 images.append(im)
                 ax.set_xlim(extent[0],extent[1])
                 ax.set_ylim(extent[2],extent[3])
+            elif f is 'specific_scalar3_proj':
+                proj_data2=pickle.load(open(projfname.replace('surf.p','scal3.p'),'rb'))
+                data=proj_data2[axis]['data']
+                if (vy0 != 0) and (axis =='z'):
+                    data=sciim.interpolation.shift(data,(-jshift,0), mode='wrap')
+
+                im=ax.imshow(data,origin='lower',interpolation='bilinear')
+                im.set_norm(aux['specific_scalar3']['norm']) 
+                im.set_cmap(aux['specific_scalar3']['cmap']) 
+                im.set_clim(aux['specific_scalar3']['clim'])
+
+                extent=slc_data[axis+'extent']
+                im.set_extent(extent)
+                images.append(im)
+                ax.set_xlim(extent[0],extent[1])
+                ax.set_ylim(extent[2],extent[3])
+
             else:
                 data=slc_data[axis][f]
                 if (vy0 != 0) and (axis =='z'):
