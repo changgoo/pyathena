@@ -49,15 +49,18 @@ for dd in dirs:
 if narg > 3:
     do_pickling = eval(sys.argv[3])
 
+if narg > 4:
+    force_recal = eval(sys.argv[4])
+
 print system,base,dd,ids,do_pickling
 for problem_id in ids: 
     if (system == 'cori') | (system == 'rusty'):
         preprocessing.doall(base,problem_id,problem_dir='{}/slab/'.format(problem_id),\
                             do_pickling=do_pickling,use_yt=False)
     elif (system == 'tigress_arm'):
-        preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,vtkdir=vtkbase,force_recal=True)
+        preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,vtkdir=vtkbase,force_recal=force_recal)
     else:
-        preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,force_recal=True)
+        preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,force_recal=force_recal)
 
 for problem_id in ids:
     if (system == 'cori') | (system == 'rusty'):
