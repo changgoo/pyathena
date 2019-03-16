@@ -62,12 +62,15 @@ for pid in ids:
     aux=set_aux.set_aux(pid)
     aux_surf=aux['surface_density']
     if system == 'tigress_rps':
-        field_list=['star_particles','surface_density','specific_scalar3_proj','nH','specific_scalar3','temperature','pok','velocity_z']
+        field_list=['star_particles','surface_density','specific_scalar3_proj','nH','specific_scalar3','temperature','pok','ram_pok_z']
     else:
         field_list=['star_particles','surface_density','nH','temperature','pok','velocity_z']
     slcdata=p.load(open(slc_files[0]))
     if 'magnetic_field_strength' in slcdata['x']:
-        field_list += ['magnetic_field_strength']
+        if system == 'tigress_rps':
+            field_list += ['mag_pok']
+        else:
+            field_list += ['magnetic_field_strength']
     for slcname in slc_files:
         print slcname
         starname=slcname.replace('slice.p','starpar.vtk').replace('slice','starpar')
@@ -79,7 +82,7 @@ for pid in ids:
             plot_projection.plot_projection(projname,starname,
               scale_func=np.cbrt,runaway=False,aux=aux_surf,vy0=vy0)
 
-    if (system == 'tigress') | (system == 'tigress_arm'):
+    if system.startswith('tigress'):
         basedir1='{}{}/'.format(base,pid)
         basedir2='/tigress/changgoo/public_html/TIGRESS_figures/movies/'
         if system == 'tigress_arm': basedir2 += 'ARM/'

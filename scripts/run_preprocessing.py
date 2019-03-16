@@ -51,6 +51,8 @@ if narg > 3:
 
 if narg > 4:
     force_recal = eval(sys.argv[4])
+else:
+    force_recal = False
 
 print system,base,dd,ids,do_pickling
 for problem_id in ids: 

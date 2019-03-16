@@ -16,7 +16,7 @@ def set_aux(model='solar',verbose=False):
         n_bins=128, norm=LogNorm())
     aux['pok']=dict(label=r'$P/k_B\;[{\rm K}\,{\rm cm}^{-3}]$', \
         unit='K*cm**(-3)', limits=(1.e-2,1.e8), \
-        cmap=cm.gnuplot2,clim=(10,5.e5), \
+        cmap=cm.plasma,clim=(10,5.e5), \
         cticks=(1.e2,1.e3,1.e4,1.e5), \
         n_bins=128, norm=LogNorm())
     aux['temperature']=dict(label=r'$T\;[{\rm K}]$', \
@@ -49,12 +49,12 @@ def set_aux(model='solar',verbose=False):
         n_bins=128, norm=LogNorm())
     aux['mag_pok']=dict(label=r'$P_{\rm mag}/k_B\;[{\rm K}{\rm cm}^{-3}]$',\
         unit='K*cm**(-3)', limits=(1.e-2,1.e8), \
-        cmap=cm.gnuplot2,clim=(10,5.e5), \
+        cmap=cm.plasma,clim=(10,5.e5), \
         n_bins=128, norm=LogNorm())
     aux['ram_pok_z']=dict(\
         label=r'$P_{\rm turb}/k_B\;[{\rm K}{\rm cm}^{-3}]$', \
         unit='K*cm**(-3)', limits=(1.e-2,1.e8), \
-        cmap=cm.gnuplot2,clim=(10,5.e5), \
+        cmap=cm.plasma,clim=(10,5.e5), \
         n_bins=128, norm=LogNorm())
     aux['plasma_beta']=dict(label=r'$\beta$', limits=(1.e-4,1.e16), \
         n_bins=256, norm=LogNorm())

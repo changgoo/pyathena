@@ -10,9 +10,9 @@ import astropy.constants as c
 import astropy.units as u
 import pickle as p
 
-from ath_hst import test_pickle
-from utils import *
-from set_units import set_units
+from pyathena.ath_hst import test_pickle
+from pyathena.utils import *
+from pyathena.set_units import set_units
 
 def parse_filename(filename):
     """
