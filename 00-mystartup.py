@@ -1,5 +1,5 @@
 #from startup import *
-import sys
+import sys,os
 import subprocess
 
 sysconfig={}
@@ -9,17 +9,16 @@ sysconfig['tigressdata2.princeton.edu']={'base':'/tigress/changgoo/','source':'/
 sysconfig['cori']={'base':'/global/cscratch1/sd/changgoo/','source':'/global/u2/c/changgoo/pyathena/'}
 sysconfig['princeton-macbook']={'base':'/Users/ckim/Research/TIGRESS/','source':'/Users/ckim/Sources/pyathena-TIGRESS/'}
 
-uname=subprocess.check_output(['uname','-a'])
-sysname=uname.split(' ')[1]
+sysname=os.uname()[1]
 
 if sysname in sysconfig:
-    print '### setting up for %s system' % sysname
+    print('### setting up for %s system' % sysname)
     sys.path.insert(0,sysconfig[sysname]['source'])
     base=sysconfig[sysname]['base']
     sourcedir=sysconfig[sysname]['source']
-    print '### base directory path is %s' % base
+    print('### base directory path is %s' % base)
 else:
-    print '### no system is matched with %s' % sysname
+    print('### no system is matched with %s' % sysname)
 
 #import matplotlib.pyplot as plt
 import numpy as np
