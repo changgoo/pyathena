@@ -1,5 +1,9 @@
+%matplotlib inline
+%load_ext autoreload
+%autoreload 2
+
 #from startup import *
-import sys,os
+import sys,os,glob
 import subprocess
 
 sysconfig={}
@@ -21,5 +25,6 @@ else:
     print('### no system is matched with %s' % sysname)
 
 #import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from matplotlib.colors import LogNorm
