@@ -5,7 +5,7 @@ def write_par_from_rst(rstfile,parfile):
     while 1:
         l=fp.readline()
         if not l: break
-        if l.startswith('<par_end>'):
+        if l.startswith(b'<par_end>'):
             size=fp.tell()-start
             break
 

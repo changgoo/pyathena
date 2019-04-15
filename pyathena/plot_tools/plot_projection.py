@@ -10,7 +10,7 @@ from pyathena import read_starvtk,texteffect,set_units
 import numpy as np
 import string
 from .scatter_sp import scatter_sp
-import cPickle as pickle
+import pickle
 
 unit=set_units(muH=1.4271)
 Myr=unit['time'].to('Myr').value
@@ -24,7 +24,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
 
 
     if stars: sp=read_starvtk(starfname)
-    frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
+    frb=pickle.load(open(surfname,'rb'),encoding='latin1')
 
     if 'time' in frb:
         tMyr=frb['time']
@@ -113,7 +113,7 @@ def plot_projection_Z(surfname,starfname,stars=True,writefile=True,runaway=True,
     plt.rc('ytick',labelsize=16)
 
     if stars: sp=read_starvtk(starfname)
-    frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
+    frb=pickle.load(open(surfname,'rb'),encoding='latin1')
     if 'time' in frb:
         tMyr=frb['time']
     else:
@@ -195,8 +195,8 @@ def plot_projection_icm(surfname,scalfname,starfname,
     plt.rc('ytick',labelsize=20)
 
     if stars: sp=read_starvtk(starfname)
-    frb=pickle.load(open(surfname,'rb'))#,encoding='latin1')
-    icm=pickle.load(open(scalfname,'rb'))#,encoding='latin1')
+    frb=pickle.load(open(surfname,'rb'),encoding='latin1')
+    icm=pickle.load(open(scalfname,'rb'),encoding='latin1')
 
     if 'time' in frb:
         tMyr=frb['time']
@@ -323,11 +323,11 @@ def plot_projection_all(surfnames,axis='y',pngfname=None,runaway=True,icm_max=1.
             starfname=starfnames[0]
             sp=read_starvtk(starfname)
         
-        frb=pickle.load(open(surfname,'rb'))
+        frb=pickle.load(open(surfname,'rb'),encoding='latin1')
         if nscal > 0:
-            icm=pickle.load(open(scalfnames[iscal],'rb'))
+            icm=pickle.load(open(scalfnames[iscal],'rb'),encoding='latin1')
             if icm[axis]['data'].max() > (icm_max*1.1):
-                print scalfnames[iscal],icm[axis]['data'].min(),icm[axis]['data'].max()
+                print(scalfnames[iscal],icm[axis]['data'].min(),icm[axis]['data'].max())
 
         if 'time' in frb:
             tMyr=frb['time']

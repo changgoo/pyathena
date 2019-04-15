@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
-import cPickle as pickle
+import pickle
 import glob,os
 
 import astropy.constants as c
@@ -46,7 +46,7 @@ def create_surface_density(ds,surf_fname):
     re=ds.domain['right_edge']
     pdata=ds.read_all_data('density')
 
-    proj = pdata.mean(axis=0)
+    proj = np.nanmean(pdata,axis=0)
     proj *= ds.domain['Lx'][2]*to_surf
     bounds = np.array([le[0],re[0],le[1],re[1]])
     surf_data={'time':time,'data':proj,'bounds':bounds}
@@ -86,9 +86,9 @@ def create_projection(ds,proj_fname,field='density',conversion=1.0,weight_field=
         pdata *= wdata
 
     for i,axis in enumerate(['x','y','z']):
-        proj = pdata.mean(axis=data_axis[axis])
+        proj = np.nanmean(pdata,axis=data_axis[axis])
         if weight_field != None:
-            wproj = wdata.mean(axis=data_axis[axis])
+            wproj = np.nanmean(wdata,axis=data_axis[axis])
             proj /= wproj
         if type(conversion) == dict:
             if axis in conversion:

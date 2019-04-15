@@ -11,7 +11,7 @@ from pyathena import read_starvtk,texteffect,set_units
 import numpy as np
 import string
 from .scatter_sp import scatter_sp
-import cPickle as pickle
+import pickle
 
 unit=set_units(muH=1.4271)
 Myr=unit['time'].to('Myr').value
@@ -22,7 +22,7 @@ def slice(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
 
-    slc_data=pickle.load(open(slcfname,'rb'))
+    slc_data=pickle.load(open(slcfname,'rb'),encoding='latin1')
     x0=slc_data['yextent'][0]
     y0=slc_data['yextent'][3]
     Lx=slc_data['yextent'][1]-slc_data['yextent'][0]
@@ -132,7 +132,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.,\
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
 
-    slc_data=pickle.load(open(slcfname,'rb'))
+    slc_data=pickle.load(open(slcfname,'rb'),encoding='latin1')
     x0=slc_data['yextent'][0]
     y0=slc_data['zextent'][2]
     z0=slc_data['yextent'][2]
@@ -265,8 +265,8 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
 
-    slc_data=pickle.load(open(slcfname,'rb'))
-    proj_data=pickle.load(open(projfname,'rb'))
+    slc_data=pickle.load(open(slcfname,'rb'),encoding='latin1')
+    proj_data=pickle.load(open(projfname,'rb'),encoding='latin1')
     
     x0=slc_data['yextent'][0]
     y0=slc_data['zextent'][2]
@@ -335,7 +335,7 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
                 ax.set_xlim(extent[0],extent[1])
                 ax.set_ylim(extent[2],extent[3])
             elif f is 'specific_scalar3_proj':
-                proj_data2=pickle.load(open(projfname.replace('surf.p','scal3.p'),'rb'))
+                proj_data2=pickle.load(open(projfname.replace('surf.p','scal3.p'),'rb'),encoding='latin1')
                 data=proj_data2[axis]['data']
                 if (vy0 != 0) and (axis =='z'):
                     data=sciim.interpolation.shift(data,(-jshift,0), mode='wrap')

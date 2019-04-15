@@ -57,7 +57,7 @@ def main(**kwargs):
 
     parfile='%s/%s.par' % (newbase,newid)
     if os.path.isfile(parfile):
-        print('par file is already there for %s!' % newid)
+        print(('par file is already there for %s!' % newid))
     else:
         if len(rstfiles):
             write_par_from_rst(rstfiles[0],parfile)
@@ -73,7 +73,7 @@ def main(**kwargs):
     Nproc_h=NGrids[0]*NGrids[1]
     gid=np.arange(Nproc)
 
-    print(Nproc,NGrids)
+    print((Nproc,NGrids))
 
 # copy history
     fpath,fbase,fstep,fext,mpi=parse_filename(files[0])
@@ -117,11 +117,11 @@ def main(**kwargs):
         Nproc_h=NGrids[0]*NGrids[1]
         gid=np.arange(Nproc)
 
-        print(f,Nproc,NGrids)
+        print((f,Nproc,Nproc_h,NGrids))
 
         for islab in range(Nslab):
-            print('%d of %d' % (islab, Nslab))
-            grids=gid[gid/Nproc_h == islab]
+            print(('%d of %d' % (islab, Nslab)))
+            grids=gid[(gid/Nproc_h).astype('int') == islab]
             if islab == 0: baseid=newid
             else: baseid='%s-id%d' %(newid,islab)
             if not os.path.isdir('%s/id%d' % (newbase,islab)):
@@ -131,7 +131,7 @@ def main(**kwargs):
                 command=[join_vtk]
                 command.append('-o %s' % outfile)
             else:
-                print('%s is already merged' % (outfile)) 
+                print(('%s is already merged' % (outfile))) 
                 command=['mv']
             for gidx in grids:
                 if gidx == 0: 
@@ -145,13 +145,13 @@ def main(**kwargs):
 
             #print command
             if not compare_files(vtkfile,outfile) or kwargs['overwrite']:
-                subprocess.call(string.join(command),shell=True)
+                subprocess.call(' '.join(command),shell=True)
             else:
-                print('%s is newer than %s' % (outfile, vtkfile))
+                print(('%s is newer than %s' % (outfile, vtkfile)))
                 remove_flag=False
 
             if not os.path.isfile(outfile):
-                print('join to %s is failed' % (outfile)) 
+                print(('join to %s is failed' % (outfile))) 
                 remove_flag=False
 # delete originals
         file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
@@ -168,7 +168,7 @@ def main(**kwargs):
         src_zprof_names=glob.glob('%s/id0/%s.%s.*.zprof' % (fpath,fbase,fstep))
         for f in src_zprof_names:
             dst_name=f.replace(fpath,newbase).replace('id0/','zprof/').replace(fbase,newid)
-            print dst_name
+            print(dst_name)
             if os.path.isfile(f):
                 shutil.move(f,dst_name)
     subprocess.call('find %s/id* -name *.rst -exec mv {} %s/rst/ \;' % (fpath,newbase),shell=True)

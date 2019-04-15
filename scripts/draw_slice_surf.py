@@ -11,7 +11,7 @@ from pyathena import get_params
 from pyathena.plot_tools import plot_slices,plot_projection,set_aux
 import pyathena.plot_tools.movie as movie
 from pyathena.utils import compare_files
-import cPickle as p
+import pickle as p
 
 narg=len(sys.argv)
 system='tigress'
@@ -31,7 +31,7 @@ if narg > 1:
     elif system =='cori':
         base='/global/cscratch1/sd/changgoo/'
     else:
-        print '{} is not supported'.format(system)
+        print('{} is not supported'.format(system))
         sys.exit()
 if narg > 2:
     dirs=glob.glob('{}/{}'.format(base,sys.argv[2]))
@@ -49,11 +49,11 @@ else:
     overwrite = False
 
 for pid in ids:
-    print pid
+    print(pid)
     par = get_params('{}{}/{}.par'.format(base,pid,pid))
     if 'pattern' in par:
         vy0 = par['Omega']*(1.0-par['pattern'])*par['R0']
-        print 'v_y,circ = {}'.format(vy0)
+        print('v_y,circ = {}'.format(vy0))
     else:
         vy0 = 0.0
     slc_files=glob.glob('{}{}/slice/{}.????.slice.p'.format(base,pid,pid))
@@ -65,14 +65,14 @@ for pid in ids:
         field_list=['star_particles','surface_density','specific_scalar3_proj','nH','specific_scalar3','temperature','pok','ram_pok_z']
     else:
         field_list=['star_particles','surface_density','nH','temperature','pok','velocity_z']
-    slcdata=p.load(open(slc_files[0]))
+    slcdata=p.load(open(slc_files[0],'rb'), encoding='latin1')
     if 'magnetic_field_strength' in slcdata['x']:
         if system == 'tigress_rps':
             field_list += ['mag_pok']
         else:
             field_list += ['magnetic_field_strength']
     for slcname in slc_files:
-        print slcname
+        print(slcname)
         starname=slcname.replace('slice.p','starpar.vtk').replace('slice','starpar')
         projname=slcname.replace('slice','surf')
         if not compare_files(slcname,slcname.replace('.p','_proj.png')) or overwrite:
@@ -89,8 +89,8 @@ for pid in ids:
         ffig = os.path.join(basedir1,'slice/*.slice_proj.png')
         fmp4 = os.path.join(basedir1,'slice/{}_slice_proj.mp4'.format(pid))
         movie.make_movie(ffig, fmp4)
-        shutil.copy2(fmp4,basedir2)
+        shutil.copy(fmp4,basedir2)
         ffig = os.path.join(basedir1,'surf/*.surf.png')
         fmp4 = os.path.join(basedir1,'slice/{}_surf.mp4'.format(pid))
         movie.make_movie(ffig, fmp4)
-        shutil.copy2(fmp4,basedir2)
+        shutil.copy(fmp4,basedir2)

@@ -78,7 +78,7 @@ def main(**kwargs):
         zmax=max(ds.domain['right_edge'][2],zmax)
         command.append(vtkfile)
     #print command
-    print(string.join(command))
+    print(''.join(command))
     print('id={} to {} corresponds to z={} to {}'.format(istart,iend,zmin,zmax))
 
 if __name__ == '__main__':

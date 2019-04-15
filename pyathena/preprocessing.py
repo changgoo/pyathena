@@ -72,10 +72,10 @@ def cleanup_directory(base,problem_id,problem_dir=None,newbase=None):
                 f2=f.replace('id0/','{}/'.format(ext))
                 f2=f2.replace(base,newbase)
                 if ext is 'hst':
-                    shutil.copy2(f,f2)
+                    shutil.copy(f,f2)
                     if base != base: 
                         f2=f.replace(base,newbase)
-                        shutil.copy2(f,f2)
+                        shutil.copy(f,f2)
                 else:
                     shutil.move(f,f2)
         else:
@@ -144,7 +144,7 @@ def read_zprof(zprof_fnames):
         time=float(hd[hd.rfind('t=')+2:])
         df=pd.read_csv(f,skiprows=1)
         zaxis=np.array(df['z'])
-        fields=np.array(df.columns)
+        fields=np.array(df.columns.get_values())
         taxis.append(time)
         if dfall is None:
             dfall=np.array(df)[np.newaxis,:]
@@ -452,7 +452,7 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
 
         for z0 in [500,1000]:
-            zstr='{:02d}'.format(z0/100)
+            zstr='{:02d}'.format(int(z0/100))
             zp_upper=zp.sel(zaxis=z0,method='nearest')
             zp_lower=zp.sel(zaxis=-z0,method='nearest')
             for ns in range(nscal+1):

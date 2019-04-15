@@ -900,7 +900,7 @@ def read_starvtk(starfile,time_out=False):
     age=read_field(file,fm['star_particle_age'])
     pos=read_field(file,fm['star_particle_position']).reshape(nstar,3)
     vel=read_field(file,fm['star_particle_velocity']).reshape(nstar,3)
-    misc_keys=fm.keys()
+    misc_keys=list(fm.keys())
     misc_keys.remove('star_particle_id')
     misc_keys.remove('star_particle_mass')
     misc_keys.remove('star_particle_age')

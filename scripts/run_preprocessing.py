@@ -28,7 +28,7 @@ if narg > 1:
     elif system =='rusty':
         base='/mnt/ceph/users/ckim/'
     else:
-        print '{} is not supported'.format(system)
+        print('{} is not supported'.format(system))
         sys.exit()
 if narg > 2:
     dirs=glob.glob('{}/{}'.format(base,sys.argv[2]))
@@ -54,7 +54,7 @@ if narg > 4:
 else:
     force_recal = False
 
-print system,base,dd,ids,do_pickling
+print(system,base,dd,ids,do_pickling)
 for problem_id in ids: 
     if (system == 'cori') | (system == 'rusty'):
         preprocessing.doall(base,problem_id,problem_dir='{}/slab/'.format(problem_id),\
@@ -71,7 +71,7 @@ for problem_id in ids:
         problem_dir='{}/'.format(problem_id)
     hzpfile='{}{}hst/{}.hst_zp.p'.format(base,problem_dir,problem_id)
     if os.path.isfile(hzpfile):
-        print 'drawing {} ...'.format(problem_id)
+        print('drawing {} ...'.format(problem_id))
         h_zp=pd.read_pickle('{}{}hst/{}.hst_zp.p'.format(base,problem_dir,problem_id))
         sfrmean=h_zp['sfr10'].mean()
         snrmean=h_zp['snr10'].mean()
@@ -101,5 +101,5 @@ for problem_id in ids:
         if system == 'tigress':
             figdir_tigress='{}/public_html/TIGRESS_figures/history/'.format(base)
             if len(figfname) > 0: 
-                os.chmod(figfname,0644)
-                shutil.copy2(figfname,figdir_tigress)
+                os.chmod(figfname,0o644)
+                shutil.copy(figfname,figdir_tigress+os.path.basename(figfname))
