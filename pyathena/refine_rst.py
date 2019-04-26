@@ -12,8 +12,8 @@ def refine(**kwargs):
     dir=kwargs['dir']
     id=kwargs['id']
     itime=int(f_lowres[-8:-4])
-    print f_lowres,pdir,pid
-    print dir,id,itime
+    print(f_lowres,pdir,pid)
+    print(dir,id,itime)
 
     files=glob.glob('{}*{}'.format(f_lowres[:-9],f_lowres[-9:]))
     nf=len(files)
@@ -22,14 +22,14 @@ def refine(**kwargs):
     sghost=kwargs['starghost']
     ns=int(par['configure']['nscalars'])
     if kwargs['nscalars'] >= 0: ns=kwargs['nscalars']
-    print sghost,ns 
+    print(sghost,ns)
 
     dm=par['domain1']
     Nx=np.array([dm['Nx1'],dm['Nx2'],dm['Nx3']])
     Ng=np.array([dm['NGrid_x1'],dm['NGrid_x2'],dm['NGrid_x3']])
     Nb=Nx/Ng
     if not (Ng.prod() == nf): 
-        print "something wrong...",Ng,nf
+        print("something wrong...",Ng,nf)
         return
 
     grids,NG=rh.calculate_grid(Nx,Nb)
@@ -40,7 +40,8 @@ def refine(**kwargs):
 
     pardata=rh.parse_misc_info(f_lowres)
 
-    par=pardata['par']
+    par=pardata['par'].decode()
+    print(par)
     if not kwargs['split']:
         par=par.replace('Nx1           = %d' % Nx[0],'Nx1           = %d' % (Nx[0]*2))
         par=par.replace('Nx2           = %d' % Nx[1],'Nx2           = %d' % (Nx[1]*2))
@@ -49,16 +50,16 @@ def refine(**kwargs):
     par=par.replace('NGrid_x2      = %d' % NG[1],'NGrid_x2      = %d' % NG_refine[1])
     par=par.replace('NGrid_x3      = %d' % NG[2],'NGrid_x3      = %d' % NG_refine[2])
     par=par.replace('AutoWithNProc = %d' % NG[0]*NG[1]*NG[2],'AutoWithNProc = 0')
-    pardata['par']=par
+    pardata['par']=par.encode()
 
-    print par[par.rfind('<domain1'):par.rfind('<problem')]
+    print(par[par.rfind('<domain1'):par.rfind('<problem')])
 
     for g_orig in grids:
         if g_orig['id'] == 0:
             fname_orig='{}{}.{:04d}.rst'.format(pdir,pid,itime)
         else:
             fname_orig='{}{}-id{}.{:04d}.rst'.format(pdir,pid,g_orig['id'],itime)
-        print fname_orig
+        print(fname_orig)
         fm,rstdata=rh.read_rst_grid(fname_orig,starghost=sghost)
 
         if kwargs['split']:
@@ -81,7 +82,7 @@ def refine(**kwargs):
             fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
             for f in fc_varnames:
                 if f in rstdata_refine: 
-                    print 'removing {}'.format(f)
+                    print('removing {}'.format(f))
                     del rstdata_refine[f]
 
         rh.write_allfile(pardata,rstdata_refine,grids_part,grid_disp=is_refine,\

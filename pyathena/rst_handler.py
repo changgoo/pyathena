@@ -21,8 +21,8 @@ def parse_misc_info(rstfile):
         l=fp.readline()
         if not l: break
     
-        if l.startswith('N_STEP') or l.startswith('DENSITY') or \
-           l.startswith('STAR') or l.startswith('USER'): 
+        if l.startswith(b'N_STEP') or l.startswith(b'DENSITY') or \
+           l.startswith(b'STAR') or l.startswith(b'USER'): 
             iblock+=1
             start[search_block[iblock]]=start[block]+size[block]
 
@@ -46,14 +46,14 @@ def write_onefile(newfile,data_part,data_par):
             'SCALAR 5','SCALAR 6','SCALAR 7','SCALAR 8','SCALAR 9']
     for block in ['par','time']: fp.write(data_par[block])
 
-    fp.write('DENSITY\n')
+    fp.write(b'DENSITY\n')
     fp.write(data_part['DENSITY'].flatten().tobytes('C'))
     for f in fields[1:]:
         if f in list(data_part.keys()):
         #print f,data_part[f].shape
-            fp.write('\n%s\n' % f)
+            fp.write('\n{}\n'.format(f).encode())
             fp.write(data_part[f].flatten().tobytes('C'))
-    fp.write('\n')
+    fp.write(b'\n')
     for block in ['star','user']: 
       if block in data_par: fp.write(data_par[block])
     fp.close()
