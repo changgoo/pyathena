@@ -23,4 +23,5 @@ else:
 #import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
-from matplotlib.colors import LogNorm
+from matplotlib.colors import LogNorm,Normalize,SymLogNorm
+import cmocean
