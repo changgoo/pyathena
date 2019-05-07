@@ -43,7 +43,7 @@ def parse_filename(filename):
         step=base_split[1]
         ext=base_split[2]
     else:
-        id=string.join(base_split[:-2],'.')
+        id='.'.join(base_split[:-2])
         step=base_split[-2]
         ext=base_split[-1]
 

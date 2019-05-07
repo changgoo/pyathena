@@ -1,7 +1,3 @@
-%matplotlib inline
-%load_ext autoreload
-%autoreload 2
-
 #from startup import *
 import sys,os,glob
 import subprocess
