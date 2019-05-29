@@ -1,0 +1,19 @@
+figure.figsize: 8,6
+figure.dpi: 100
+figure.edgecolor: 1,1,1,1
+savefig.dpi: 150
+
+font.size: 18
+font.weight: 300
+
+axes.linewidth: 2
+xtick.major.width: 2
+ytick.major.width: 2
+xtick.major.size: 5
+ytick.major.size: 5
+xtick.minor.size: 3
+ytick.minor.size: 3
+
+lines.linewidth: 2
+
+image.origin: lower
