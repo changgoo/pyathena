@@ -1,6 +1,5 @@
 figure.figsize: 8,6
 figure.dpi: 100
-figure.edgecolor: 1,1,1,1
 savefig.dpi: 150
 
 font.size: 18
