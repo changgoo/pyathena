@@ -15,7 +15,8 @@ def make_movie(fname_glob, fname_out, fps_in=15, fps_out=15):
            '-r', str(fps_out),
            '-pix_fmt', 'yuv420p',
            '-vcodec', 'libx264',
-           '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+#           '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+           '-s','1200x800',
            '-f', 'mp4', fname_out]
 
     print('[make_mp4]: ffmpeg command:')
