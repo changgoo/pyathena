@@ -171,10 +171,10 @@ def gradient(phi,dx):
 
     return g1,g2,g3
 
-def texteffect(fontsize=12):
+def texteffect(fontsize=12,foreground='w',linewidth=3):
   try:
     from matplotlib.patheffects import withStroke
-    myeffect = withStroke(foreground="w", linewidth=3)
+    myeffect = withStroke(foreground=foreground,linewidth=linewidth)
     kwargs = dict(path_effects=[myeffect], fontsize=fontsize)
   except ImportError:
     kwargs = dict(fontsize=fontsize)
