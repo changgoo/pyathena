@@ -35,6 +35,7 @@ def parse_par(rstfile):
             fields[block]=[]
             blocks.append(block)
         line=fp.readline()
+        if '' == line: break
         sp=line.split('=')
         if len(sp) >= 2:
             
@@ -49,7 +50,7 @@ def parse_par(rstfile):
             fields[block].append(field)
 
 
-    par[block]=fp.tell()
+    par['par_end']=fp.tell()
 
     fp.close()
 
@@ -64,5 +65,6 @@ def get_params(rstfile):
     for block in param_blocks:
         for key in par[block]:
             params[key]=float(par[block][key][0])
-    params['nscalars']=int(par['configure']['nscalars'][0])
+    if 'configure' in blocks:
+        params['nscalars']=int(par['configure']['nscalars'][0])
     return params
