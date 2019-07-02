@@ -178,8 +178,12 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
     dir = kwargs['base_directory']+kwargs['directory']
     if 'vtk_directory' in kwargs: vtkdir=kwargs['vtk_directory']
     else: vtkdir=dir
+
     fname=glob.glob(vtkdir+'id0/'+kwargs['id']+'.????.vtk')
     fname.sort()
+    if len(fname) == 0:
+        fname=glob.glob(vtkdir+kwargs['id']+'.????.vtk')
+        print(vtkdir, kwargs['id'], fname)
 
     if kwargs['range'] != '':
         sp=kwargs['range'].split(',')
