@@ -1,6 +1,7 @@
 import glob
 import os
 
+import matplotlib.lines as mlines
 import matplotlib.colorbar as colorbar
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -16,7 +17,8 @@ unit=set_units(muH=1.4271)
 Myr=unit['time'].to('Myr').value
 
 def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
-  aux={},norm_factor=2.,active=False,scale_func=np.sqrt, vy0=0.):
+  aux={},norm_factor=2.,active=False,scale_func=np.sqrt, vy0=0.,timestamp=True,
+  nstarkeys=4):
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -60,7 +62,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
     if 'norm' in aux: im.set_norm(aux['norm'])
     if 'cmap' in aux: im.set_cmap(aux['cmap'])
     if 'clim' in aux: im.set_clim(aux['clim'])
-    ax.text(extent[0]*0.9,extent[3]*0.9,
+    if timestamp: ax.text(extent[0]*0.9,extent[3]*0.9,
             't=%3d Myr' % tMyr,ha='left',va='top',**(texteffect()))
 
     if stars: scatter_sp(sp,ax,axis='z',runaway=runaway,type='surf',norm_factor=norm_factor,active=active,scale_func=scale_func)
@@ -75,26 +77,20 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
              cmap=plt.cm.cool_r, norm=Normalize(vmin=0,vmax=40), 
              orientation='vertical')
       cbar.set_label(r'${\rm age [Myr]}$')
- 
-      s0=ax.scatter(Lx*2,Ly*2,
-        s=scale_func(1.e3)/norm_factor,color='k',
-        alpha=.8,label=r'$10^3 M_\odot$')
-      s1=ax.scatter(Lx*2,Ly*2,
-        s=scale_func(1.e4)/norm_factor,color='k',
-        alpha=.8,label=r'$10^4 M_\odot$')
-      s2=ax.scatter(Lx*2,Ly*2,
-        s=scale_func(1.e5)/norm_factor,color='k',
-        alpha=.8,label=r'$10^5 M_\odot$')
-      s3=ax.scatter(Lx*2,Ly*2,
-        s=scale_func(1.e6)/norm_factor,
-        color='k',alpha=.8,label=r'$10^6 M_\odot$')
+
+
+      syms=[]
+      for i in range(nstarkeys):
+        s0 = mlines.Line2D([], [], color='k', marker='o',ls='',
+                           markersize=np.sqrt(scale_func(10.**(i+3))/norm_factor), 
+                           alpha=.8,label=r'$10^{} M_\odot$'.format(i+3)) 
+        syms.append(s0)
 
       ax.set_xlim(x0,x0+Lx)
       ax.set_ylim(y0,y0+Ly);
-      legend=ax.legend((s0,s1,s2,s3),(r'$10^3 M_\odot$',r'$10^4 M_\odot$',
-                        r'$10^5 M_\odot$',r'$10^6 M_\odot$'), 
-                        loc=2,ncol=4,bbox_to_anchor=(-0.1, 1.0+0.15*Lx/Ly),
-                        fontsize='medium',frameon=True)
+      legend=ax.legend(handles=syms,
+                       loc=2,ncol=4,bbox_to_anchor=(-0.1, 1.0+0.15*Lx/Ly),
+                       fontsize='medium',frameon=True)
 
     ax.set_xlabel('x [kpc]')
     ax.set_ylabel('y [kpc]')
