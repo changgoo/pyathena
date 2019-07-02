@@ -1,5 +1,5 @@
 from pyathena.set_plt import *
-from GF12 import *
+from .GF12 import *
 
 def plot_ion_frac(tbl,ion_name):
     element=tbl.elements.loc[ion_name]
