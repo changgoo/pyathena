@@ -50,13 +50,17 @@ else:
 
 for pid in ids:
     print(pid)
-    par = get_params('{}{}/{}.par'.format(base,pid,pid))
+    if os.path.isdir('{}{}/slab/'.format(base,pid):
+        pdir='{}/slab/'.format(pid)
+    else:
+        pdir=pid + '/'
+    par = get_params('{}{}{}.par'.format(base,pdir,pid))
     if 'pattern' in par:
         vy0 = par['Omega']*(1.0-par['pattern'])*par['R0']
         print('v_y,circ = {}'.format(vy0))
     else:
         vy0 = 0.0
-    slc_files=glob.glob('{}{}/slice/{}.????.slice.p'.format(base,pid,pid))
+    slc_files=glob.glob('{}{}/slice/{}.????.slice.p'.format(base,pdir,pid))
     slc_files.sort()
     nf=len(slc_files)
     aux=set_aux.set_aux(pid)
@@ -82,10 +86,13 @@ for pid in ids:
             plot_projection.plot_projection(projname,starname,
               scale_func=np.cbrt,runaway=False,aux=aux_surf,vy0=vy0)
 
-    if system.startswith('tigress'):
-        basedir1='{}{}/'.format(base,pid)
-        basedir2='/tigress/changgoo/public_html/TIGRESS_figures/movies/'
-        if system == 'tigress_arm': basedir2 += 'ARM/'
+    if system.startswith('tigress') or system is 'rusty':
+        basedir1=base + pdir
+        if system.startswith('tigress'):
+            basedir2='/tigress/changgoo/public_html/TIGRESS_figures/movies/'
+            if system == 'tigress_arm': basedir2 += 'ARM/'
+        else:
+            basedir2='/mnt/home/ckim/public_www/TIGRESS_Models/movies/'
         ffig = os.path.join(basedir1,'slice/*.slice_proj.png')
         fmp4 = os.path.join(basedir1,'slice/{}_slice_proj.mp4'.format(pid))
         movie.make_movie(ffig, fmp4)

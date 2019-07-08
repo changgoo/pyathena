@@ -57,7 +57,11 @@ else:
 print(system,base,dd,ids,do_pickling)
 for problem_id in ids: 
     if (system == 'cori') | (system == 'rusty'):
-        preprocessing.doall(base,problem_id,problem_dir='{}/slab/'.format(problem_id),\
+        if os.path.isdir('{}{}/slab/'.format(base,problem_id)):
+            problem_dir='{}/slab/'.format(problem_id)
+        else:
+            problem_dir=problem_id + '/'
+        preprocessing.doall(base,problem_id,problem_dir=problem_dir,\
                             do_pickling=do_pickling,use_yt=False)
     elif (system == 'tigress_arm'):
         preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,vtkdir=vtkbase,force_recal=force_recal)
