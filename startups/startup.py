@@ -28,6 +28,9 @@ import cmocean
 import pandas as pd
 import xarray as xr
 
+import astropy.constants as ac
+import astropy.units as au
+
 from IPython import get_ipython
 ipython = get_ipython()
 
