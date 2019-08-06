@@ -50,7 +50,7 @@ else:
 
 for pid in ids:
     print(pid)
-    if os.path.isdir('{}{}/slab/'.format(base,pid):
+    if os.path.isdir('{}{}/slab/'.format(base,pid)):
         pdir='{}/slab/'.format(pid)
     else:
         pdir=pid + '/'
