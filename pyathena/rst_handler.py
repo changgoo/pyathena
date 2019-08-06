@@ -267,7 +267,10 @@ def calculate_grid(Nx,NBx):
     NProcs=NGrids[0]*NGrids[1]*NGrids[2]
     grids=[]
     i=0
-    print(Nx, NBx, NGrids, NProcs)
+    print('Domain Size:',Nx)
+    print('Grid Size:', NBx)
+    print('Processor configuration:', NGrids)
+    print('Number of Processors:', NProcs)
     for n in range(NGrids[2]):
        for m in range(NGrids[1]):
            for l in range(NGrids[0]):
