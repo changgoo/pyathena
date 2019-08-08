@@ -134,15 +134,18 @@ def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True):
         da.to_netcdf(zpfile)
         print('{} is created'.format(zpfile))
 
+def read_zprof_one(zprof_fname):
+    with open(zprof_fname,'r') as fp:
+      hd=fp.readline()
+      time=float(hd[hd.rfind('t=')+2:])
+    df=pd.read_csv(zprof_fname,skiprows=1)
+    return df,time
+
 def read_zprof(zprof_fnames):
     taxis=[]
     dfall=None
     for f in zprof_fnames:
-        fp=open(f,'r')
-        hd=fp.readline()
-        fp.close()
-        time=float(hd[hd.rfind('t=')+2:])
-        df=pd.read_csv(f,skiprows=1)
+        df,time=read_zprof_one(f)
         zaxis=np.array(df['z'])
         fields=np.array(df.columns.get_values())
         taxis.append(time)
