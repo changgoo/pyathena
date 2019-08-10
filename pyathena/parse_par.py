@@ -2,9 +2,17 @@ def write_par_from_rst(rstfile,parfile):
     fp=open(rstfile,'rb')
     search_block='par'
     start=0
+    first=True
     while 1:
         l=fp.readline()
         if not l: break
+        if l.startswith(b'# --------------------- PAR_DUMP '):
+            if first: 
+                start=fp.tell()
+                first=False
+            else: 
+                size=fp.tell()-start-len(l)
+                break
         if l.startswith(b'<par_end>'):
             size=fp.tell()-start
             break

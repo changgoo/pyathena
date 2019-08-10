@@ -54,6 +54,7 @@ def main(**kwargs):
 
     rstfiles=glob.glob('%s%s/id0/%s.????.rst' % (base,dir,id))
     rstfiles+=glob.glob('%s%s/rst/%s.????.rst' % (base,dir,id))
+    rstfiles+=glob.glob('%s%s/out.txt' % (base,dir))
 
     parfile='%s/%s.par' % (newbase,newid)
     if os.path.isfile(parfile):
@@ -119,60 +120,69 @@ def main(**kwargs):
 
         print((f,Nproc,Nproc_h,NGrids))
 
-        for islab in range(Nslab):
-            print(('%d of %d' % (islab, Nslab)))
-            grids=gid[(gid/Nproc_h).astype('int') == islab]
-            if islab == 0: baseid=newid
-            else: baseid='%s-id%d' %(newid,islab)
-            if not os.path.isdir('%s/id%d' % (newbase,islab)):
-                os.mkdir('%s/id%d' % (newbase,islab))
-            outfile='%s/id%d/%s.%s.vtk' % (newbase,islab,baseid,fstep)
-            if len(grids) > 1:
-                command=[join_vtk]
-                command.append('-o %s' % outfile)
-            else:
-                print(('%s is already merged' % (outfile))) 
-                command=['mv']
-            for gidx in grids:
-                if gidx == 0: 
-                    vtkfile='%s%s/id%d/%s.%s.%s' % (base,dir,gidx,id,fstep,fext)
+        if join_vtk is not None:
+            for islab in range(Nslab):
+                print(('%d of %d' % (islab, Nslab)))
+                grids=gid[(gid/Nproc_h).astype('int') == islab]
+                if islab == 0: baseid=newid
+                else: baseid='%s-id%d' %(newid,islab)
+                if not os.path.isdir('%s/id%d' % (newbase,islab)):
+                    os.mkdir('%s/id%d' % (newbase,islab))
+                outfile='%s/id%d/%s.%s.vtk' % (newbase,islab,baseid,fstep)
+                if len(grids) > 1:
+                    command=[join_vtk]
+                    command.append('-o %s' % outfile)
                 else:
-                    vtkfile='%s%s/id%d/%s-id%d.%s.%s' % (base,dir,gidx,id,gidx,fstep,fext)
-                command.append(vtkfile)
-            if len(grids) == 1:
-                command.append(outfile)
-                remove_flag=False
-
-            #print command
-            if not compare_files(vtkfile,outfile) or kwargs['overwrite']:
-                subprocess.call(' '.join(command),shell=True)
-            else:
-                print(('%s is newer than %s' % (outfile, vtkfile)))
-                remove_flag=False
-
-            if not os.path.isfile(outfile):
-                print(('join to %s is failed' % (outfile))) 
-                remove_flag=False
+                    print(('%s is already merged' % (outfile))) 
+                    command=['mv']
+                for gidx in grids:
+                    if gidx == 0: 
+                        vtkfile='%s%s/id%d/%s.%s.%s' % (base,dir,gidx,id,fstep,fext)
+                    else:
+                        vtkfile='%s%s/id%d/%s-id%d.%s.%s' % (base,dir,gidx,id,gidx,fstep,fext)
+                    command.append(vtkfile)
+                if len(grids) == 1:
+                    command.append(outfile)
+                    remove_flag=False
+ 
+                #print command
+                if not compare_files(vtkfile,outfile) or kwargs['overwrite']:
+                    subprocess.call(' '.join(command),shell=True)
+                else:
+                    print(('%s is newer than %s' % (outfile, vtkfile)))
+                    remove_flag=False
+ 
+                if not os.path.isfile(outfile):
+                    print(('join to %s is failed' % (outfile))) 
+                    remove_flag=False
 # delete originals
-        file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
-        if (len(file_originals) > 0) and remove_flag: 
-            for f in file_originals: os.remove(f)
-            os.remove('%s/id0/%s.%s.%s' % (fpath,fbase,fstep,fext))
+            file_originals=glob.glob('%s/id*/%s-id*.%s.%s' % (fpath,fbase,fstep,fext))
+            if (len(file_originals) > 0) and remove_flag: 
+                for f in file_originals: os.remove(f)
+                os.remove('%s/id0/%s.%s.%s' % (fpath,fbase,fstep,fext))
 # move starpar.vtk
         src_starpar_name='%s/id0/%s.%s.starpar.vtk' % (fpath,fbase,fstep)
         dst_name='%s/starpar/%s.%s.starpar.vtk' % (newbase,newid,fstep)
         if os.path.isfile(src_starpar_name): 
-            shutil.move(src_starpar_name,dst_name)
+            if join_vtk is None:
+                shutil.copy(src_starpar_name,dst_name)
+            else:
+                shutil.move(src_starpar_name,dst_name)
 
 # move zprof
         src_zprof_names=glob.glob('%s/id0/%s.%s.*.zprof' % (fpath,fbase,fstep))
         for f in src_zprof_names:
-            dst_name=f.replace(fpath,newbase).replace('id0/','zprof/').replace(fbase,newid)
+            ph = f.split('.')[-2]
+            dst_name='%s/zprof/%s.%s.%s.zprof' % (newbase,newid,fstep,ph)
             print(dst_name)
             if os.path.isfile(f):
-                shutil.move(f,dst_name)
-    subprocess.call('find %s/id* -name *.rst -exec mv {} %s/rst/ \;' % (fpath,newbase),shell=True)
-    subprocess.call('rename %s %s %s/rst/*' % (id,newid,newbase),shell=True)
+                if join_vtk is None:
+                    shutil.copy(f,dst_name)
+                else:
+                    shutil.move(f,dst_name)
+    if join_vtk is not None:
+        subprocess.call('find %s/id* -name *.rst -exec mv {} %s/rst/ \;' % (fpath,newbase),shell=True)
+        subprocess.call('rename %s %s %s/rst/*' % (id,newid,newbase),shell=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
