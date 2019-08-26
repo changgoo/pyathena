@@ -294,7 +294,7 @@ def dump_zprof_one(f,dc,icm_field=None,outdir='zprof_icm',
 
     if icm_field is not None: icm=True
 
-    print('Reading: ',f)
+    print('\nReading: ',f)
 
     ds = pa.AthenaDataSet(f)
     time = ds.domain['time']
