@@ -38,7 +38,8 @@ def los_to_HI(dens,temp,vel,vchannel,deltas=1.,WF=False):
     tau_v=np.nansum(kappa_v*ds,axis=1) # dimensionless
     return TB,tau_v,TBthin
 
-def los_to_HI_small_mem(dens,temp,vel,vchannel,deltas=1.,WF=False,los_axis=1,verbose=False):
+def los_to_HI_axis_proj(dens,temp,vel,vchannel,small_mem=True,
+                        deltas=1.,WF=False,los_axis=1,verbose=False):
     """
         inputs:
             dens: number density of hydrogen in units of 1/cm^3
@@ -55,9 +56,17 @@ def los_to_HI_small_mem(dens,temp,vel,vchannel,deltas=1.,WF=False,los_axis=1,ver
             TBthin: the brithgtness temperature assuming optically-thin case.
     """
     
-    Tlos=temp
-    vlos=vel
-    nlos=dens
+    if small_mem:
+        Tlos=temp
+        vlos=vel
+        nlos=np.copy(dens)
+    else:
+        Tlos=temp[np.newaxis,...]
+        vlos=vel[np.newaxis,...]
+        nlos=np.copy(dens[np.newaxis,...])
+
+    idx = Tlos>2.e4
+    nlos[idx]=0.
 
     if WF: Tspin=Tspin_WF(Tlos,nlos)
     else: Tspin=Tlos
@@ -65,20 +74,73 @@ def los_to_HI_small_mem(dens,temp,vel,vchannel,deltas=1.,WF=False,los_axis=1,ver
     ds=deltas*3.085677581467192e+18
 
     v_L=0.21394414*np.sqrt(Tlos) # in units of km/s
-    TB=[]
-    tau_v=[]
-    for vch in vchannel:
-        if verbose: print vch
+    if small_mem:
+        TB=[]
+        tau_v=[]
+        for vch in vchannel:
+            if verbose: print(vch)
+            phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
+                  (vch-vlos)/v_L)**2) # time
+            kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
+            tau_los=kappa_v*ds # dimensionless
+ 
+            tau_cumul=tau_los.cumsum(axis=los_axis)
+            TB.append(np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=los_axis)) # same unit with Tspin
+            tau_v.append(np.nansum(kappa_v*ds,axis=los_axis)) # dimensionless
+    else:
         phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
-              (vch-vlos)/v_L)**2) # time
+              (vchannel[:,np.newaxis,np.newaxis,np.newaxis]-vlos)/v_L)**2) # time
         kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
         tau_los=kappa_v*ds # dimensionless
 
-        tau_cumul=tau_los.cumsum(axis=los_axis)
-        TB.append(np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=los_axis)) # same unit with Tspin
-        tau_v.append(np.nansum(kappa_v*ds,axis=los_axis)) # dimensionless
-        
+        tau_cumul=tau_los.cumsum(axis=los_axis+1)
+
+        TB=np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=los_axis+1) # same unit with Tspin
+        tau_v=np.nansum(kappa_v*ds,axis=los_axis+1) # dimensionless
+ 
     return np.array(TB),np.array(tau_v)
+
+def los_to_HI_axis_proj_thin(dens,temp,vel,vchannel,small_mem=True,
+                        deltas=1.,WF=False,los_axis=1,verbose=False):
+    """
+        inputs:
+            dens: number density of hydrogen in units of 1/cm^3
+            temp: temperature in units of K
+            vel: line-of-sight velocity in units of km/s
+        parameters:
+            vmax: maximum range of velocity channel (+- vmax) in units of km/s
+            dvch: velocity channel resolution in units of km/s
+            deltas: length of line segments in units of pc
+        outputs: a dictionary
+            TB: the brightness temperature
+            tau: optical depth
+            vchannel: velocity channel
+            TBthin: the brithgtness temperature assuming optically-thin case.
+    """
+    
+    Tlos=temp[np.newaxis,...]
+    vlos=vel[np.newaxis,...]
+    nlos=np.copy(dens[np.newaxis,...])
+
+    idx = Tlos>2.e4
+    nlos[idx]=0.
+
+    if WF: Tspin=Tspin_WF(Tlos,nlos)
+    else: Tspin=Tlos
+    
+    ds=deltas*3.085677581467192e+18
+
+    
+    v_L=0.21394414*np.sqrt(Tlos) # in units of km/s
+    phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
+          (vchannel[:,np.newaxis,np.newaxis,np.newaxis]-vlos)/v_L)**2) # time
+    kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
+    tau_los=kappa_v*ds # dimensionless
+
+    TBthin=np.nansum(Tspin*tau_los,axis=los_axis+1) # same unit with Tspin
+ 
+    return TBthin
+
 
 def k10h(T2):
     """

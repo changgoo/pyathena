@@ -11,7 +11,7 @@ from pyathena import read_starvtk,texteffect,set_units
 import numpy as np
 import string
 from .scatter_sp import scatter_sp
-import cPickle as pickle
+import pickle
 
 unit=set_units(muH=1.4271)
 Myr=unit['time'].to('Myr').value
@@ -22,7 +22,7 @@ def slice(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
 
-    slc_data=pickle.load(open(slcfname,'rb'))
+    slc_data=pickle.load(open(slcfname,'rb'),encoding='latin1')
     x0=slc_data['yextent'][0]
     y0=slc_data['yextent'][3]
     Lx=slc_data['yextent'][1]-slc_data['yextent'][0]
@@ -121,7 +121,7 @@ def slice(slcfname,starfname,fields_to_draw,zoom=1.,aux={},\
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.savefig(pngfname,num=1,dpi=150)
         plt.close(1)
     else:
         return fig
@@ -132,7 +132,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.,\
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
 
-    slc_data=pickle.load(open(slcfname,'rb'))
+    slc_data=pickle.load(open(slcfname,'rb'),encoding='latin1')
     x0=slc_data['yextent'][0]
     y0=slc_data['zextent'][2]
     z0=slc_data['yextent'][2]
@@ -254,7 +254,7 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.,\
     #canvas = mpl.backends.backend_agg.FigureCanvasAgg(fig)
     #canvas.print_figure(pngfname,num=1,dpi=150,bbox_inches='tight')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.savefig(pngfname,num=1,dpi=150)
         plt.close(1)
     else:
         return fig
@@ -265,8 +265,8 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
 
-    slc_data=pickle.load(open(slcfname,'rb'))
-    proj_data=pickle.load(open(projfname,'rb'))
+    slc_data=pickle.load(open(slcfname,'rb'),encoding='latin1')
+    proj_data=pickle.load(open(projfname,'rb'),encoding='latin1')
     
     x0=slc_data['yextent'][0]
     y0=slc_data['zextent'][2]
@@ -279,9 +279,9 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
     iy=ix*Ly/Lx
     iz=ix*Lz/Lx
     nf=len(fields_to_draw)
-    fig=plt.figure(1,figsize=(ix*(nf+1),iz+iy*1.2))
-    gs = gridspec.GridSpec(2,nf+1,height_ratios=[iz,iy])
-    gs.update(top=0.95,left=0.10,right=0.95,wspace=0.05,hspace=0)
+    fig=plt.figure(1,figsize=(ix*nf,iz+iy*1.2))
+    gs = gridspec.GridSpec(2,nf,height_ratios=[iz,iy])
+    gs.update(top=0.95,left=0.08,bottom=0.05,right=0.98,wspace=0.05,hspace=0)
 
     if stars:
         sp=read_starvtk(starfname)
@@ -334,6 +334,23 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
                 images.append(im)
                 ax.set_xlim(extent[0],extent[1])
                 ax.set_ylim(extent[2],extent[3])
+            elif f is 'specific_scalar3_proj':
+                proj_data2=pickle.load(open(projfname.replace('surf.p','scal3.p'),'rb'),encoding='latin1')
+                data=proj_data2[axis]['data']
+                if (vy0 != 0) and (axis =='z'):
+                    data=sciim.interpolation.shift(data,(-jshift,0), mode='wrap')
+
+                im=ax.imshow(data,origin='lower',interpolation='bilinear')
+                im.set_norm(aux['specific_scalar3']['norm']) 
+                im.set_cmap(aux['specific_scalar3']['cmap']) 
+                im.set_clim(aux['specific_scalar3']['clim'])
+
+                extent=slc_data[axis+'extent']
+                im.set_extent(extent)
+                images.append(im)
+                ax.set_xlim(extent[0],extent[1])
+                ax.set_ylim(extent[2],extent[3])
+
             else:
                 data=slc_data[axis][f]
                 if (vy0 != 0) and (axis =='z'):
@@ -409,7 +426,7 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
 
     pngfname=slcfname.replace('.p','_proj.png')
     if writefile:
-        plt.savefig(pngfname,bbox_inches='tight',num=1,dpi=150)
+        plt.savefig(pngfname,num=1,dpi=150)
         plt.close(1)
     else:
         return fig

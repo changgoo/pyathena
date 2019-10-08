@@ -6,9 +6,9 @@ def int_to_roman(input):
     """ Convert an integer to a Roman numeral. """
 
     if not isinstance(input, type(1)):
-        raise TypeError, "expected integer, got %s" % type(input)
+        raise TypeError( "expected integer, got %s" % type(input))
     if not 0 < input < 4000:
-        raise ValueError, "Argument must be between 1 and 3999"
+        raise ValueError( "Argument must be between 1 and 3999")
     ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
     nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
     result = []
@@ -39,7 +39,7 @@ class GF12_table(object):
             
     def get_cie_cooling(self,ion_name):
         nion=self.elements.loc[ion_name]['number']+1
-        if not self.cie_cooling.has_key(ion_name):
+        if not (ion_name in self.cie_cooling):
             cie_cooling_ion,cie_cooling=self.read_cie_cooling_table_(ion_name)
             self.cie_cooling[ion_name]=cie_cooling
             self.cie_cooling_per_ion[ion_name]=cie_cooling_ion

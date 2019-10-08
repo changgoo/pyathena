@@ -4,13 +4,18 @@ from pyathena import set_units
 import astropy.constants as c
 import astropy.units as u
 
-plt.rcParams['figure.figsize'] = (10,6)
-plt.rcParams['figure.dpi'] = 150
+def toggle_xticks(axes,visible=False):
+    plt.setp([ax.get_xticklabels() for ax in axes],visible=visible)
+def toggle_yticks(axes,visible=False):
+    plt.setp([ax.get_yticklabels() for ax in axes],visible=visible)
 
-plt.rcParams['font.size'] = 18
-plt.rcParams['font.weight'] = 300
-
-plt.rcParams['savefig.bbox']='tight'
+#plt.rcParams['figure.figsize'] = (10,6)
+#plt.rcParams['figure.dpi'] = 150
+#
+#plt.rcParams['font.size'] = 18
+#plt.rcParams['font.weight'] = 300
+#
+#plt.rcParams['savefig.bbox']='tight'
 
 label_units={'density':r'$\,[{\rm cm}^{-3}]$',
         'pressure':r'$\,[{\rm cm}^{-3}\,{\rm K}]$',

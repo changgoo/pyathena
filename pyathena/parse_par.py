@@ -2,10 +2,18 @@ def write_par_from_rst(rstfile,parfile):
     fp=open(rstfile,'rb')
     search_block='par'
     start=0
+    first=True
     while 1:
         l=fp.readline()
         if not l: break
-        if l.startswith('<par_end>'):
+        if l.startswith(b'# --------------------- PAR_DUMP '):
+            if first: 
+                start=fp.tell()
+                first=False
+            else: 
+                size=fp.tell()-start-len(l)
+                break
+        if l.startswith(b'<par_end>'):
             size=fp.tell()-start
             break
 
@@ -35,6 +43,7 @@ def parse_par(rstfile):
             fields[block]=[]
             blocks.append(block)
         line=fp.readline()
+        if '' == line: break
         sp=line.split('=')
         if len(sp) >= 2:
             
@@ -49,7 +58,7 @@ def parse_par(rstfile):
             fields[block].append(field)
 
 
-    par[block]=fp.tell()
+    par['par_end']=fp.tell()
 
     fp.close()
 
@@ -64,5 +73,6 @@ def get_params(rstfile):
     for block in param_blocks:
         for key in par[block]:
             params[key]=float(par[block][key][0])
-    params['nscalars']=int(par['configure']['nscalars'][0])
+    if 'configure' in blocks:
+        params['nscalars']=int(par['configure']['nscalars'][0])
     return params

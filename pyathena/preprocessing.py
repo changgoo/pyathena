@@ -72,10 +72,10 @@ def cleanup_directory(base,problem_id,problem_dir=None,newbase=None):
                 f2=f.replace('id0/','{}/'.format(ext))
                 f2=f2.replace(base,newbase)
                 if ext is 'hst':
-                    shutil.copy2(f,f2)
+                    shutil.copy(f,f2)
                     if base != base: 
                         f2=f.replace(base,newbase)
-                        shutil.copy2(f,f2)
+                        shutil.copy(f,f2)
                 else:
                     shutil.move(f,f2)
         else:
@@ -108,7 +108,7 @@ def cleanup_directory(base,problem_id,problem_dir=None,newbase=None):
 
     return success
 
-def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True):
+def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True,icm=False):
     """
         merge zprof dumps along t-axis and create netCDF files 
         files should have moved to zprof/
@@ -118,8 +118,12 @@ def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True):
     plist=['phase1','phase2','phase3','phase4','phase5']
     for phase in plist:
         zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_dir,problem_id,phase))
+        if icm:
+            zprof_fnames=glob.glob('{}{}/zprof_icm/{}.*.{}-icm.zprof'.format(base,problem_dir,problem_id,phase))
         zprof_fnames.sort()
         zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
+        if icm:
+            zpfile='{}{}/zprof_merged/{}.{}-icm.zprof.nc'.format(base,problem_dir,problem_id,phase)
         if os.path.isfile(zpfile) and concatenated: 
             with xr.open_dataarray(zpfile) as da: da.load()
             nfiles_in_zpmerged=len(da.taxis)
@@ -134,17 +138,20 @@ def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True):
         da.to_netcdf(zpfile)
         print('{} is created'.format(zpfile))
 
+def read_zprof_one(zprof_fname):
+    with open(zprof_fname,'r') as fp:
+      hd=fp.readline()
+      time=float(hd[hd.rfind('t=')+2:])
+    df=pd.read_csv(zprof_fname,skiprows=1)
+    return df,time
+
 def read_zprof(zprof_fnames):
     taxis=[]
     dfall=None
     for f in zprof_fnames:
-        fp=open(f,'r')
-        hd=fp.readline()
-        fp.close()
-        time=float(hd[hd.rfind('t=')+2:])
-        df=pd.read_csv(f,skiprows=1)
+        df,time=read_zprof_one(f)
         zaxis=np.array(df['z'])
-        fields=np.array(df.columns)
+        fields=np.array(df.columns.get_values())
         taxis.append(time)
         if dfall is None:
             dfall=np.array(df)[np.newaxis,:]
@@ -154,7 +161,7 @@ def read_zprof(zprof_fnames):
                         dims=('fields','zaxis','taxis'))
     return da
 
-def merge_xarray(base,problem_dir,problem_id):
+def merge_xarray(base,problem_dir,problem_id,icm=False):
     """
         merge all phases into a single file
     """    
@@ -162,6 +169,8 @@ def merge_xarray(base,problem_dir,problem_id):
     datasets = xr.Dataset()
     for phase in plist:
         path='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
+        if icm: 
+            path='{}{}/zprof_merged/{}.{}-icm.zprof.nc'.format(base,problem_dir,problem_id,phase)
         with xr.open_dataarray(path) as da: da.load()
         datasets[phase]=da
     return datasets
@@ -452,7 +461,7 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
             h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
 
         for z0 in [500,1000]:
-            zstr='{:02d}'.format(z0/100)
+            zstr='{:02d}'.format(int(z0/100))
             zp_upper=zp.sel(zaxis=z0,method='nearest')
             zp_lower=zp.sel(zaxis=-z0,method='nearest')
             for ns in range(nscal+1):
@@ -608,7 +617,7 @@ def draw_history(h_zp,metadata,figfname=''):
         fig.savefig(figfname,bbox_inches='tight',dpi=150)
 
 def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True,
-  force_recal=False, force_redraw=False):
+  force_recal=False, force_redraw=False,vtkdir=None):
     """
         This function will do following tasks: 
         (1) reoranizing files 
@@ -657,6 +666,7 @@ def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True,
             from pyathena.yt_analysis import yt_analysis
             yt_analysis.main(force_recal=force_recal,force_redraw=force_redraw,verbose=50,**kwargs)
         else:
+            if not (vtkdir is None): kwargs['vtk_directory']=vtkdir
             print('slicing and projecting with pyathena ...')
             from pyathena.create_pickle import create_all_pickles
             create_all_pickles(force_recal=force_recal,force_redraw=force_redraw,verbose=True,**kwargs)

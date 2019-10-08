@@ -7,8 +7,9 @@ sys.path.insert(0,'../')
 import pyathena.rst_handler as rh
 
 if len(sys.argv) == 1:
-    print "please specify filename"
+    print("please specify filename")
 else:
     filename=sys.argv[1]
-    for sghost in [False,True]:
+    for sghost in [True,False]:
+        print("sghost {}".format(sghost))
         fm,data=rh.read_rst_grid(filename,verbose=True,starghost=sghost)

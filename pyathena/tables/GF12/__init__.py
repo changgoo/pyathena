@@ -1,1 +1,1 @@
-from GF12 import *
+from .GF12 import *

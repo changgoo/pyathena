@@ -2,6 +2,14 @@ import astropy.constants as c
 import astropy.units as u
 import numpy as np
 
+@np.vectorize
+def get_Tidx(T,Tmin,Tmax,nT,dT):
+    if T < Tmin: return 0
+    if T >= Tmax: return nT-2
+    Tidx=np.log10(T/Tmin)/dT
+    return int(Tidx)
+
+
 class coolftn(object):
     def __init__(self):
         self.cool=cool
@@ -21,10 +29,7 @@ class coolftn(object):
             Tidx[np.where(T>=self.Tmax)]=self.nT-2
             return Tidx.astype(int)
         else:
-            if T < self.Tmin: return 0
-            if T >= self.Tmax: return self.nT-2
-            Tidx=np.log10(T/self.Tmin)/self.dT
-            return int(Tidx)
+            return get_Tidx(T,self.Tmin,self.Tmax,self.nT,self.dT)
 
     def get_temp(self,T1):
         T1idx=self.get_Tidx(T1)

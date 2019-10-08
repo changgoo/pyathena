@@ -10,9 +10,9 @@ import astropy.constants as c
 import astropy.units as u
 import pickle as p
 
-from ath_hst import test_pickle
-from utils import *
-from set_units import set_units
+from pyathena.ath_hst import test_pickle
+from pyathena.utils import *
+from pyathena.set_units import set_units
 
 def parse_filename(filename):
     """
@@ -43,7 +43,7 @@ def parse_filename(filename):
         step=base_split[1]
         ext=base_split[2]
     else:
-        id=string.join(base_split[:-2],'.')
+        id='.'.join(base_split[:-2])
         step=base_split[-2]
         ext=base_split[-1]
 
@@ -613,7 +613,7 @@ class AthenaDataSet(AthenaDomain):
         if slab > self.NGrids[2]: 
             print(("%d is lareger than %d" % (slab,self,NGrids[2])))
         NxNy=self.NGrids[0]*self.NGrids[1]
-        gidx, = np.where(slab == self.gid/NxNy+1)
+        gidx, = np.where(slab == self.gid//NxNy+1)
         grids = []
         for i in gidx:
             grids.append(self.grids[i])
@@ -900,7 +900,7 @@ def read_starvtk(starfile,time_out=False):
     age=read_field(file,fm['star_particle_age'])
     pos=read_field(file,fm['star_particle_position']).reshape(nstar,3)
     vel=read_field(file,fm['star_particle_velocity']).reshape(nstar,3)
-    misc_keys=fm.keys()
+    misc_keys=list(fm.keys())
     misc_keys.remove('star_particle_id')
     misc_keys.remove('star_particle_mass')
     misc_keys.remove('star_particle_age')

@@ -42,6 +42,8 @@ def main(**kwargs):
     if not os.path.isdir(newbase): os.mkdir(newbase)
 
     parfile='%s%s/%s.par' % (base,dir,id)
+    if not os.path.isfile(parfile):
+        parfile='%s/%s.par' % (newbase,newid)
     par=get_params(parfile)
 
     NGrids=[int(par['NGrid_x1']),\
@@ -78,7 +80,7 @@ def main(**kwargs):
         zmax=max(ds.domain['right_edge'][2],zmax)
         command.append(vtkfile)
     #print command
-    print(string.join(command))
+    print(' '.join(command))
     print('id={} to {} corresponds to z={} to {}'.format(istart,iend,zmin,zmax))
 
 if __name__ == '__main__':

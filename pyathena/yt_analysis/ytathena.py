@@ -155,3 +155,19 @@ def add_yt_fields(ds,cooling=True,mhd=True,rotation=True):
     if len(scal_fields)>2:
         ds.add_field(("gas","metal2"),function=_metal_run,sampling_type='cell', \
           units='g*cm**(-3)',display_name=r'$\rho_{\rm metal,run}$')
+
+def ytload(filename):
+    
+    unit_base={"length_unit": (1.0,"pc"), 
+               "time_unit": (1.0,"s*pc/km"), 
+               "mass_unit": (2.38858753789e-24,"g/cm**3*pc**3"), 
+               "velocity_unit": (1.0,"km/s"),
+               "magnetic_unit": (5.4786746797e-07,"gauss")}
+
+    tigress_unit_system=yt.UnitSystem('tigress','pc','Msun','Myr',)
+    tigress_unit_system['velocity']='km/s'
+    tigress_unit_system['magnetic_field']='uG'
+    ds=yt.load(filename,units_override=unit_base,unit_system=tigress_unit_system)
+    add_yt_fields(ds,cooling=True,mhd=True,rotation=False)
+    
+    return ds

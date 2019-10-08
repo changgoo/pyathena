@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
-import cPickle as pickle
+import pickle
 import glob,os
 
 import astropy.constants as c
@@ -46,7 +46,7 @@ def create_surface_density(ds,surf_fname):
     re=ds.domain['right_edge']
     pdata=ds.read_all_data('density')
 
-    proj = pdata.mean(axis=0)
+    proj = np.nanmean(pdata,axis=0)
     proj *= ds.domain['Lx'][2]*to_surf
     bounds = np.array([le[0],re[0],le[1],re[1]])
     surf_data={'time':time,'data':proj,'bounds':bounds}
@@ -71,14 +71,24 @@ def create_projection(ds,proj_fname,field='density',conversion=1.0,weight_field=
     surf_data['time']=time
     le=ds.domain['left_edge']
     re=ds.domain['right_edge']
-    pdata=ds.read_all_data(field)
+    if field is 'temperature':
+        pdata=ds.read_all_data('T1')
+        pdata=coolftn.get_temp(pdata)
+    else:
+        pdata=ds.read_all_data(field)
+
     if weight_field != None:
-        wdata=ds.read_all_data(weight_field)
+        if weight_field is 'temperature':
+            wdata=ds.read_all_data('T1')
+            wdata=coolftn.get_temp(wdata)
+        else:
+            wdata=ds.read_all_data(weight_field)
         pdata *= wdata
+
     for i,axis in enumerate(['x','y','z']):
-        proj = pdata.mean(axis=data_axis[axis])
+        proj = np.nanmean(pdata,axis=data_axis[axis])
         if weight_field != None:
-            wproj = wdata.mean(axis=data_axis[axis])
+            wproj = np.nanmean(wdata,axis=data_axis[axis])
             proj /= wproj
         if type(conversion) == dict:
             if axis in conversion:
@@ -166,8 +176,14 @@ def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
 
 def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, verbose=True, **kwargs):
     dir = kwargs['base_directory']+kwargs['directory']
-    fname=glob.glob(dir+'id0/'+kwargs['id']+'.????.vtk')
+    if 'vtk_directory' in kwargs: vtkdir=kwargs['vtk_directory']
+    else: vtkdir=dir
+
+    fname=glob.glob(vtkdir+'id0/'+kwargs['id']+'.????.vtk')
     fname.sort()
+    if len(fname) == 0:
+        fname=glob.glob(vtkdir+kwargs['id']+'.????.vtk')
+        print(vtkdir, kwargs['id'], fname)
 
     if kwargs['range'] != '':
         sp=kwargs['range'].split(',')
@@ -180,7 +196,7 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
         fskip = 1
     fname=fname[start:end:fskip]
 
-    ngrids=len(glob.glob(dir+'id*/'+kwargs['id']+'*'+fname[0][-8:]))
+    ngrids=len(glob.glob(vtkdir+'id*/'+kwargs['id']+'*'+fname[0][-8:]))
 
     ds=pa.AthenaDataSet(fname[0])
     mhd='magnetic_field' in ds.field_list
@@ -194,7 +210,8 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
         print("cooling:", cooling)
         print("rotation:", rotation, Omega)
 
-    slc_fields=['nH','pok','temperature','velocity_z','ram_pok_z']
+    #slc_fields=['nH','pok','temperature','velocity_z','ram_pok_z']
+    slc_fields=['nH','pok','temperature','velocity_x','velocity_y','velocity_z','ram_pok_z']
     fields_to_draw=['star_particles','nH','temperature','pok','velocity_z']
     if mhd:
         slc_fields.append('magnetic_field_strength')
@@ -206,18 +223,21 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
 
     if not os.path.isdir(dir+'slice/'): os.mkdir(dir+'slice/')
     if not os.path.isdir(dir+'surf/'): os.mkdir(dir+'surf/')
+    if not os.path.isdir(dir+'proj/'): os.mkdir(dir+'proj/')
 
     for i,f in enumerate(fname):
         slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
         surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
         scalfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.scal0.p'
+        projfname=dir+'proj/'+kwargs['id']+f[-9:-4]+'.ddproj.p'
 
         tasks={'slice':(not compare_files(f,slcfname)) or force_recal,
                'surf':(not compare_files(f,surfname)) or force_recal,
                'scal':(not compare_files(f,scalfname)) or force_recal,
+               'proj':(not compare_files(f,projfname)) or force_recal,
         }
 
-        do_task=(tasks['slice'] or tasks['surf'] or tasks['scal'])
+        do_task=(tasks['slice'] or tasks['surf'] or tasks['scal'] or tasks['proj'])
          
         if verbose: 
             print('file number: {} -- Tasks to be done ['.format(i),end='')
@@ -231,6 +251,11 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
                 for nscal,sf in enumerate(scal_fields):
                     nscalfname=scalfname.replace('scal0','scal{}'.format(nscal))
                     create_projection(ds,nscalfname,field=sf,weight_field='density')
+            if tasks['proj']: 
+                create_projection(ds,projfname,
+                                 field='density',weight_field='density')
+                create_projection(ds,projfname.replace('ddproj','dTproj'),
+                                 field='temperature',weight_field='density')
 
     aux=set_aux(kwargs['id'])
 

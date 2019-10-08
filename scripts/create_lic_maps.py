@@ -14,7 +14,8 @@ import glob,os
 base='/tigress/changgoo/'
 sourcedir='../'
 cmap=syn.load_planck_cmap('{}/misc/Planck_Parchment_RGB.txt'.format(sourcedir))
-cmap.set_bad('white',1.)
+cmap.set_bad('white',0.)
+cmap.set_under(cmap.colors[0])
 plt.register_cmap(cmap=cmap)
 plt.rcParams['image.cmap'] = 'planck'
 plt.rcParams['font.size']=20
@@ -148,6 +149,7 @@ def draw_lic_maps_one(lic_fitsname):
     cbar = fig.colorbar(im)
     cbar.set_label(r'$I_{\rm 353} [{\rm MJy/sr}]$')
     fig.savefig(lic_fitsname.replace('fits','mol.png'),dpi=200,bbox_inches='tight')
+    fig.clf()
 
 base='/tigress/changgoo/'
 #pid='R8_8pc_rst'
@@ -165,5 +167,5 @@ for fitsname in fitsfiles:
         print('*** Skipping LIC map for {} ***'.format(fitsname))
 
     print('*** Drwaing for {} ***'.format(licfname))
-    draw_lic_maps(licfname)
+    #draw_lic_maps(licfname)
     draw_lic_maps_one(licfname)

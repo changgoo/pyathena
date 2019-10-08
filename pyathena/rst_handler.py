@@ -21,8 +21,8 @@ def parse_misc_info(rstfile):
         l=fp.readline()
         if not l: break
     
-        if l.startswith('N_STEP') or l.startswith('DENSITY') or \
-           l.startswith('STAR') or l.startswith('USER'): 
+        if l.startswith(b'N_STEP') or l.startswith(b'DENSITY') or \
+           l.startswith(b'STAR') or l.startswith(b'USER'): 
             iblock+=1
             start[search_block[iblock]]=start[block]+size[block]
 
@@ -46,14 +46,14 @@ def write_onefile(newfile,data_part,data_par):
             'SCALAR 5','SCALAR 6','SCALAR 7','SCALAR 8','SCALAR 9']
     for block in ['par','time']: fp.write(data_par[block])
 
-    fp.write('DENSITY\n')
+    fp.write(b'DENSITY\n')
     fp.write(data_part['DENSITY'].flatten().tobytes('C'))
     for f in fields[1:]:
-        if f in data_part.keys():
+        if f in list(data_part.keys()):
         #print f,data_part[f].shape
-            fp.write('\n%s\n' % f)
+            fp.write('\n{}\n'.format(f).encode())
             fp.write(data_part[f].flatten().tobytes('C'))
-    fp.write('\n')
+    fp.write(b'\n')
     for block in ['star','user']: 
       if block in data_par: fp.write(data_par[block])
     fp.close()
@@ -70,7 +70,7 @@ def write_allfile(pardata,rstdata,grids,grid_disp=np.array([0,0,0]),
 #
 #       return -1
 
-    fields = rstdata.keys()
+    fields = list(rstdata.keys())
 
     cc_varnames=['DENSITY','1-MOMENTUM','2-MOMENTUM','3-MOMENTUM',\
                  'ENERGY','POTENTIAL']
@@ -137,7 +137,7 @@ def get_eint(rstdata,neg_correct=True):
             e_neg=epart[epart<0]
             Nneg=len(e_neg)
             eavg.append((epart.sum()-e_neg.sum())/(epart.size-e_neg.size))
-            print kk,jj,ii,eint[kk,jj,ii],eavg[-1],epart.sum(),e_neg.sum()
+            print(kk,jj,ii,eint[kk,jj,ii],eavg[-1],epart.sum(),e_neg.sum())
         eint[k,j,i]=np.array(eavg)
         if len(eint[eint<0]) > 0: sys.exit("negative energy persist!")
  
@@ -263,18 +263,21 @@ def refine(rstdata,scalar=0):
     return rstdata_new
 
 def calculate_grid(Nx,NBx):
-    NGrids=np.array(Nx)/np.array(NBx)
+    NGrids=(np.array(Nx)/np.array(NBx)).astype('int')
     NProcs=NGrids[0]*NGrids[1]*NGrids[2]
     grids=[]
     i=0
-    print Nx, NBx, NGrids, NProcs
+    print('Domain Size:',Nx)
+    print('Grid Size:', NBx)
+    print('Processor configuration:', NGrids)
+    print('Number of Processors:', NProcs)
     for n in range(NGrids[2]):
        for m in range(NGrids[1]):
            for l in range(NGrids[0]):
                grid={}
                grid['id']=i
-               grid['is']=np.array([l*NBx[0],m*NBx[1],n*NBx[2]])
-               grid['Nx']=np.array(NBx)
+               grid['is']=np.array([l*NBx[0],m*NBx[1],n*NBx[2]]).astype('int')
+               grid['Nx']=np.array(NBx).astype('int')
                grids.append(grid)
                i += 1 
 
@@ -286,7 +289,7 @@ def parse_par(rstfile):
 
     fp=open(rstfile,'rb')
     par={}
-    line=fp.readline()
+    line=fp.readline().decode('utf-8')
     
     while 1:
 
@@ -294,7 +297,7 @@ def parse_par(rstfile):
             block=line[1:line.rfind('>')]
             if block == 'par_end': break
             par[block]={}
-        line=fp.readline()
+        line=fp.readline().decode('utf-8')
 
         if block in ['problem','domain1','time']:
             sp = line.strip().split()
@@ -321,9 +324,9 @@ def parse_rst(var,par,fm):
     cc_varnames=['DENSITY','1-MOMENTUM','2-MOMENTUM','3-MOMENTUM','ENERGY','POTENTIAL']
     fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
     dm=par['domain1']
-    nx1=dm['Nx1']/dm['NGrid_x1']
-    nx2=dm['Nx2']/dm['NGrid_x2']
-    nx3=dm['Nx3']/dm['NGrid_x3']
+    nx1=int(dm['Nx1']/dm['NGrid_x1'])
+    nx2=int(dm['Nx2']/dm['NGrid_x2'])
+    nx3=int(dm['Nx3']/dm['NGrid_x3'])
 
     if var=='N_STEP':
         ndata=1
@@ -398,12 +401,15 @@ def read_star(fp,nscal=0,ghost=True):
     dtype='i'
     for var in ivars:
        data=fp.read(struct.calcsize(dtype))
-       star_dict[var],=struct.unpack('<'+dtype,data)
+       tmp=struct.unpack('<'+dtype,data)
+       star_dict[var]=tmp
 
     dtype='d'
     for var in dvars:
        data=fp.read(struct.calcsize(dtype))
-       star_dict[var],=struct.unpack('<'+dtype,data)
+       tmp=struct.unpack('<'+dtype,data)
+       #if var is 'm': print(var,tmp)
+       star_dict[var]=tmp
 
     return star_dict
 
@@ -417,7 +423,7 @@ def read_rst_grid(rstfile,verbose=False,starghost=True):
     data_array={}
     nscal=0
     while 1:
-        l=fp.readline()
+        l=fp.readline().decode('utf-8')
         var=l.strip()
 
         if parse_rst(var,par,rst):
@@ -427,7 +433,7 @@ def read_rst_grid(rstfile,verbose=False,starghost=True):
             dsize=ndata*struct.calcsize(dtype)
             data=fp.read(dsize)
             if vtype == 'param': 
-                if verbose: print var,struct.unpack('<'+ndata*dtype,data)
+                if verbose: print(var,struct.unpack('<'+ndata*dtype,data))
             elif vtype == 'star':
                 nstar,=struct.unpack('<'+ndata*dtype,data)
                 data=fp.read(dsize)
@@ -436,20 +442,20 @@ def read_rst_grid(rstfile,verbose=False,starghost=True):
                   for i in range(nstar):
                       star_list.append(read_star(fp,nscal=nscal,ghost=starghost))
                   if verbose: 
-                      print var, nstar
-                      print star_list[0]
-                      print star_list[nstar-1]
+                      print(var, nstar)
+                      print(star_list[0])
+                      print(star_list[nstar-1])
                 data_array[var]=star_list
             else: 
                 arr=np.asarray(struct.unpack('<'+ndata*dtype,data))
                 arr.shape = rst[var]['nx']
                 data_array[var]=arr
-                if verbose: print var, arr.mean(), arr.shape
+                if verbose: print(var, arr.mean(), arr.shape)
                 if var.startswith('SCALAR'): nscal += 1
             fp.readline()
         else: 
             break
-    if verbose: print l, fp.tell()
+    if verbose: print(l, fp.tell())
     fp.close()
 
     return rst,data_array
@@ -463,7 +469,7 @@ def read(rstfile,grids,NGrids,parfile=None,verbose=False,starghost=True):
     nx=NGrids*grids[0]['Nx']
     nx=nx[::-1]
     #nx=ds.domain['Nx'][::-1]
-    print nx,nprocs
+    print(nx,nprocs)
     dirname=os.path.dirname(rstfile)
     basename=os.path.basename(rstfile)
 
@@ -474,7 +480,7 @@ def read(rstfile,grids,NGrids,parfile=None,verbose=False,starghost=True):
     gnx=g['Nx']
     gie=gis+gnx
 
-    print fm['DENSITY']['nx'],gnx
+    print(fm['DENSITY']['nx'],gnx)
 
 
     for k in fm:
@@ -502,7 +508,7 @@ def read(rstfile,grids,NGrids,parfile=None,verbose=False,starghost=True):
             rstfname = '%s/../id%d/%s-id%d%s' % (dirname,i,basename[:-9],i,basename[-9:])
         fm,data=read_rst_grid(rstfname,starghost=starghost)
 
-        if verbose > 1: print i,fm['DENSITY']['nx'],gnx
+        if verbose > 1: print(i,fm['DENSITY']['nx'],gnx)
 
         for k in fm:
             ib,jb,kb=(0,0,0)
@@ -520,7 +526,7 @@ def read_part(rstfile,grids,nx,verbose=False):
     nprocs=len(grids)
     field_maps=[]
     rstdata={}
-    print nx,nprocs
+    print(nx,nprocs)
 
     basename=os.path.basename(rstfile)
     pid=basename[:-9]
@@ -532,7 +538,7 @@ def read_part(rstfile,grids,nx,verbose=False):
     gie=gis+gnx
     ks=gis[2]
 
-    print fm['DENSITY']['nx'],gnx
+    print(fm['DENSITY']['nx'],gnx)
 
 
     for k in fm:
@@ -561,7 +567,7 @@ def read_part(rstfile,grids,nx,verbose=False):
 
         fm,data=read_rst_grid(rstfname)
 
-        if verbose > 1: print i,fm['DENSITY']['nx'],gnx
+        if verbose > 1: print(i,fm['DENSITY']['nx'],gnx)
 
         for k in fm:
             ib,jb,kb=(0,0,0)
@@ -584,7 +590,7 @@ def set_xpos_with_dm(dm):
     dx=Lx/Nx
     xc={}
     xf={}
-    for i,ax in zip(range(3),['x','y','z']):
+    for i,ax in zip(list(range(3)),['x','y','z']):
         xf[ax]=np.arange(le[i],re[i]+dx[i],dx[i])
         xc[ax]=np.arange(le[i],re[i],dx[i])+0.5*dx[i]
     return xf,xc
@@ -596,7 +602,7 @@ def set_xpos(ds):
     dx=ds.domain['dx']
     xc={}
     xf={}
-    for i,ax in zip(range(3),['x','y','z']):
+    for i,ax in zip(list(range(3)),['x','y','z']):
         xf[ax]=np.arange(le[i],re[i]+dx[i],dx[i])
         xc[ax]=np.arange(le[i],re[i],dx[i])+0.5*dx[i]
     return xf,xc
@@ -611,20 +617,20 @@ def to_hdf5(h5file,rstdata,ds):
 
     f=h5py.File(h5file,'a')
     for name in ['Bfields','cell_centered_coord','face_centered_coord']:
-        if name in f.keys():
+        if name in list(f.keys()):
             grp=f[name]
         else:
             grp=f.create_group(name)
-        print name
+        print(name)
 
     grp=f['Bfields']
     for name,B in zip(['Bx','By','Bz'],[Bx,By,Bz]):
-        if name in grp.keys():
+        if name in list(grp.keys()):
             dset=grp[name]
         else:
             dset=grp.create_dataset(name,B.shape,data=B,dtype=B.dtype)
 
-    for k in grp.keys():
+    for k in list(grp.keys()):
         for i,ax in enumerate(['z','y','x']):
             grp[k].dims[i].label=ax
 
@@ -632,17 +638,17 @@ def to_hdf5(h5file,rstdata,ds):
     ccoord=f['cell_centered_coord']
     fcoord=f['face_centered_coord']
     for ax in ['x','y','z']:
-        if ax in ccoord.keys():
-            print ax
+        if ax in list(ccoord.keys()):
+            print(ax)
         else:
             ccoord[ax] = xc[ax]
         
-        if ax in fcoord.keys():
-            print ax
+        if ax in list(fcoord.keys()):
+            print(ax)
         else:
             fcoord[ax] = xf[ax]
 
-    for b in bfield.keys():
+    for b in list(bfield.keys()):
         bax=b[-1]
 
         for i,ax in enumerate(['z','y','x']):
