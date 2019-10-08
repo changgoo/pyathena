@@ -34,7 +34,7 @@ def refine(**kwargs):
 
     grids,NG=rh.calculate_grid(Nx,Nb)
     if kwargs['split']: # just to split restart files 
-        grids_refine,NG_refine=rh.calculate_grid(Nx,[Nb[0]/2,Nb[1],Nb[2]])
+        grids_refine,NG_refine=rh.calculate_grid(Nx,[Nb[0]/2,Nb[1]/2,Nb[2]/2])
     else: # refine (2x higher resolution)
         grids_refine,NG_refine=rh.calculate_grid(Nx*2,[64,64,64])
 

@@ -613,7 +613,7 @@ class AthenaDataSet(AthenaDomain):
         if slab > self.NGrids[2]: 
             print(("%d is lareger than %d" % (slab,self,NGrids[2])))
         NxNy=self.NGrids[0]*self.NGrids[1]
-        gidx, = np.where(slab == self.gid/NxNy+1)
+        gidx, = np.where(slab == self.gid//NxNy+1)
         grids = []
         for i in gidx:
             grids.append(self.grids[i])

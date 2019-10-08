@@ -8,7 +8,7 @@ def cc_arr(domain):
     dx=domain['dx']
     x=[]
     for i in range(3):
-        x.append(np.arange(le[i],re[i],dx[i])+0.5*dx[i])
+        x.append(np.arange(le[i]+0.5*dx[i],re[i],dx[i]))
 
     return x
 
@@ -18,7 +18,7 @@ def fc_arr(domain):
     dx=domain['dx']
     x=[]
     for i in range(3):
-        x.append(np.arange(le[i],re[i]+dx[i],dx[i]))
+        x.append(np.arange(le[i],re[i]+0.5*dx[i],dx[i]))
 
     return x
 

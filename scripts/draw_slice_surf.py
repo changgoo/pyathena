@@ -28,6 +28,8 @@ if narg > 1:
         base='/tigress/changgoo/ARM/'
     elif system =='rusty':
         base='/mnt/ceph/users/ckim/'
+    elif system =='perseus':
+        base='/perseus/scratch/gpfs/changgoo/'
     elif system =='cori':
         base='/global/cscratch1/sd/changgoo/'
     else:
@@ -86,9 +88,9 @@ for pid in ids:
             plot_projection.plot_projection(projname,starname,
               scale_func=np.cbrt,runaway=False,aux=aux_surf,vy0=vy0)
 
-    if system.startswith('tigress') or system is 'rusty':
+    if system.startswith('tigress') or system == 'rusty' or system == 'perseus':
         basedir1=base + pdir
-        if system.startswith('tigress'):
+        if system.startswith('tigress') or system == 'perseus':
             basedir2='/tigress/changgoo/public_html/TIGRESS_figures/movies/'
             if system == 'tigress_arm': basedir2 += 'ARM/'
         else:
