@@ -116,9 +116,13 @@ def get_zprof(data,domain,par,hst):
     Nx=domain['Nx']
     x3d=np.tile(x.reshape(1,1,Nx[0]),(Nx[2],Nx[1],1))
     z3d=np.tile(z.reshape(Nx[2],1,1),(1,Nx[1],Nx[0]))
+    vx0=0.
     if shearing_box: 
         vy0=-qshear*Omega*x3d
         Phit=-qshear*Omega**2*x3d**2
+        if 'pattern' in par['problem']:
+            vy0 += par['problem']['R0']*(Omega-par['problem']['pattern'])
+            vx0 += (Omega-par['problem']['pattern'])
     else:
         vy0=np.zeros(x3d.shape)
     
@@ -136,6 +140,7 @@ def get_zprof(data,domain,par,hst):
     v1=np.copy(data['velocity1'].data)
     v2=np.copy(data['velocity2'].data)
     v3=np.copy(data['velocity3'].data)
+    dv1=v1-vx0
     dv2=v2-vy0
     if MHD:
         B1=np.copy(data['magnetic_field1'].data)
@@ -163,7 +168,7 @@ def get_zprof(data,domain,par,hst):
         dsqrt=np.sqrt(d)
         vdotB=B1*v1+B2*v2+B3*v3
         Emag=0.5*(B1**2+B2**2+B3**2)
-    meanB={'1':B1.mean(axis=2).mean(axis=1),'2':B2.mean(axis=2).mean(axis=1),'3':B3.mean(axis=2).mean(axis=1)}
+        meanB={'1':B1.mean(axis=2).mean(axis=1),'2':B2.mean(axis=2).mean(axis=1),'3':B3.mean(axis=2).mean(axis=1)}
     for vec in ['1','2','3']:
         zprof['M%s' % vec] = zprof['d']*zprof['v%s' % vec]
         zprof['Ek%s' % vec] = 0.5*zprof['d']*zprof['v%s' % vec]**2
@@ -179,6 +184,10 @@ def get_zprof(data,domain,par,hst):
         zprof['v2']=dv2
         zprof['dM2'] = zprof['d']*zprof['v2']
         zprof['dEk2'] = 0.5*zprof['d']*zprof['v2']**2
+        if 'pattern' in par['problem']:
+            zprof['v1']=dv1
+            zprof['M1'] = zprof['d']*zprof['v1']
+            zprof['Ek1'] = 0.5*zprof['d']*zprof['v1']**2
 #        zprof['Phit'] = Phit
     zprof['T']=coolftn.get_temp(T1)
     if cooling:
@@ -231,7 +240,7 @@ def get_zprof(data,domain,par,hst):
             zprof['%sFzs%s' % (pm,ns+1)]=data['specific_scalar%s' % ns].data*d*v3
     if shearing_box:
         zprof['Rxy']=d*v1*dv2
-        zprof['Mxy']=-B1*B2
+        if MHD: zprof['Mxy']=-B1*B2
         
     nv3=zprof['v3']<0
     pv3=~nv3
@@ -263,12 +272,12 @@ def get_mean(dset,dA):
     Nx=len(dset.x)
 
     zp=zp.drop('Rxy')
-    zp=zp.drop('Mxy')
 
     stress=dset['Rxy'].sum(axis=1)
     zp['RxyL']=stress.isel(x=0).drop('x')*Nx*dA
     zp['RxyR']=stress.isel(x=-1).drop('x')*Nx*dA
     if 'Mxy' in dset:
+        zp=zp.drop('Mxy')
         stress=dset['Mxy'].sum(axis=1)
         zp['MxyL']=stress.isel(x=0).drop('x')*Nx*dA
         zp['MxyR']=stress.isel(x=-1).drop('x')*Nx*dA
@@ -292,6 +301,7 @@ def dump_zprof_one(f,dc,icm_field=None,outdir='zprof_icm',
     full_domain=get_full_domain(par)
     x,y,z,=pa.cc_arr(full_domain)
 
+    icm=False
     if icm_field is not None: icm=True
 
     print('\nReading: ',f)
@@ -350,16 +360,18 @@ def dump_zprof_one(f,dc,icm_field=None,outdir='zprof_icm',
         zpds_icm=xr.concat(zp_slab_icm,dim='z')
         zpds_icm.coords['phase']=plist
 
-    print('\nWriting at {}: '.format(os.path.dirname(f).replace('id0',outdir)))
+    dirname=dc.base+dc.pdir+outdir+'/'
+    fbase=os.path.basename(f)
+    print('\nWriting at {}: '.format(dirname))
     for phase in plist:
         print(phase,end=' ')
-        zprof_fname=f.replace('vtk','%s.zprof' % phase).replace('id0',outdir)
+        zprof_fname=dirname+fbase.replace('vtk','%s.zprof' % phase)
         with open(zprof_fname,'w') as fp:
             fp.write('# Athena vertical profile at t={}\n'.format(time))
             zpdf=zpds.sel(phase=phase).drop('phase').to_dataframe()
             zpdf.to_csv(fp)
         if icm: 
-            zprof_fname_icm=f.replace('vtk','%s-icm.zprof' % phase).replace('id0',outdir)
+            zprof_fname_icm=dirname+fbase.replace('vtk','%s-icm.zprof' % phase)
             with open(zprof_fname_icm,'w') as fp:
                 fp.write('# Athena vertical profile at t={}\n'.format(time))
                 zpdf=zpds_icm.sel(phase=phase).drop('phase').to_dataframe()
@@ -371,9 +383,16 @@ def dump_zprof_one(f,dc,icm_field=None,outdir='zprof_icm',
         return zpds
 
 class data_container(object):
-    def __init__(self,pid,base='/tigress/changgoo/',pdir=None):
+    def __init__(self,pid,base='/tigress/changgoo/',pdir=None,vtkbase=None):
         if pdir is None: pdir=pid+'/'
-        self.vtkfiles= glob.glob(base+pdir+"id0/"+pid+".????.vtk")
+        if vtkbase is None:
+            self.vtkbase = base+pdir
+        else:
+            self.vtkbase = vtkbase 
+        self.base=base
+        self.pdir=pdir
+        self.pid=pid
+        self.vtkfiles= glob.glob(self.vtkbase+"id0/"+pid+".????.vtk")
         self.vtkfiles.sort() 
         self.parfname='%s%s/%s.par' % (base,pdir,pid)
         self.par=parse_par(self.parfname)
