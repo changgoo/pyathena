@@ -8,11 +8,12 @@ def make_movie(fname_glob, fname_out, fps_in=15, fps_out=15):
 
     cmd = ['ffmpeg',
            '-y', # override existing file
-           '-r', str(fps_in),
+#           '-r', str(fps_in),
            '-f', 'image2',
+           '-framerate', str(fps_in),
            '-pattern_type', 'glob',
            '-i', fname_glob,
-           '-r', str(fps_out),
+#           '-r', str(fps_out),
            '-pix_fmt', 'yuv420p',
            '-vcodec', 'libx264',
 #           '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
