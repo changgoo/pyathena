@@ -12,4 +12,4 @@ dependencies:
   - xarray
   - netCDF4
   - cmocean
-prefix: /tigress/$USERS/tigpy-env
+  - jupyter
