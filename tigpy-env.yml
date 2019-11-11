@@ -1,0 +1,15 @@
+name: tigpy-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  - matplotlib
+  - numpy 
+  - astropy
+  - pandas
+  - yt
+  - healpy
+  - xarray
+  - netCDF4
+  - cmocean
+prefix: /tigress/$USERS/tigpy-env
