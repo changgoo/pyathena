@@ -109,3 +109,36 @@ class GF12_table(object):
         total_cooling_new=np.interp(temp,cie[:,0],cie[:,-1])
         
         return cie_new,total_cooling_new
+
+class GF12_NIE(GF12_table):
+    def __init__(self,data_path='./data/'):
+        self.data_path=data_path
+        self.elements = self.read_ion_abundance_table_()
+        self.ion_frac = self.read_ion_frac_table_()
+        self.temp = self.ion_frac['temp']
+
+    def read_ion_frac_table_(self):
+        ion_frac_file=self.data_path+'tab3.txt'
+        #ion_frac=pd.read_table(ion_frac_file,skiprows=125,delimiter=' ',)
+        fp=open(ion_frac_file,'r')
+        lines=fp.readlines()
+        fp.close()
+        nlines=len(lines[124:][::-1])
+
+        fields=['temp']
+        ion_frac={}
+        import re
+        for l in lines[9:121]:
+            ion_name=l.split()[-5].split('{')[0]+l[l.rfind('{')+1:max(l.rfind('{')+2,l.rfind('}')-1)].replace('+','1')
+            fields.append(ion_name)
+        for f in fields:
+            ion_frac[f]=np.empty(nlines)
+        for iline,l in enumerate(lines[124:][::-1]):
+            sp=l.split()
+            nfields = len(sp)
+            if nfields == len(fields):
+                for ifield in range(nfields):
+                    ion_frac[fields[ifield]][iline]=sp[ifield]
+        return ion_frac
+    
+
