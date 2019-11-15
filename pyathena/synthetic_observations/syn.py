@@ -147,7 +147,7 @@ def get_rslice(data,domain,nside,s0,fields=['density','temperature'],\
         fields += ['velocity1','velocity2','velocity3']
     if mhd:
         fields += ['magnetic_field1','magnetic_field2','magnetic_field3']
-    if domain.has_key('Omega'):
+    if 'Omega' in domain:
         Omega=domain['Omega']
         qshear=domain['qshear'] 
         xarr=sarr*hat['Z'][0]+center[0]
@@ -159,7 +159,7 @@ def get_rslice(data,domain,nside,s0,fields=['density','temperature'],\
     los_out={} 
     for f in fields:
         los_out[f]=interp3D(data[f],idx)
-    if vel and domain.has_key('Omega'):
+    if vel and ('Omega' in domain):
         los_out['velocity2'] += vy0
     
     if vel:
@@ -184,7 +184,7 @@ def get_los(data,domain,nside,ipix,fields=['density','temperature'],\
         fields += ['velocity1','velocity2','velocity3']
     if mhd:
         fields += ['magnetic_field1','magnetic_field2','magnetic_field3']
-    if domain.has_key('Omega'):
+    if 'Omega' in domain:
         Omega=domain['Omega']
         qshear=domain['qshear'] 
         xarr=sarr*hat['Z'][0]+center[0]
@@ -196,7 +196,7 @@ def get_los(data,domain,nside,ipix,fields=['density','temperature'],\
     los_out={} 
     for f in fields:
         los_out[f]=interp3D(data[f],idx)
-    if vel and domain.has_key('Omega'):
+    if vel and ('Omega' in domain):
         los_out['velocity2'] += vy0
     
     if vel:

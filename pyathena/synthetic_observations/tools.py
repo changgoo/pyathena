@@ -2,7 +2,7 @@ import numpy as np
 import healpy as hp
 import astropy.constants as c
 import astropy.units as u
-import os
+import os,re
 
 from ..utils import cc_idx
 
@@ -107,7 +107,7 @@ def load_planck_cmap(cmap_fname="../misc/Planck_Parchment_RGB.txt"):
     '''
     from matplotlib.colors import ListedColormap
     import numpy as np
-    colombi1_cmap = ListedColormap(np.loadtxt(cmap_fname)/255.)
+    colombi1_cmap = ListedColormap(np.loadtxt(cmap_fname)/255.,name='planck')
     colombi1_cmap.set_bad("gray") # color of missing pixels
     colombi1_cmap.set_under("white") # color of background, necessary if you want to use
 
@@ -116,10 +116,34 @@ def load_planck_cmap(cmap_fname="../misc/Planck_Parchment_RGB.txt"):
 
 def get_center(dname):
     cstr=dname.split('-x')[1]
-    yidx=cstr.rfind('y')
-    zidx=cstr.rfind('z')
+    yidx=cstr.find('y')
+    zidx=cstr.find('z')
     x0=int(cstr[:yidx])
     y0=int(cstr[yidx+1:zidx])
-    z0=int(cstr[zidx+1:])
+    z0=int(cstr[zidx+1:zidx+2])
     center=[x0,y0,z0]
     return center
+
+def get_time(f):
+    sp=f.split('.')
+    itime=float(sp[1])
+    return itime
+
+def get_header(f):
+    fp=open(f,'r')
+    h1=fp.readline()
+    h2=fp.readline()
+    fp.close()
+
+    x,y,z,=get_center(os.path.basename(f))
+    itime=get_time(os.path.basename(f))
+    Nside=int(f[f.find('Nside')+5:f.find('-x')])
+    
+    varlist=re.split('\s',h1)[1:-1]
+
+    sp=re.split('\s|,',h2)
+    Mjy_to_uK = 1044.8135
+    header={sp[1]:float(sp[3]),sp[5]:float(sp[7])/Mjy_to_uK,
+           'x0':x,'y0':y,'z0':z,'itime':itime,'Nside':Nside}
+    
+    return varlist,header

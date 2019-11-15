@@ -7,11 +7,12 @@ import shutil
 
 from pyathena.parse_par import write_par_from_rst
 import pyathena as pa
-from pyathena.yt_analysis import yt_analysis
 
 import astropy.constants as c
 import astropy.units as u
 import numpy as np
+
+
 
 def cleanup_directory(base,problem_id,problem_dir=None):
     """
@@ -71,48 +72,60 @@ def cleanup_directory(base,problem_id,problem_dir=None):
 
     return success
 
-def zprof_to_xarray(base,problem_id):
+def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True):
     """
         merge zprof dumps along t-axis and create netCDF files 
         files should have moved to zprof/
     """    
-    zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_id)
+    zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_dir)
     if not os.path.isdir(zpmerge_dir): os.mkdir(zpmerge_dir)
-    plist=['phase1','phase2','phase3','phase4','phase5','whole']
+    plist=['phase1','phase2','phase3','phase4','phase5']
     for phase in plist:
-        zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_id,problem_id,phase))
+        zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_dir,problem_id,phase))
         zprof_fnames.sort()
-
-        taxis=[]
-        dfall=None
-        for f in zprof_fnames:
-            fp=open(f,'r')
-            hd=fp.readline()
-            fp.close()
-            time=float(hd[hd.rfind('t=')+2:])
-            df=pd.read_csv(f,skiprows=1)
-            zaxis=np.array(df['z'])
-            fields=np.array(df.columns)
-            taxis.append(time)
-            if dfall is None:
-                dfall=np.array(df)[np.newaxis,:]
-            else:
-                dfall=np.concatenate([dfall,np.array(df)[np.newaxis,:]],axis=0)
-    
-        da=xr.DataArray(dfall.T,coords={'fields':fields,'zaxis':zaxis,'taxis':taxis},
-                                dims=('fields','zaxis','taxis'))
-        zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_id,problem_id,phase)
+        zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
+        if os.path.isfile(zpfile) and concatenated: 
+            with xr.open_dataarray(zpfile) as da: da.load()
+            nfiles_in_zpmerged=len(da.taxis)
+            nappend=len(zprof_fnames)-nfiles_in_zpmerged
+            if nappend>0: 
+                da_part=read_zprof(zprof_fnames[nfiles_in_zpmerged:])
+                da=xr.concat((da,da_part),dim='taxis')
+                print('{} files have been merged. {} will be appended'.format(
+                  nfiles_in_zpmerged,nappend))
+        else:
+            da=read_zprof(zprof_fnames)
         da.to_netcdf(zpfile)
         print('{} is created'.format(zpfile))
 
-def merge_xarray(base,problem_id):
+def read_zprof(zprof_fnames):
+    taxis=[]
+    dfall=None
+    for f in zprof_fnames:
+        fp=open(f,'r')
+        hd=fp.readline()
+        fp.close()
+        time=float(hd[hd.rfind('t=')+2:])
+        df=pd.read_csv(f,skiprows=1)
+        zaxis=np.array(df['z'])
+        fields=np.array(df.columns)
+        taxis.append(time)
+        if dfall is None:
+            dfall=np.array(df)[np.newaxis,:]
+        else:
+            dfall=np.concatenate([dfall,np.array(df)[np.newaxis,:]],axis=0)
+    da=xr.DataArray(dfall.T,coords={'fields':fields,'zaxis':zaxis,'taxis':taxis},
+                        dims=('fields','zaxis','taxis'))
+    return da
+
+def merge_xarray(base,problem_dir,problem_id):
     """
         merge all phases into a single file
     """    
     plist=['phase1','phase2','phase3','phase4','phase5']
     datasets = xr.Dataset()
     for phase in plist:
-        path='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_id,problem_id,phase)
+        path='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
         with xr.open_dataarray(path) as da: da.load()
         datasets[phase]=da
     return datasets
@@ -120,12 +133,12 @@ def merge_xarray(base,problem_id):
     #datasets.to_netcdf(zpfile)
     #print('{} is created'.format(zpfile))
 
-def panel_to_xarray(base,problem_id):
+def panel_to_xarray(base,problem_dir,problem_id):
     """
         convert exsiting merged pickles for pandas Panel to netCDF for xarray DataArray
     """
-    zpfile='{}{}/zprof_merged/{}.whole.zprof.p'.format(base,problem_id,problem_id)
-    if os.path.isfile(zpfile):
+    zpfile='{}{}/zprof_merged/{}.whole.zprof.p'.format(base,problem_dir,problem_id)
+    if not os.path.isfile(zpfile):
         print('no merged pickle files')
         return
 
@@ -146,28 +159,75 @@ def panel_to_xarray(base,problem_id):
             da.to_netcdf(ncfile)
             print('{} is created'.format(ncfile))
 
-def recal_history(base,problem_id):
-    parfile='{}{}/{}.par'.format(base,problem_id,problem_id)
+def recal_rates(h,sn,base,problem_dir,problem_id):
+    import glob
+    from pyathena.set_plt import units
+    from pyathena.parse_par import parse_par
+    import pandas as pd
+    
+    par,blocks,fields,=parse_par('{}{}/{}.par'.format(base,problem_dir,problem_id))
+    dt=float(par['output1']['dt'][0])
+    Lx=float(par['domain1']['x1max'][0])-float(par['domain1']['x1min'][0])
+    Ly=float(par['domain1']['x2max'][0])-float(par['domain1']['x2min'][0])
+    area=Lx*Ly
+    
+    nhst=len(h.index)
+    
+    starvtk=glob.glob('{}{}/starpar/{}.*.starpar.vtk'.format(base,problem_dir,problem_id))
+    starvtk.sort()
+    sp=pa.read_starvtk(starvtk[-1])
+    cl=sp[sp.mass!=0]
+    cl_birth_time=(cl.time-cl.age)#*units['Myr']
+    cl_mass=cl.mass*units['Msun']
+    
+    time=np.arange(nhst+1)*dt+h.index[0]*units['Myr']
+    Msp,t=np.histogram(cl_birth_time,bins=time,weights=cl_mass)
+    sfr_inst=pd.Series(Msp/area/dt)
+
+    rates=pd.DataFrame()
+    rates['sfr']=sfr_inst
+
+    runaway=sn[sn.runaway==1]
+    cluster=sn[sn.runaway==0]
+    sn_time=sn.time*units['Myr']
+    for lab,sndata in zip(['','_run','_cl'],[sn,runaway,cluster]):
+        NSN,t=np.histogram(sn_time,bins=time)
+        rates['snr{}'.format(lab)]=NSN/dt/area
+
+    for rinst_key in ['sfr','snr','snr_run','snr_cl']:
+        rinst=rates[rinst_key] 
+        for tbin in [1.,10.,40.,100.]:
+            window=int(tbin/dt)
+            rates['{}{}'.format(rinst_key,int(tbin))]=rinst.rolling(window,min_periods=1).mean()
+
+    rates.index=time[:-1]
+    return rates
+
+def recal_history(base,problem_dir,problem_id):
+    parfile='{}{}/{}.par'.format(base,problem_dir,problem_id)
     params=pa.get_params(parfile)
 
-    hstfile='{}{}/hst/{}.hst'.format(base,problem_id,problem_id)
+    hstfile='{}{}/hst/{}.hst'.format(base,problem_dir,problem_id)
     hst=pa.hst_reader(hstfile)
 
     hstrecalfile='{}_cal.p'.format(hstfile)
     h=processing_history_dump(hst,params,hstrecalfile)
 
+    snfile='{}{}/hst/{}.sn'.format(base,problem_dir,problem_id)
+    sn=pa.hst_reader(snfile)
+    rates=recal_rates(h,sn,base,problem_dir,problem_id)
+
     hstzpfile='{}_zp.p'.format(hstfile)
-    if not os.path.isfile(hstzpfile): 
-        zprof_ds=merge_xarray(base,problem_id)
-        print("zprof dataset is loaded")
-        h_zp=processing_zprof_dump(h,params,zprof_ds,hstzpfile)
+    zprof_ds=merge_xarray(base,problem_dir,problem_id)
+    #print("zprof dataset is loaded")
+    h_zp=processing_zprof_dump(h,rates,params,zprof_ds,hstzpfile)
 
 def processing_history_dump(hst,params,hstfile):
-    unit=pa.set_units(muH=1.4271)
-    toMsun=unit['mass'].to('Msun').value
-    toMyr=unit['time'].to('Myr').value
-    toflux=(unit['density']*unit['velocity']).to('Msun/pc^2/Myr').value
-    toPok=(unit['pressure']/c.k_B).cgs.value
+    from pyathena.set_plt import unit,units
+    toMsun=units['Msun']
+    toMyr=units['Myr']
+    toflux=units['massflux']
+    toPok=units['P']
 
     Lz=params['x3max']-params['x3min']
     Ly=params['x2max']-params['x2min']
@@ -177,12 +237,14 @@ def processing_history_dump(hst,params,hstfile):
     Nz=params['Nx3']
     Ntot=Nx*Ny*Nz
     vol=Lx*Ly*Lz
+    area=Lx*Ly
     dz=Lz/Nz
     Omega=params['Omega']
     torb=2*np.pi/Omega*toMyr
 
     mhd=False
     if 'x1ME' in hst: mhd=True
+    #if mhd: print("this is MHD output")
 
     # process history dump
     h=pd.DataFrame()
@@ -220,18 +282,21 @@ def processing_history_dump(hst,params,hstfile):
     h['sfr10']=hst['sfr10']
     h['sfr40']=hst['sfr40']
     h['sfr100']=hst['sfr100']
+    h['heat_ratio']=hst['heat_ratio']
+    if 'ftau' in hst: h['ftau']=hst['ftau']
+
     h.index=hst['time']
     h.to_pickle(hstfile)
     print('{} is created'.format(hstfile))
 
     return h
 
-def processing_zprof_dump(h,params,zprof_ds,hstfile):
-    unit=pa.set_units(muH=1.4271)
-    toMsun=unit['mass'].to('Msun').value
-    toMyr=unit['time'].to('Myr').value
-    toflux=(unit['density']*unit['velocity']).to('Msun/pc^2/Myr').value
-    toPok=(unit['pressure']/c.k_B).cgs.value
+def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
+    from pyathena.set_plt import unit,units
+    toMsun=units['Msun']
+    toMyr=units['Myr']
+    toflux=units['massflux']
+    toPok=units['P']
 
     Lz=params['x3max']-params['x3min']
     Ly=params['x2max']-params['x2min']
@@ -241,32 +306,38 @@ def processing_zprof_dump(h,params,zprof_ds,hstfile):
     Nz=params['Nx3']
     Ntot=Nx*Ny*Nz
     vol=Lx*Ly*Lz
+    area=Lx*Ly
     dz=Lz/Nz
     Omega=params['Omega']
     torb=2*np.pi/Omega*toMyr
 
     mhd=False
-    if 'x1ME' in h: mhd=True
+    if 'B1' in zprof_ds.fields.to_index(): mhd=True
+    nscal=0
+    for f in zprof_ds.fields.data:
+        if f.startswith('s'): nscal +=1
+    #if mhd: print("this is MHD output")
 
     # process zprof dump
     h_zp=pd.DataFrame()
     zpw=zprof_ds.to_array().sum(dim='variable')
-    zpw['z']=zpw.zaxis
     zp2p=zprof_ds.to_array().sel(variable=['phase1','phase2','phase3']).sum(dim='variable')
-    zp2p['z']=zp2p.zaxis
+    zph=zprof_ds.to_array().sel(variable=['phase4','phase5']).sum(dim='variable')
 
     h_zp['tMyr']=zpw.taxis*toMyr
     h_zp['torb']=h_zp['tMyr']/torb
 
-    for i,ph in enumerate(['_c','_u','_w','_h1','_h2','_2p','']):
+    for i,ph in enumerate(['_2p','_h','','_c','_u','_w','_h1','_h2',]):
         dtot=zpw.sel(fields='d').sum(dim='zaxis')
         Atot=zpw.sel(fields='A').sum(dim='zaxis')
         if ph is '_2p':
             zp=zp2p
+        elif ph is '_h':
+            zp=zph
         elif ph is '':
             zp=zpw
         else:
-            zp=zprof_ds['phase{}'.format(i+1)]
+            zp=zprof_ds['phase{}'.format(i-2)]
         dphase=zp.sel(fields='d').sum(dim='zaxis')
         h_zp['surf{}'.format(ph)]=(zp.sel(fields='d')/zpw.sel(fields='A')).sum(dim='zaxis')*toMsun*dz
         if ph is not '':
@@ -277,16 +348,105 @@ def processing_zprof_dump(h,params,zprof_ds,hstfile):
             Ekf = 'Ek{}'.format(ax)
             if ax == '2': Ekf = 'dEk2'
             h_zp['v{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields=Ekf).sum(dim='zaxis')/dphase)
+            h_zp['Ek{}{}'.format(ax,ph)] = zp.sel(fields=Ekf).sum(dim='zaxis')/Atot
             if mhd:
                 h_zp['vA{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields='PB{}'.format(ax)).sum(dim='zaxis')/dphase)
                 h_zp['dvA{}{}'.format(ax,ph)] = np.sqrt(2.0*zp.sel(fields='dPB{}'.format(ax)).sum(dim='zaxis')/dphase)
+                h_zp['EB{}{}'.format(ax,ph)] = zp.sel(fields='PB{}'.format(ax)).sum(dim='zaxis')/Atot
+                h_zp['EB{}_turb{}'.format(ax,ph)] = zp.sel(fields='dPB{}'.format(ax)).sum(dim='zaxis')/Atot
+
+        h_zp['v{}'.format(ph)] = np.sqrt(h_zp['v1{}'.format(ph)]**2 + \
+                                         h_zp['v2{}'.format(ph)]**2 + \
+                                         h_zp['v3{}'.format(ph)]**2)
+        h_zp['Ek{}'.format(ph)] = h_zp['Ek1{}'.format(ph)] + \
+                                  h_zp['Ek2{}'.format(ph)] + \
+                                  h_zp['Ek3{}'.format(ph)]
+        if mhd:
+            h_zp['vA{}'.format(ph)] = np.sqrt(h_zp['vA1{}'.format(ph)]**2 + \
+                                              h_zp['vA2{}'.format(ph)]**2 + \
+                                              h_zp['vA3{}'.format(ph)]**2)
+            h_zp['dvA{}'.format(ph)] = np.sqrt(h_zp['dvA1{}'.format(ph)]**2 + \
+                                               h_zp['dvA2{}'.format(ph)]**2 + \
+                                               h_zp['dvA3{}'.format(ph)]**2)
+            h_zp['EB{}'.format(ph)] = h_zp['EB1{}'.format(ph)] + \
+                                      h_zp['EB2{}'.format(ph)] + \
+                                      h_zp['EB3{}'.format(ph)]
+            h_zp['EB_turb{}'.format(ph)] = h_zp['EB1_turb{}'.format(ph)] + \
+                                           h_zp['EB2_turb{}'.format(ph)] + \
+                                           h_zp['EB3_turb{}'.format(ph)]
+
+
         h_zp['cs{}'.format(ph)] = np.sqrt(zp.sel(fields='P').sum(dim='zaxis')/dphase)
+        h_zp['Eth{}'.format(ph)] = 1.5*zp.sel(fields='P').sum(dim='zaxis')/Atot
         h_zp['sigma_eff{}'.format(ph)] = h_zp['cs{}'.format(ph)]**2 + h_zp['v3{}'.format(ph)]**2
         if mhd:
             h_zp['sigma_eff{}'.format(ph)] += 0.5*(h_zp['vA1{}'.format(ph)]**2 + 
                                                    h_zp['vA2{}'.format(ph)]**2 - 
                                                    h_zp['vA3{}'.format(ph)]**2)
         h_zp['sigma_eff{}'.format(ph)] = np.sqrt(h_zp['sigma_eff{}'.format(ph)])
+
+        zp_upper=zp[:,-1,:]
+        zp_lower=zp[:,0,:]
+        h_zp['v3_ubd{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/zp_upper.loc['pd'])
+        h_zp['v3_lbd{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/zp_lower.loc['md'])
+        h_zp['v3_bd{}'.format(ph)]=0.5*(h_zp['v3_ubd{}'.format(ph)]+h_zp['v3_lbd{}'.format(ph)])
+
+        for ns in range(nscal+1):
+            if ns is 0: var='d'
+            else: var='s{}'.format(ns)
+            field_name_u='massflux_{}_{}{}'.format('ubd',var,ph)
+            flx=zp_upper.loc['pFz{}'.format(var)]/area
+            h_zp[field_name_u]=flx*toflux
+            field_name_l='massflux_{}_{}{}'.format('lbd',var,ph)
+            flx=-zp_lower.loc['mFz{}'.format(var)]/area
+            h_zp[field_name_l]=flx*toflux
+            field_name='massflux_{}_{}{}'.format('bd',var,ph)
+            h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
+
+        for var in ['M1','M2','M3','E1','E2','E3','P']:
+            field_name_u='flux_{}_{}{}'.format('ubd',var,ph)
+            flx=zp_upper.loc['pFz{}'.format(var)]/area
+            h_zp[field_name_u]=flx
+            field_name_l='flux_{}_{}{}'.format('lbd',var,ph)
+            flx=-zp_lower.loc['mFz{}'.format(var)]/area
+            h_zp[field_name_l]=flx
+            field_name='flux_{}_{}{}'.format('bd',var,ph)
+            h_zp[field_name]=h_zp[field_name_u]+h_zp[field_name_l]
+
+        zp_upper=zp.sel(zaxis=500,method='nearest')
+        zp_lower=zp.sel(zaxis=-500,method='nearest')
+        h_zp['massflux_out_u5{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/area)*toflux
+        h_zp['massflux_out_l5{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/area)*toflux
+        h_zp['massflux_out_5{}'.format(ph)]=h_zp['massflux_out_u5{}'.format(ph)]+ \
+                                            h_zp['massflux_out_l5{}'.format(ph)]
+        h_zp['massflux_in_u5{}'.format(ph)]=(zp_upper.sel(fields='mFzd')/area)*toflux
+        h_zp['massflux_in_l5{}'.format(ph)]=(-zp_lower.sel(fields='pFzd')/area)*toflux
+        h_zp['massflux_in_5{}'.format(ph)]=h_zp['massflux_in_u5{}'.format(ph)]+ \
+                                           h_zp['massflux_in_l5{}'.format(ph)]
+        h_zp['massflux_5{}'.format(ph)]=h_zp['massflux_out_5{}'.format(ph)]+ \
+                                         h_zp['massflux_in_5{}'.format(ph)]
+        h_zp['v3_out_u5{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/zp_upper.loc['pd'])
+        h_zp['v3_out_l5{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/zp_lower.loc['md'])
+        h_zp['v3_out_5{}'.format(ph)]=0.5*(h_zp['v3_out_u5{}'.format(ph)]+ \
+                                           h_zp['v3_out_l5{}'.format(ph)])
+
+        zp_upper=zp.sel(zaxis=1000,method='nearest')
+        zp_lower=zp.sel(zaxis=-1000,method='nearest')
+        h_zp['massflux_out_u10{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/area)*toflux
+        h_zp['massflux_out_l10{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/area)*toflux
+        h_zp['massflux_out_10{}'.format(ph)]=h_zp['massflux_out_u10{}'.format(ph)]+ \
+                                             h_zp['massflux_out_l10{}'.format(ph)]
+        h_zp['massflux_in_u10{}'.format(ph)]=(zp_upper.sel(fields='mFzd')/area)*toflux
+        h_zp['massflux_in_l10{}'.format(ph)]=(-zp_lower.sel(fields='pFzd')/area)*toflux
+        h_zp['massflux_in_10{}'.format(ph)]=h_zp['massflux_in_u10{}'.format(ph)]+ \
+                                            h_zp['massflux_in_l10{}'.format(ph)]
+        h_zp['massflux_10{}'.format(ph)]=h_zp['massflux_out_10{}'.format(ph)]+ \
+                                         h_zp['massflux_in_10{}'.format(ph)]
+        h_zp['v3_out_u10{}'.format(ph)]=(zp_upper.sel(fields='pFzd')/zp_upper.loc['pd'])
+        h_zp['v3_out_l10{}'.format(ph)]=(-zp_lower.sel(fields='mFzd')/zp_lower.loc['md'])
+        h_zp['v3_out_10{}'.format(ph)]=0.5*(h_zp['v3_out_u10{}'.format(ph)]+ \
+                                            h_zp['v3_out_l10{}'.format(ph)])
+
         mid_idx=np.abs(zp.zaxis) < dz
         zpmid=zp[:,mid_idx,:]
         h_zp['vf_mid{}'.format(ph)] = zpmid.loc['A'].sum(axis=0)/zpw[:,mid_idx,:].loc['A'].sum(axis=0)
@@ -297,13 +457,19 @@ def processing_zprof_dump(h,params,zprof_ds,hstfile):
         if mhd:
             oPmag = 0.5*(zpmid.loc['B1']/zpmid.loc['A'])**2
             oPmag += 0.5*(zpmid.loc['B2']/zpmid.loc['A'])**2
-            oPmag -= 0.5*(zpmid.loc['B3']/zpmid.loc['A'])**2
-            h_zp['oPmag_mid{}'.format(ph)] = oPmag.mean(axis=0)*toPok
+            oPmag += 0.5*(zpmid.loc['B3']/zpmid.loc['A'])**2
+            h_zp['Pmag_mean_mid{}'.format(ph)] = oPmag.mean(axis=0)*toPok
+            oPmag -= (zpmid.loc['B3']/zpmid.loc['A'])**2
+            h_zp['Pimag_mean_mid{}'.format(ph)] = oPmag.mean(axis=0)*toPok
+            h_zp['Pmid{}'.format(ph)] += h_zp['Pimag_mean_mid{}'.format(ph)]
+
             tPmag = (zpmid.loc['dPB1']/zpmid.loc['A'])
             tPmag += (zpmid.loc['dPB2']/zpmid.loc['A'])
-            tPmag -= (zpmid.loc['dPB3']/zpmid.loc['A'])
-            h_zp['tPmag_mid{}'.format(ph)] = tPmag.mean(axis=0)*toPok
-            h_zp['Pmid{}'.format(ph)] += h_zp['oPmag_mid{}'.format(ph)]+h_zp['tPmag_mid{}'.format(ph)]
+            tPmag += (zpmid.loc['dPB3']/zpmid.loc['A'])
+            h_zp['Pmag_turb_mid{}'.format(ph)] = tPmag.mean(axis=0)*toPok
+            tPmag -= 2.0*(zpmid.loc['dPB3']/zpmid.loc['A'])
+            h_zp['Pimag_turb_mid{}'.format(ph)] = tPmag.mean(axis=0)*toPok
+            h_zp['Pmid{}'.format(ph)] += h_zp['Pimag_turb_mid{}'.format(ph)]
 
 
         dWext=zp.sel(fields='dWext')/zpw.sel(fields='A')
@@ -321,8 +487,11 @@ def processing_zprof_dump(h,params,zprof_ds,hstfile):
         h_zp['W{}'.format(ph)]=h_zp['Wext{}'.format(ph)]+h_zp['Wsg{}'.format(ph)]
 
     # data intepolated from history dump
-    for field in ['sfr10','sfr40','sfr100','surfsp']:
-        h_zp[field] = np.interp(zpw.taxis,h.index,h[field])
+    for field in h:
+        h_zp['{}_hst'.format(field)] = np.interp(zpw.taxis,h.index,h[field])
+
+    for field in rates.keys():
+        h_zp[field] = np.interp(zpw.taxis,rates.index,rates[field])
 
     # calculate zeta
     H=h_zp['surf']/toMsun/h_zp['nmid']/2.0
@@ -343,7 +512,7 @@ def processing_zprof_dump(h,params,zprof_ds,hstfile):
     unit_rho=c.M_sun/c.pc**3
     unit_v=unit['velocity']
     Sigma_gas=h_zp['surf']
-    Sigma_sp=h_zp['surfsp']
+    Sigma_sp=h_zp['surfsp_hst']
     Sigma_star=params['SurfS']
     H_star=params['zstar']
     rho_dm=params['rhodm']
@@ -364,12 +533,49 @@ def processing_zprof_dump(h,params,zprof_ds,hstfile):
     h_zp.index=zpw.taxis
      
     h_zp.to_pickle(hstfile)
-    print('{} is created'.format(hstfile))
+    print('new {} is created'.format(hstfile))
     return h_zp
     
-def doall(base,problem_id,problem_dir=None,do_yt=True):
+def draw_history(h_zp,metadata,figfname=''):
+    from pyathena.set_plt import labels,plt
+    nplot=len(metadata)
+    fig=plt.figure(figsize=(10,4*nplot))
+    iplot=1
+    tmax=h_zp['tMyr'].max()
+    for f,ylabel,yscale,subfields,ybottom,ytop in metadata:
+        plt.subplot(nplot,1,iplot)
+        if f in h_zp:
+            l,=plt.plot(h_zp['tMyr'],h_zp[f])
+            if len(subfields)>0:
+                if f in labels: l.set_label(labels[f])
+                for sf in subfields:
+                    if sf in h_zp:
+                        l,=plt.plot(h_zp['tMyr'],h_zp[sf])
+                        if sf in labels: l.set_label(labels[sf])
+                plt.legend(bbox_to_anchor=(1.02, 1),loc=2,fontsize='small')
+        plt.ylabel(ylabel)
+        plt.yscale(yscale)
+        plt.ylim(bottom=ybottom,top=ytop)
+        iplot+=1
+
+
+    plt.xlabel('t [Myr]')
+    if len(figfname) > 0:
+        fig.savefig(figfname,bbox_inches='tight',dpi=150)
+
+def doall(base,problem_id,problem_dir=None,do_pickling=True,use_yt=True,
+  force_recal=False, force_redraw=False):
     """
-       do all preprocessing for a model
+        This function will do following tasks: 
+        (1) reoranizing files 
+           * .hst, .sn --> hst/
+           * .zprof --> zprof/
+           * .starpar.vtk --> starpar/
+           * .rst --> rst/
+        (2) creating a parameter file from a restart header
+        (3) creating merged (along the time axis) zprof files for each thermal phase (using xarray)
+        (4) creating history data using zprof dumps, including new fields
+        (5) [if do_pickling] creating pickle files for slice and projection (will use yt [if use_yt])
     """
     if problem_dir is None: problem_dir = problem_id
     print('preparing metadata for {}...'.format(problem_id))
@@ -380,15 +586,19 @@ def doall(base,problem_id,problem_dir=None,do_yt=True):
     parfile='{}{}/{}.par'.format(base,problem_dir,problem_id)
     params=pa.get_params(parfile)    
 
-    zpfile='{}{}/zprof_merged/{}.whole.zprof.nc'.format(base,problem_id,problem_id)
-    if not os.path.isfile(zpfile): zprof_to_xarray(base,problem_id)
+    zpfile='{}{}/zprof_merged/{}.phase5.zprof.nc'.format(base,problem_dir,problem_id)
+    from pyathena.utils import compare_files
+    zpfiles=glob.glob('{}{}/zprof/{}.*.whole.zprof'.format(base,problem_dir,problem_id))
+    zpfiles.sort()
+    if len(zpfiles) > 0:
+        if not compare_files(zpfiles[-1],zpfile): zprof_to_xarray(base,problem_dir,problem_id)
     #zpfile='{}{}/zprof_merged/{}.zprof.nc'.format(base,problem_id,problem_id)
     #if not os.path.isfile(zpfile): merge_xarray(base,problem_id)
 
-    hstzpfile='{}{}/hst/{}.hst_zp.p'.format(base,problem_id,problem_id)
-    if not os.path.isfile(hstzpfile): recal_history(base,problem_id)
+    hstzpfile='{}{}/hst/{}.hst_zp.p'.format(base,problem_dir,problem_id)
+    if os.path.isfile(zpfile): recal_history(base,problem_dir,problem_id)
 
-    if do_yt:
+    if do_pickling:
         kwargs={'base_directory':base,
             'directory':'{}/'.format(problem_dir),
             'id':problem_id,
@@ -397,6 +607,12 @@ def doall(base,problem_id,problem_dir=None,do_yt=True):
             'rotation':params['Omega']*1.e3,
             'range':''
         }
-        print('slicing and projecting using yt...')
-        yt_analysis.main(force_recal=False,force_redraw=False,verbose=False,**kwargs)
-        
+
+        if use_yt:
+            print('slicing and projecting with yt ...')
+            from pyathena.yt_analysis import yt_analysis
+            yt_analysis.main(force_recal=force_recal,force_redraw=force_redraw,verbose=50,**kwargs)
+        else:
+            print('slicing and projecting with pyathena ...')
+            from pyathena.create_pickle import create_all_pickles
+            create_all_pickles(force_recal=force_recal,force_redraw=force_redraw,verbose=True,**kwargs)

@@ -30,9 +30,9 @@ def save_to_fits(ds,mhd=True):
         hdr['dy']=(ds.domain['dx'][1],'pc')
         hdr['dz']=(ds.domain['dx'][2],'pc')
         hdr['unit']=(units[field].value,units[field].unit)
-        if ds.domain.has_key('qshear'):
+        if 'qshear' in ds.domain:
             hdr['qshear']=ds.domain['qshear']
-        if ds.domain.has_key('Omega'):
+        if 'Omega' in ds.domain:
             hdr['Omega']=(ds.domain['Omega'],'km/s/pc')
         hdu = fits.PrimaryHDU(data,header=hdr)
         hdu.writeto(fitsname,overwrite=True)
