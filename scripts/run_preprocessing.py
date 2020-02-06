@@ -102,8 +102,8 @@ for problem_id in ids:
         if not os.path.isdir(figdir): os.mkdir(figdir)
         figfname='{}{}/figures/{}-history.png'.format(base,problem_dir,problem_id)
         preprocessing.draw_history(h_zp,metadata,figfname)
-        if system == 'tigress':
-            figdir_tigress='{}/public_html/TIGRESS_figures/history/'.format(base)
+        if system.startswith('tigress'):
+            figdir_tigress='/tigress/changgoo/public_html/TIGRESS_figures/history/'
             if len(figfname) > 0: 
                 os.chmod(figfname,0o644)
                 shutil.copy(figfname,figdir_tigress+os.path.basename(figfname))

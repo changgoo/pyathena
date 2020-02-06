@@ -150,6 +150,7 @@ def read_zprof(zprof_fnames):
     dfall=None
     for f in zprof_fnames:
         df,time=read_zprof_one(f)
+        if 'pP' in df: df=df.drop(columns=['pP','mP'])
         zaxis=np.array(df['z'])
         fields=np.array(df.columns.get_values())
         taxis.append(time)
@@ -285,8 +286,11 @@ def processing_history_dump(hst,params,hstfile):
     vol=Lx*Ly*Lz
     area=Lx*Ly
     dz=Lz/Nz
-    Omega=params['Omega']
-    torb=2*np.pi/Omega*toMyr
+    if 'Omega' in params:
+        Omega = params['Omega']
+    else:
+        Omega = 0.
+    if Omega > 0: torb=2*np.pi/Omega*toMyr
 
     mhd=False
     if 'x1ME' in hst: mhd=True
@@ -296,7 +300,7 @@ def processing_history_dump(hst,params,hstfile):
     h=pd.DataFrame()
 
     h['tMyr']=hst['time']*toMyr
-    h['torb']=h['tMyr']/torb
+    if Omega>0: h['torb']=h['tMyr']/torb
     h['surf']=hst['mass']*toMsun*Lz
     h['surfsp']=hst['msp']*toMsun*Lz
     for ph in ['c','u','w','h1','h2']:
@@ -354,8 +358,12 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
     vol=Lx*Ly*Lz
     area=Lx*Ly
     dz=Lz/Nz
-    Omega=params['Omega']
-    torb=2*np.pi/Omega*toMyr
+    if 'Omega' in params:
+        Omega = params['Omega']
+    else:
+        Omega = 0.
+
+    if Omega > 0: torb=2*np.pi/Omega*toMyr
 
     mhd=False
     if 'B1' in zprof_ds.fields.to_index(): mhd=True
@@ -371,7 +379,7 @@ def processing_zprof_dump(h,rates,params,zprof_ds,hstfile):
     zph=zprof_ds.to_array().sel(variable=['phase4','phase5']).sum(dim='variable')
 
     h_zp['tMyr']=zpw.taxis*toMyr
-    h_zp['torb']=h_zp['tMyr']/torb
+    if Omega > 0: h_zp['torb']=h_zp['tMyr']/torb
 
     for i,ph in enumerate(['_2p','_h','','_c','_u','_w','_h1','_h2',]):
         dtot=zpw.sel(fields='d').sum(dim='zaxis')

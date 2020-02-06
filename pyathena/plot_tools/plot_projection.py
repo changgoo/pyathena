@@ -18,7 +18,7 @@ Myr=unit['time'].to('Myr').value
 
 def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
   aux={},norm_factor=2.,active=False,scale_func=np.sqrt, vy0=0.,timestamp=True,
-  nstarkeys=4):
+  nstarkeys=4,suffix='.png'):
 
     plt.rc('font',size=11)
     plt.rc('xtick',labelsize=11)
@@ -95,7 +95,7 @@ def plot_projection(surfname,starfname,stars=True,writefile=True,runaway=True,
     ax.set_xlabel('x [kpc]')
     ax.set_ylabel('y [kpc]')
 
-    pngfname=surfname+'ng'
+    pngfname=surfname.replace('.p',suffix)
     if writefile:
         plt.savefig(pngfname,bbox_inches='tight',num=0,dpi=150)
         plt.close()

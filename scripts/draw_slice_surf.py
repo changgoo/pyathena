@@ -68,6 +68,9 @@ for pid in ids:
     slc_files.sort()
     nf=len(slc_files)
     aux=set_aux.set_aux(pid)
+    suffix='.png'
+    #aux=set_aux.set_aux('R8')
+    #suffix='2.png'
     aux_surf=aux['surface_density']
     if system == 'tigress_rps':
         field_list=['star_particles','surface_density','specific_scalar3_proj','nH','specific_scalar3','temperature','pok','ram_pok_z']
@@ -83,12 +86,13 @@ for pid in ids:
         print(slcname)
         starname=slcname.replace('slice.p','starpar.vtk').replace('slice','starpar')
         projname=slcname.replace('slice','surf')
-        if not compare_files(slcname,slcname.replace('.p','_proj.png')) or overwrite:
+        if not compare_files(slcname,slcname.replace('.p',suffix)) or overwrite:
             #plot_slices.slice2(slcname,starname,field_list,aux=aux,vy0=vy0)
-            plot_slices.slice_proj(slcname,projname,starname,field_list,aux=aux,vy0=vy0)
+            plot_slices.slice_proj(slcname,projname,starname,field_list,
+                                   aux=aux,vy0=0.,suffix=suffix)
         #if not compare_files(projname,projname+'ng') or overwrite:
             plot_projection.plot_projection(projname,starname,
-              scale_func=np.cbrt,runaway=False,aux=aux_surf,vy0=vy0)
+              scale_func=np.cbrt,runaway=False,aux=aux_surf,vy0=vy0,suffix=suffix)
 
     if system.startswith('tigress') or system == 'rusty' or system == 'perseus':
         basedir1=base + pdir
@@ -97,11 +101,11 @@ for pid in ids:
             if system == 'tigress_arm': basedir2 += 'ARM/'
         else:
             basedir2='/mnt/home/ckim/public_www/TIGRESS_Models/movies/'
-        ffig = os.path.join(basedir1,'slice/*.slice_proj.png')
-        fmp4 = os.path.join(basedir1,'slice/{}_slice_proj.mp4'.format(pid))
+        ffig = os.path.join(basedir1,'slice/*.slice_proj{}'.format(suffix))
+        fmp4 = os.path.join(basedir1,'slice/{}_slice_proj{}'.format(pid,suffix.replace('png','mp4')))
         movie.make_movie(ffig, fmp4)
         shutil.copy(fmp4,basedir2)
-        ffig = os.path.join(basedir1,'surf/*.surf.png')
-        fmp4 = os.path.join(basedir1,'slice/{}_surf.mp4'.format(pid))
+        ffig = os.path.join(basedir1,'surf/*.surf{}'.format(suffix))
+        fmp4 = os.path.join(basedir1,'slice/{}_surf{}'.format(pid,suffix.replace('png','mp4')))
         movie.make_movie(ffig, fmp4)
         shutil.copy(fmp4,basedir2)

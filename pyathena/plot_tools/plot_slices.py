@@ -260,7 +260,8 @@ def slice2(slcfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.,\
         return fig
 
 def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.,\
-               writefile=True,tstamp=True,stars=True,field_label=True,norm_factor=2):
+               writefile=True,tstamp=True,stars=True,field_label=True,norm_factor=2,\
+               suffix='.png'):
     plt.rc('font',size=14)
     plt.rc('xtick',labelsize=14)
     plt.rc('ytick',labelsize=14)
@@ -424,7 +425,7 @@ def slice_proj(slcfname,projfname,starfname,fields_to_draw,zoom=1.,aux={},vy0=0.
     plt.setp([ax.get_yticklabels() for ax in axes[:2*nf:nf]], visible=True)
     plt.setp([ax.xaxis.get_majorticklabels() for ax in axes[nf:2*nf]], rotation=45 )
 
-    pngfname=slcfname.replace('.p','_proj.png')
+    pngfname=slcfname.replace('.p','_proj'+suffix)
     if writefile:
         plt.savefig(pngfname,num=1,dpi=150)
         plt.close(1)
