@@ -52,6 +52,52 @@ def create_surface_density(ds,surf_fname):
     surf_data={'time':time,'data':proj,'bounds':bounds}
     pickle.dump(surf_data,open(surf_fname,'wb'),pickle.HIGHEST_PROTOCOL)
     
+def create_Bprojection(ds,proj_fname):
+    '''
+        function to create pickle file for magnetic field projection in y direction
+    '''
+    
+    time = ds.domain['time']*to_Myr
+    dx=ds.domain['dx']
+
+    surf_data={}
+    surf_data['time']=time
+    prof_data={}
+    prof_data['time']=time
+    le=ds.domain['left_edge']
+    re=ds.domain['right_edge']
+    xfc=np.linspace(le[0],re[0],ds.domain['Nx'][0]+1)
+    xcc=0.5*(xfc[1:]+xfc[:-1])
+    prof_data['xcc']=xcc
+    pdata=ds.read_all_data('magnetic_field')
+    den=ds.read_all_data('density')
+    paxis='y'
+
+    dproj=np.nanmean(den,axis=data_axis[paxis])
+    dprof=den.mean(axis=0).mean(axis=0)
+
+    for i,axis in enumerate(['x','y','z']):
+        proj_tot = np.sqrt(np.nanmean(pdata[...,i]**2,axis=data_axis[paxis]))
+        proj_mean = np.nanmean(pdata[...,i],axis=data_axis[paxis])
+        proj_turb = np.sqrt(np.nanmean((pdata[...,i]-proj_mean[:,np.newaxis,:])**2,axis=data_axis[paxis]))
+
+        # wkim's definition
+        Breg=(den*pdata[...,i]).mean(axis=0).mean(axis=0)/dprof
+        Btot=np.sqrt((den*pdata[...,i]**2).mean(axis=0).mean(axis=0)/dprof)
+        Btrb=np.sqrt(Btot**2-Breg**2)
+
+        # my definition
+        Bmean = (dproj*proj_mean).mean(axis=0)/dprof
+        Bturb = (dproj*proj_turb).mean(axis=0)/dprof
+        Btotal = (dproj*proj_tot).mean(axis=0)/dprof
+
+        bounds = np.array([le[domain_axis[proj_axis[paxis][0]]],re[domain_axis[proj_axis[paxis][0]]],
+                           le[domain_axis[proj_axis[paxis][1]]],re[domain_axis[proj_axis[paxis][1]]]])
+        surf_data[axis]={'tot':proj_tot,'mean':proj_mean,'turb':proj_turb,'bounds':bounds}
+        prof_data[axis]={'total':Btotal,'mean':Bmean,'turb':Bturb,'tot':Btot,'reg':Breg,'trb':Btrb}
+    pickle.dump(surf_data,open(proj_fname,'wb'),pickle.HIGHEST_PROTOCOL)
+    pickle.dump(prof_data,open(proj_fname.replace('Bproj','Bprof'),'wb'),pickle.HIGHEST_PROTOCOL)
+
 def create_projection(ds,proj_fname,field='density',conversion=1.0,weight_field=None):
     '''
         generic function to create pickle file containing projections of field along all axes
@@ -230,14 +276,16 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
         surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
         scalfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.scal0.p'
         projfname=dir+'proj/'+kwargs['id']+f[-9:-4]+'.ddproj.p'
+        Bprojfname=dir+'proj/'+kwargs['id']+f[-9:-4]+'.Bproj.p'
 
         tasks={'slice':(not compare_files(f,slcfname)) or force_recal,
                'surf':(not compare_files(f,surfname)) or force_recal,
                'scal':(not compare_files(f,scalfname)) or force_recal,
                'proj':(not compare_files(f,projfname)) or force_recal,
+               'Bproj':((not compare_files(f,Bprojfname)) or force_recal) and mhd,
         }
 
-        do_task=(tasks['slice'] or tasks['surf'] or tasks['scal'] or tasks['proj'])
+        do_task=(tasks['slice'] or tasks['surf'] or tasks['scal'] or tasks['proj'] or tasks['Bproj'])
          
         if verbose: 
             print('file number: {} -- Tasks to be done ['.format(i),end='')
@@ -256,6 +304,8 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
                                  field='density',weight_field='density')
                 create_projection(ds,projfname.replace('ddproj','dTproj'),
                                  field='temperature',weight_field='density')
+            if tasks['Bproj']:
+                create_Bprojection(ds,Bprojfname)
 
     aux=set_aux(kwargs['id'])
 
