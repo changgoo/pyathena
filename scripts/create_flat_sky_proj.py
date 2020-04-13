@@ -1,6 +1,6 @@
 # %load /tigress/changgoo/pyathena-TIGRESS/scripts/create_XYsyn.py
 from __future__ import print_function
-from mpi4py import MPI
+#from mpi4py import MPI
 
 import numpy as np
 import sys
@@ -10,6 +10,8 @@ import pyathena.synthetic_observations as syn
 import os,glob
 import pandas as pd
 from astropy.io import fits
+
+import gc
 
 def to_map_alongy(IQU,jmin=0,jmax=-1):
     Nz,Ny,Nx=IQU[0].shape
@@ -60,6 +62,9 @@ def add_header_for_glue(hdu,hdr,axis='xyz'):
     return 
 
 def flat_sky_proj_kmin(pid,base='/tigress/changgoo/',istart=300,iend=301):
+    '''
+        flat sky projection along the z axis down to various zmin
+    '''
     proj_dir='{}{}/maps-XYproj/'.format(base,pid)
 
     if not os.path.isdir(proj_dir): os.mkdir(proj_dir)
@@ -152,6 +157,10 @@ def flat_sky_proj_kmin(pid,base='/tigress/changgoo/',istart=300,iend=301):
     print('*** DONE: synthesized XY projection for {} ***'.format(pid))
 
 def flat_sky_proj_midplane(pid,base='/tigress/changgoo/',istart=300,iend=301):
+    '''
+        flat sky projection along all x,y,z axes using data cube near the midplane
+    '''
+
     proj_dir='{}{}/maps-XZproj/'.format(base,pid)
 
     if not os.path.isdir(proj_dir): os.mkdir(proj_dir)
@@ -267,7 +276,70 @@ def flat_sky_proj_midplane(pid,base='/tigress/changgoo/',istart=300,iend=301):
         hdul_sim.writeto(fitsname,overwrite=True)
         print('*** DONE: synthesized Z projections for {} ***'.format(pid))
 
+def flat_sky_proj_with_pp(pid,mybase='/tigress/changgoo/',
+                          ppbase='/tigress/jk11/radps_postproc/',
+                          xymax='.xymax1024',
+                          itime=0,dt=1,overwrite=False):
+    '''
+        create synthetic HI projected along the z axis using post-processed data
+    '''
+
+    proj_dir='{}{}/maps-XYproj-pp/'.format(mybase,pid)
+
+    if not os.path.isdir(proj_dir): os.mkdir(proj_dir)
+
+    vchannel=np.linspace(-100,100,201)
+
+    fname='%s%s%s/vtk/%s.%4.4d.vtk' % (ppbase,pid,xymax,pid,itime)
+    if not os.path.isfile(fname): return
+    print('*** beginning projection with {} ***'.format(fname))
+    ds,domain=syn.setup_domain(fname,vel=False,shear=False,mhd=False)
+    print(domain['time'])
+    fitsname=proj_dir+pid+'.{:04d}'.format(round(domain['time']/dt))+xymax+'.HI.fits'
+    if (not overwrite) and os.path.isfile(fitsname): return
+    x,y,z,=pa.cc_arr(domain)
+
+    losdata=[]
+
+    print('*** reading density ...')
+    nden=syn.read_data(ds,'density',domain)
+    xH=syn.read_data(ds,'specific_scalar{}'.format(ds.domain['nscal']-1),domain)
+    nH=nden*xH
+    print('*** reading temperature ...')
+    temp=syn.read_data(ds,'temperature',domain)
+    print('*** reading LOS velocity ...')
+    vlos=syn.read_data(ds,'velocity3',domain)
+
+    dz=domain['dx'][2]
+    # create synthetic HI data
+    TB,tau=syn.los_to_HI_axis_proj(nH,temp,vlos,vchannel,deltas=dz,los_axis=0,memlim=-1)
+
+    # save to FITS
+        
+    hdul = fits.HDUList()
+    hdu = create_fits(domain)
+
+    hdu.header['vmin']=(vchannel.min(),'km/s')
+    hdu.header['vmax']=(vchannel.max(),'km/s')
+    hdu.header['dv']=(vchannel[1]-vchannel[0],'km/s')
+
+    hdul.append(hdu)
+    for fdata,label in zip([TB,tau],['TB','tau']):
+        hdul.append(fits.ImageHDU(name=label,data=fdata))
+
+    hdr=hdu.header
+    for hdu in hdul:
+        add_header_for_glue(hdu,hdr,axis='xyv')
+
+    fbase = os.path.basename(fname)
+    hdul.writeto(fitsname,overwrite=overwrite)
+
+    print('*** DONE: synthesized XY projection for {} ***'.format(fitsname))
+
 def to_fits(pid,base='/tigress/changgoo/',istart=300,iend=301,midplane_cut=True):
+    '''
+        save raw 3D data in the FITS format
+    '''
     if midplane_cut:
         proj_dir='{}{}/fits-midplane/'.format(base,pid)
     else:
@@ -362,21 +434,27 @@ def to_fits(pid,base='/tigress/changgoo/',istart=300,iend=301,midplane_cut=True)
 
 
 
+if __name__ == '__main__':
+    #base='/tigress/changgoo/'
+    #pid=sys.argv[1]
 
-base='/tigress/changgoo/'
-pid=sys.argv[1]
+    #comm = MPI.COMM_WORLD
+    #size = comm.Get_size()
+    #rank = comm.Get_rank()
 
+    #tstart=300
+    #dt=100/size
+    #istart=rank*dt+tstart
+    #iend=(rank+1)*dt+tstart
+    #iend=301
 
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
-
-tstart=300
-dt=100/size
-istart=rank*dt+tstart
-iend=(rank+1)*dt+tstart
-iend=301
+#    flat_sky_proj_with_pp('R8_8pc_rst',xymax='.xymax2048',itime=26)
+#    for itime in np.arange(6,400,10):
+    for itime in np.arange(101,500,10):
+        flat_sky_proj_with_pp('R8_4pc_newacc',xymax='.xymax1024',itime=itime)
+        #flat_sky_proj_with_pp('R8_8pc_rst',xymax='.xymax1024',itime=itime)
+        gc.collect()
 
 #flat_sky_proj_kmin(pid,base=base,istart=istart,iend=iend)
 #flat_sky_proj_midplane(pid,base=base,istart=istart,iend=iend)
-to_fits(pid,base=base,istart=istart,iend=iend,midplane_cut=False)
+#to_fits(pid,base=base,istart=istart,iend=iend,midplane_cut=False)

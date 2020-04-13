@@ -41,12 +41,13 @@ def data_reader(fname,vel=True,mhd=True):
 def setup_domain(fname,vel=True,mhd=True,shear=True):
     dir, id, step, ext, mpi = pa.parse_filename(fname)
     ds=pa.AthenaDataSet(fname)
-    rstfnames=glob.glob('%s/%s.par' % (ds.dir,ds.id))
-    par,blocks,fields=pa.parse_par(rstfnames[0])
-
     domain=ds.domain
-    domain['qshear']=eval(par['problem']['qshear'][0])
-    domain['Omega']=eval(par['problem']['Omega'][0])
+    if shear:
+        rstfnames=glob.glob('%s/%s.par' % (ds.dir,ds.id))
+        par,blocks,fields=pa.parse_par(rstfnames[0])
+
+        domain['qshear']=eval(par['problem']['qshear'][0])
+        domain['Omega']=eval(par['problem']['Omega'][0])
     fields=['density']
     fields.append('temperature')
     if vel:

@@ -165,8 +165,8 @@ def calc_IQU_XY(losdata,domain,deltas):
     nH,B1,B2,B3=losdata
     
     Bz=B3
-    Bx=-B2
-    By=B1
+    Bx=B1
+    By=B2
 
     args={'Bnu':41495.876171482356, 'sigma':1.2e-26, 'p0':0.2, 'attenuation': 0}
     Bnu=args['Bnu']

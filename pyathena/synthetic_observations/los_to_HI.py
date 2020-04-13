@@ -38,7 +38,7 @@ def los_to_HI(dens,temp,vel,vchannel,deltas=1.,WF=False):
     tau_v=np.nansum(kappa_v*ds,axis=1) # dimensionless
     return TB,tau_v,TBthin
 
-def los_to_HI_axis_proj(dens,temp,vel,vchannel,small_mem=True,
+def los_to_HI_axis_proj(dens,temp,vel,vchannel,memlim=1.,
                         deltas=1.,WF=False,los_axis=1,verbose=False):
     """
         inputs:
@@ -56,17 +56,34 @@ def los_to_HI_axis_proj(dens,temp,vel,vchannel,small_mem=True,
             TBthin: the brithgtness temperature assuming optically-thin case.
     """
     
-    if small_mem:
-        Tlos=temp
-        vlos=vel
-        nlos=np.copy(dens)
-    else:
+    Nv=len(vchannel)
+    mem=np.prod(temp.shape)*4*Nv/1024.**3
+    if memlim>0:
+        if mem>memlim:
+            nchunk=int(mem/memlim)+1
+            vchunk=[]
+            dv=int(Nv/nchunk)+1
+            if dv == 1:
+                print("at least {} GB memory would be required".format(mem/Nv))
+            for i in np.arange(nchunk):
+                imin=i*dv
+                imax=(i+1)*dv
+                if imin>Nv:
+                    break
+                if imax>Nv:
+                    vchunk.append(vchannel[imin:Nv])
+                    break 
+                vchunk.append(vchannel[imin:imax])
         Tlos=temp[np.newaxis,...]
         vlos=vel[np.newaxis,...]
         nlos=np.copy(dens[np.newaxis,...])
+    else:
+        Tlos=temp
+        vlos=vel
+        nlos=np.copy(dens)
 
-    idx = Tlos>2.e4
-    nlos[idx]=0.
+#    idx = Tlos>2.e4
+#    nlos[idx]=0.
 
     if WF: Tspin=Tspin_WF(Tlos,nlos)
     else: Tspin=Tlos
@@ -74,19 +91,35 @@ def los_to_HI_axis_proj(dens,temp,vel,vchannel,small_mem=True,
     ds=deltas*3.085677581467192e+18
 
     v_L=0.21394414*np.sqrt(Tlos) # in units of km/s
-    if small_mem:
+    if mem>memlim:
         TB=[]
         tau_v=[]
-        for vch in vchannel:
-            if verbose: print(vch)
-            phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
-                  (vch-vlos)/v_L)**2) # time
-            kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
-            tau_los=kappa_v*ds # dimensionless
- 
-            tau_cumul=tau_los.cumsum(axis=los_axis)
-            TB.append(np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=los_axis)) # same unit with Tspin
-            tau_v.append(np.nansum(kappa_v*ds,axis=los_axis)) # dimensionless
+        if memlim>0:
+            for vch in vchunk:
+                if verbose: print(vch)
+                phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
+                      (vch[:,np.newaxis,np.newaxis,np.newaxis]-vlos)/v_L)**2) # time
+                kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
+                tau_los=kappa_v*ds # dimensionless
+        
+                tau_cumul=tau_los.cumsum(axis=los_axis+1)
+        
+                TB.append(np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=los_axis+1)) # same unit with Tspin
+                tau_v.append(np.nansum(kappa_v*ds,axis=los_axis+1)) # dimensionless
+            TB=np.concatenate(TB,axis=0)
+            tau_v=np.concatenate(tau_v,axis=0)
+        else:
+            for vch in vchannel:
+                if verbose: print(vch)
+                phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
+                      (vch-vlos)/v_L)**2) # time
+                kappa_v=2.6137475e-15*nlos/Tspin*phi_v # area/volume = 1/length
+                tau_los=kappa_v*ds # dimensionless
+        
+                tau_cumul=tau_los.cumsum(axis=los_axis)
+        
+                TB.append(np.nansum(Tspin*(1-np.exp(-tau_los))*np.exp(-tau_cumul),axis=los_axis)) # same unit with Tspin
+                tau_v.append(np.nansum(kappa_v*ds,axis=los_axis)) # dimensionless
     else:
         phi_v=0.00019827867/v_L*np.exp(-(1.6651092223153954*
               (vchannel[:,np.newaxis,np.newaxis,np.newaxis]-vlos)/v_L)**2) # time
