@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import pickle
+import pandas as pd
 import glob,os
 
 import astropy.constants as c
@@ -11,6 +12,7 @@ from pyathena.set_units import *
 from pyathena.plot_tools.plot_projection import plot_projection
 from pyathena.plot_tools.plot_slices import slice2 as plot_slice
 from pyathena.plot_tools.set_aux import set_aux
+import gc
 
 coolftn=pa.coolftn()
 unit=pa.set_units(muH=1.4271)
@@ -166,7 +168,8 @@ def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
     import copy
     field_to_slice = copy.copy(slc_fields)
     if os.path.isfile(slcfname) and not force_recal:
-        slc_data = pickle.load(open(slcfname,'rb'))
+        #slc_data = pickle.load(open(slcfname,'rb'))
+        slc_data = pd.read_pickle(slcfname)
         existing_fields = slc_data['z'].keys()
         for f in existing_fields:
             if f in field_to_slice: 
@@ -192,6 +195,12 @@ def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
             pdata=ds.read_all_data('kinetic_energy3')*2.0
         elif f is 'pok':
             pdata=ds.read_all_data('pressure')
+        elif f is 'magnetic_field_z':
+            pdata=ds.read_all_data('magnetic_field3')
+        elif f is 'magnetic_field_y':
+            pdata=ds.read_all_data('magnetic_field2')
+        elif f is 'magnetic_field_x':
+            pdata=ds.read_all_data('magnetic_field1')
         elif f is 'velocity_z':
             pdata=ds.read_all_data('velocity3')
         elif f is 'velocity_y':
@@ -260,6 +269,9 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
     slc_fields=['nH','pok','temperature','velocity_x','velocity_y','velocity_z','ram_pok_z']
     fields_to_draw=['star_particles','nH','temperature','pok','velocity_z']
     if mhd:
+        slc_fields.append('magnetic_field_x')
+        slc_fields.append('magnetic_field_y')
+        slc_fields.append('magnetic_field_z')
         slc_fields.append('magnetic_field_strength')
         slc_fields.append('mag_pok')
         fields_to_draw.append('magnetic_field_strength')
@@ -272,6 +284,7 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
     if not os.path.isdir(dir+'proj/'): os.mkdir(dir+'proj/')
 
     for i,f in enumerate(fname):
+        gc.collect()
         slcfname=dir+'slice/'+kwargs['id']+f[-9:-4]+'.slice.p'
         surfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.surf.p'
         scalfname=dir+'surf/'+kwargs['id']+f[-9:-4]+'.scal0.p'
@@ -279,10 +292,10 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
         Bprojfname=dir+'proj/'+kwargs['id']+f[-9:-4]+'.Bproj.p'
 
         tasks={'slice':(not compare_files(f,slcfname)) or force_recal,
-               'surf':(not compare_files(f,surfname)) or force_recal,
-               'scal':(not compare_files(f,scalfname)) or force_recal,
-               'proj':(not compare_files(f,projfname)) or force_recal,
-               'Bproj':((not compare_files(f,Bprojfname)) or force_recal) and mhd,
+               'surf':(not compare_files(f,surfname)),# or force_recal,
+               'scal':(not compare_files(f,scalfname)),# or force_recal,
+               'proj':(not compare_files(f,projfname)),# or force_recal,
+               'Bproj':((not compare_files(f,Bprojfname))) and mhd,
         }
 
         do_task=(tasks['slice'] or tasks['surf'] or tasks['scal'] or tasks['proj'] or tasks['Bproj'])
@@ -294,7 +307,7 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
         if do_task:
             ds = pa.AthenaDataSet(f)
             if tasks['surf']: create_projection(ds,surfname,conversion={'z':ds.domain['Lx'][2]*to_surf})
-            if tasks['slice']: create_slices(ds,slcfname,slc_fields,factors=mul_factors,force_recal=force_recal)
+            if tasks['slice']: create_slices(ds,slcfname,slc_fields,factors=mul_factors,force_recal=False)
             if tasks['scal']: 
                 for nscal,sf in enumerate(scal_fields):
                     nscalfname=scalfname.replace('scal0','scal{}'.format(nscal))
