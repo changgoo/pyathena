@@ -32,15 +32,22 @@ class data(object):
             fbase=os.path.basename(f)
             self.itimes.append(int(fbase.split('.')[-3]))
 
+    def readhst(self):
+        pid=self.pid
+        pdir=self.pdir
+        base=self.base
+        itime=self.itime
+        self.hzp=pd.read_pickle('{}{}/hst/{}.hst_zp.p'.format(base,pdir,pid))
+        self.sn=pd.read_pickle('{}{}/hst/{}.sn.p'.format(base,pdir,pid))
+
     def readall(self):
         pid=self.pid
         pdir=self.pdir
         base=self.base
         itime=self.itime
         
+        self.readhst()
         self.ds=pa.AthenaDataSet('{}/id0/{}.{:04d}.vtk'.format(self.vtkdir,pid,itime))
-        self.hzp=pd.read_pickle('{}{}/hst/{}.hst_zp.p'.format(base,pdir,pid))
-        self.sn=pd.read_pickle('{}{}/hst/{}.sn.p'.format(base,pdir,pid))
         self.sp=pa.read_starvtk('{}{}/starpar/{}.{:04d}.starpar.vtk'.format(base,pdir,pid,itime))
         self.slc=pd.read_pickle('{}{}/slice/{}.{:04d}.slice.p'.format(base,pdir,pid,itime))
         self.surf=pd.read_pickle('{}{}/surf/{}.{:04d}.surf.p'.format(base,pdir,pid,itime))
