@@ -295,7 +295,7 @@ def create_all_pickles(do_drawing=False, force_recal=False, force_redraw=False, 
                'surf':(not compare_files(f,surfname)),# or force_recal,
                'scal':(not compare_files(f,scalfname)),# or force_recal,
                'proj':(not compare_files(f,projfname)),# or force_recal,
-               'Bproj':((not compare_files(f,Bprojfname))) and mhd,
+               'Bproj':((not compare_files(f,Bprojfname))) and mhd and (not force_recal),
         }
 
         do_task=(tasks['slice'] or tasks['surf'] or tasks['scal'] or tasks['proj'] or tasks['Bproj'])
