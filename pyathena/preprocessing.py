@@ -152,7 +152,7 @@ def read_zprof(zprof_fnames):
         df,time=read_zprof_one(f)
         if 'pP' in df: df=df.drop(columns=['pP','mP'])
         zaxis=np.array(df['z'])
-        fields=np.array(df.columns.get_values())
+        fields=np.array(df.columns.values)
         taxis.append(time)
         if dfall is None:
             dfall=np.array(df)[np.newaxis,:]
