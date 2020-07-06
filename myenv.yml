@@ -195,5 +195,3 @@ dependencies:
     - periodictable==1.5.0
     - tornado==5.1.1
     - trident==1.1
-prefix: /tigress/changgoo/miniconda3
-
