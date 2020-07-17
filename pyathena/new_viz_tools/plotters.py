@@ -48,28 +48,29 @@ def add_alpha_to_cmap(cmap,expo=0.5,reversed=False):
 
 def plot_sfr(sim,ax):
     hzp=sim.hzp
-    ds=sim.ds
+    tMyr = sim.slc['time']*to_Myr
 
     ax.plot(hzp.tMyr,hzp.sfr10)
-    ax.axvline(ds.domain['time']*to_Myr,ls='--',color='C1')
-    ax.plot(ds.domain['time']*to_Myr,np.interp(ds.domain['time']*to_Myr,hzp.tMyr,hzp.sfr10),'o',color='C1')
-    ax.set_xlabel('time [Myr], current time = {:5.1f} Myr'.format(ds.domain['time']*to_Myr))
+    ax.axvline(tMyr,ls='--',color='C1')
+    ax.plot(tMyr,np.interp(tMyr,hzp.tMyr,hzp.sfr10),'o',color='C1')
+    ax.set_xlabel('time [Myr], current time = {:5.1f} Myr'.format(tMyr))
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')
     ax.set_yscale('log')
-    ax.set_ylim(5.e-4,5.e-2)
+    sfrmin,sfrmax = np.quantile(hzp.sfr10[hzp.sfr10>0],[0.01,0.99])
+    ax.set_ylim(sfrmin*0.5,sfrmax*2)
+
     ax.set_ylabel(r'$\Sigma_{\rm SFR}\,[{\rm M_\odot\,kpc^{-2}\,yr^{-1}}]$')
 
 def plot_Pmid(sim,ax):
     hzp=sim.hzp
-    ds=sim.ds
+    tMyr = sim.slc['time']*to_Myr
 
     ax.plot(hzp.tMyr,hzp.Pmid_2p,label=r'$P_{\rm mid}$')
     ax.plot(hzp.tMyr,hzp.W_2p,label=r'$\mathcal{W}$')
     ax.plot(hzp.tMyr,hzp.sfr10*1.e3*eta_conv,label=r'$\eta\Sigma_{\rm SFR}$')
-    ax.axvline(ds.domain['time']*to_Myr,ls='--',color='C7')
-    #ax.plot(ds.domain['time']*to_Myr,np.interp(ds.domain['time']*to_Myr,hzp.tMyr,hzp.Pmid_2p),'o',color='C1')
-    ax.set_xlabel('time [Myr], current time = {:5.1f} Myr'.format(ds.domain['time']*to_Myr))
+    ax.axvline(tMyr,ls='--',color='C7')
+    ax.set_xlabel('time [Myr], current time = {:5.1f} Myr'.format(tMyr))
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')
     #ax.set_yscale('log')
@@ -80,7 +81,7 @@ def plot_Pmid(sim,ax):
 
 def plot_outflux(sim,ax,ph,labels=False):
     hzp=sim.hzp
-    ds=sim.ds
+    tMyr = sim.slc['time']*to_Myr
 
     if ph == '2p': 
         ax.plot(hzp.tMyr,hzp.massflux_out_05_d_2p,label=r'$\mathcal{F}_M (cool)$',color='C2',lw=3)
@@ -89,15 +90,15 @@ def plot_outflux(sim,ax,ph,labels=False):
         ax.plot(hzp.tMyr,hzp.massflux_out_05_d_h,label=r'$\mathcal{F}_M (hot)$',color='C3',lw=3)
         ax.plot(hzp.tMyr,hzp.massflux_out_10_d_h,label=r'$\mathcal{F}_M (hot)$',color='C3',lw=2)
     ax.fill_between(hzp.tMyr,hzp.sfr10,label=r'$\eta\Sigma_{\rm SFR}$',color='C0',alpha=0.5,lw=0)
-    ax.axvline(ds.domain['time']*to_Myr,ls='--',color='C6',lw=2)
+    ax.axvline(tMyr,ls='--',color='C6',lw=2)
     #ax.plot(ds.domain['time']*to_Myr,np.interp(ds.domain['time']*to_Myr,hzp.tMyr,hzp.Pmid_2p),'o',color='C1')
     if labels:
-        ax.set_xlabel('time [Myr], current time = {:5.1f} Myr'.format(ds.domain['time']*to_Myr))
+        ax.set_xlabel('time [Myr], current time = {:5.1f} Myr'.format(tMyr))
         ax.xaxis.tick_top()
         ax.xaxis.set_label_position('top')
     ax.set_yscale('log')
     ax.set_ylim(5.e-4,8.e-2)
-    ax.set_xlim(ds.domain['time']*to_Myr-100,ds.domain['time']*to_Myr+100)
+    ax.set_xlim(tMyr-100,tMyr+100)
     ax.set_ylabel(r'$[{\rm M_\odot\,kpc^{-2}\,yr^{-1}}]$')
 
 def plot_clusters(sim,ax,xaxis,yaxis,yoffset,Ly):

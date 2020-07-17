@@ -47,7 +47,7 @@ class data(object):
         itime=self.itime
         
         self.readhst()
-        self.ds=pa.AthenaDataSet('{}/id0/{}.{:04d}.vtk'.format(self.vtkdir,pid,itime))
+        #self.ds=pa.AthenaDataSet('{}/id0/{}.{:04d}.vtk'.format(self.vtkdir,pid,itime))
         self.sp=pa.read_starvtk('{}{}/starpar/{}.{:04d}.starpar.vtk'.format(base,pdir,pid,itime))
         self.slc=pd.read_pickle('{}{}/slice/{}.{:04d}.slice.p'.format(base,pdir,pid,itime))
         self.surf=pd.read_pickle('{}{}/surf/{}.{:04d}.surf.p'.format(base,pdir,pid,itime))
@@ -73,6 +73,9 @@ class data(object):
         self.clmass_keys=np.cbrt([1.e3,1.e4,1.e5])*5
         self.clcmap=add_alpha_to_cmap(cma.ember_r,expo=1,reversed=True)
         
-        dm=self.ds.domain
-        self.yoffset=-np.mod(dm['time']*self.Omega*dm['Lx'][0],dm['Lx'][1])
-        self.joffset=int(self.yoffset/dm['dx'][1])
+        time = self.slc['time']
+        Lx = self.par['x1max']-self.par['x1min']
+        Ly = self.par['x2max']-self.par['x2min']
+        dy = Lx/self.par['Nx2']
+        self.yoffset=-np.mod(time*Lx,Ly)
+        self.joffset=int(self.yoffset/dy)

@@ -120,15 +120,21 @@ def create_projection(ds,proj_fname,field='density',conversion=1.0,weight_field=
     le=ds.domain['left_edge']
     re=ds.domain['right_edge']
     if field is 'temperature':
-        pdata=ds.read_all_data('T1')
-        pdata=coolftn.get_temp(pdata)
+        if 'temperature' in ds.field_list:
+            pdata=ds.read_all_data(field)
+        else:
+            pdata=ds.read_all_data('T1')
+            pdata=coolftn.get_temp(pdata)
     else:
         pdata=ds.read_all_data(field)
 
     if weight_field != None:
         if weight_field is 'temperature':
-            wdata=ds.read_all_data('T1')
-            wdata=coolftn.get_temp(wdata)
+            if 'temperature' in ds.field_list:
+                wdata=ds.read_all_data(weight_field)
+            else:
+                wdata=ds.read_all_data('T1')
+                wdata=coolftn.get_temp(wdata)
         else:
             wdata=ds.read_all_data(weight_field)
         pdata *= wdata
@@ -188,7 +194,22 @@ def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
     for f in field_to_slice:
         print('slicing {} ...'.format(f))
         if f is 'temperature':
-            pdata=ds.read_all_data('T1')
+            if f in ds.field_list:
+                pdata=ds.read_all_data(f)
+            else:
+                pdata=ds.read_all_data('T1')
+        elif f is 'cool_rate':
+            if f in ds.field_list:
+                pdata=ds.read_all_data(f)
+            else:
+                pdata=ds.read_all_data('T1')
+                den=ds.read_all_data('density')
+        elif f is 'heat_rate':
+            if f in ds.field_list:
+                pdata=ds.read_all_data(f)
+            else:
+                pdata=ds.read_all_data('T1')
+                den=ds.read_all_data('density')
         elif f is 'magnetic_field_strength':
             pdata=ds.read_all_data('magnetic_field')
         elif f is 'ram_pok_z':
@@ -216,7 +237,24 @@ def create_slices(ds,slcfname,slc_fields,force_recal=False,factors={}):
 
         for i,axis in enumerate(['x','y','z']):
             if f is 'temperature':
-                slc=coolftn.get_temp(pdata.take(cidx[i],axis=2-i))
+                if not (f in ds.field_list):
+                    slc=coolftn.get_temp(pdata.take(cidx[i],axis=2-i))
+                else:
+                    slc=pdata.take(cidx[i],axis=2-i)
+            elif f is 'cool_rate':
+                if not (f in ds.field_list):
+                    slc=coolftn.get_cool(pdata.take(cidx[i],axis=2-i))
+                    slc *= den.take(cidx[i],axis=2-i)**2
+                else:
+                    slc=pdata.take(cidx[i],axis=2-i)
+            elif f is 'heat_rate':
+                if not (f in ds.field_list):
+                    slc=coolftn.get_heat(pdata.take(cidx[i],axis=2-i))
+                    slc *= den.take(cidx[i],axis=2-i)
+                    print('calculating heat_rate from n,P')
+                else:
+                    slc=pdata.take(cidx[i],axis=2-i)
+                    print('reading heat_rate from vtk')
             elif f is 'magnetic_field_strength':
                 slc=np.sqrt((pdata.take(cidx[i],axis=2-i)**2).sum(axis=-1))
             else:

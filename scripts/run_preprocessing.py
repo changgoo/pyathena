@@ -64,7 +64,10 @@ for problem_id in ids:
         preprocessing.doall(base,problem_id,problem_dir=problem_dir,\
                             do_pickling=do_pickling,use_yt=False)
     elif (system == 'tigress_arm'):
-        preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,vtkdir=vtkbase,force_recal=force_recal)
+        if os.path.isfile(vtkbase+problem_id+'.0000.vtk'):
+            preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,vtkdir=vtkbase,force_recal=force_recal)
+        else:
+            preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,force_recal=force_recal)
     else:
         preprocessing.doall(base,problem_id,do_pickling=do_pickling,use_yt=False,force_recal=force_recal)
 

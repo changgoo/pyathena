@@ -475,16 +475,16 @@ class AthenaDataSet(AthenaDomain):
             u['magnetic_energy1']=u['magnetic_field']**2
             u['magnetic_energy2']=u['magnetic_field']**2
             u['magnetic_energy3']=u['magnetic_field']**2
-            if field is 'magnetic_energy1': return B1**2/(8*np.pi)
-            if field is 'magnetic_energy2': return B2**2/(8*np.pi)
-            if field is 'magnetic_energy3': return B3**2/(8*np.pi)
+            if field is 'magnetic_energy1': return 0.5*B1**2
+            if field is 'magnetic_energy2': return 0.5*B2**2
+            if field is 'magnetic_energy3': return 0.5*B3**2
         elif field.startswith('magnetic_pressure'):
             self._read_grid_data(grid,'magnetic_field')
             B1=gd['magnetic_field1']
             B2=gd['magnetic_field2']
             B3=gd['magnetic_field3']
             u['magnetic_pressure']=u['magnetic_field']**2
-            if field is 'magnetic_pressure': return (B1**2+B2**2+B3**2)/(8*np.pi)
+            if field is 'magnetic_pressure': return 0.5*(B1**2+B2**2+B3**2)
         elif field.startswith('plasma_beta'):
             vfield='magnetic_field'
             unit=u[vfield]
@@ -495,7 +495,7 @@ class AthenaDataSet(AthenaDomain):
             B3=gd[vfield+'3']
             press=gd['pressure']
             u['plasma_beta']=u['pressure']/unit**2
-            if field is 'plasma_beta': return press*(8.0*np.pi)/(B1**2+B2**2+B3**2)
+            if field is 'plasma_beta': return press*2/(B1**2+B2**2+B3**2)
         elif field.startswith('alfven_velocity'):
             vfield='magnetic_field'
             unit=u[vfield]
@@ -508,9 +508,9 @@ class AthenaDataSet(AthenaDomain):
             u['alfven_velocity1']=np.sqrt(unit**2/u['density'])
             u['alfven_velocity2']=np.sqrt(unit**2/u['density'])
             u['alfven_velocity3']=np.sqrt(unit**2/u['density'])
-            if field is 'alfven_velocity1': return B1/np.sqrt(4*np.pi*den)
-            if field is 'alfven_velocity2': return B2/np.sqrt(4*np.pi*den)
-            if field is 'alfven_velocity3': return B3/np.sqrt(4*np.pi*den)
+            if field is 'alfven_velocity1': return B1/np.sqrt(den)
+            if field is 'alfven_velocity2': return B2/np.sqrt(den)
+            if field is 'alfven_velocity3': return B3/np.sqrt(den)
         elif field.startswith('sound_speed'):
             self._read_grid_data(grid,'density')
             self._read_grid_data(grid,'pressure')
@@ -551,9 +551,9 @@ class AthenaDataSet(AthenaDomain):
             u['magnetic_stress1']=unit**2
             u['magnetic_stress2']=unit**2
             u['magnetic_stress3']=unit**2
-            if field is 'magnetic_stress1': return B2*B3/(4*np.pi) 
-            if field is 'magnetic_stress2': return B1*B3/(4*np.pi) 
-            if field is 'magnetic_stress3': return B1*B2/(4*np.pi) 
+            if field is 'magnetic_stress1': return B2*B3 
+            if field is 'magnetic_stress2': return B1*B3 
+            if field is 'magnetic_stress3': return B1*B2 
             return B1*B2/(4*np.pi)
         elif field.startswith('reynold_stress'):
             self._read_grid_data(grid,'density')
