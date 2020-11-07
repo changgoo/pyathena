@@ -82,11 +82,11 @@ def set_field_list(par):
         zprof_flist+='dB1,dB2,dB3,dPB1,dPB2,dPB3,dvA1,dvA2,dvA3'.split(',')
         zprof_flist+='S1,S2,S3'.split(',')
     for i in range(nscalar): zprof_flist+=['s%d' % (i+1)]
-    zprof_flist+='pA,pd,pvz,pFzd,pFzM1,pFzM2,pFzM3,pFzE1,pFzE2,pFzE3,pFzP'.split(',')
+    zprof_flist+='pA,pd,pP,pvz,pFzd,pFzM1,pFzM2,pFzM3,pFzE1,pFzE2,pFzE3,pFzP'.split(',')
     zprof_flist+='pFzEge,pFzEgsg,pFzEtidal'.split(',')
     if MHD: zprof_flist+='pSzEm1,pSzEm2,pSzvB1,pSzvB2'.split(',')
     for i in range(nscalar): zprof_flist+=['pFzs%d' % (i+1)]
-    zprof_flist+='mA,md,mvz,mFzd,mFzM1,mFzM2,mFzM3,mFzE1,mFzE2,mFzE3,mFzP'.split(',')
+    zprof_flist+='mA,md,mP,mvz,mFzd,mFzM1,mFzM2,mFzM3,mFzE1,mFzE2,mFzE3,mFzP'.split(',')
     zprof_flist+='mFzEge,mFzEgsg,mFzEtidal'.split(',')
     if MHD: zprof_flist+='mSzEm1,mSzEm2,mSzvB1,mSzvB2'.split(',')
     for i in range(nscalar): zprof_flist+=['mFzs%d' % (i+1)]
@@ -219,6 +219,7 @@ def get_zprof(data,domain,par,hst):
     for pm in ['p','m']:
         zprof[pm+'A'] = np.ones(d.shape)*dA
         zprof[pm+'d'] = np.copy(d)
+        zprof[pm+'P'] = np.copy(P)
         zprof[pm+'vz'] = np.copy(v3)
         for f in ['d','M1','M2','M3']:
             zprof['%sFz%s' % (pm,f)] = zprof[f]*v3
@@ -252,7 +253,7 @@ def get_zprof(data,domain,par,hst):
 
     return z,zprof
 
-def get_phase(data):
+def get_phase(data,icm=False,icm_field='s4'):
     temp=data['T']
 
     idx={}
@@ -261,6 +262,10 @@ def get_phase(data):
     idx['phase3']=(temp >= 5050) * (temp <2.e4)
     idx['phase4']=(temp >= 2.e4) * (temp <5.e5)
     idx['phase5']=temp >= 5.e5
+    if icm:
+        sicm=np.clip(data[icm_field]/data['d'],0,1)
+        idx['phase6']=sicm > 0.99
+        idx['phase7']=sicm < 0.01
     return idx
 
 def get_mean(dset,dA):
@@ -292,8 +297,8 @@ def get_full_domain(par):
     full_domain['dx']=full_domain['Lx']/full_domain['Nx']
     return full_domain
 
-def dump_zprof_one(f,dc,icm_field=None,outdir='zprof_icm',
-                   plist=['phase1','phase2','phase3','phase4','phase5']):
+def dump_zprof_one(f,dc,icm_field=None,outdir='zprof_icm'):
+                   
     par=dc.par
     hst=dc.hst
 
@@ -334,7 +339,9 @@ def dump_zprof_one(f,dc,icm_field=None,outdir='zprof_icm',
             dset[field]=xr.DataArray(zpw_part[field],
                                      dims=['z','y','x'],coords=[zs,ys,xs])
 
-        idx=get_phase(dset)
+        idx=get_phase(dset,icm=icm,icm_field=icm_field)
+        plist = list(idx.keys())
+
         dA=float(dset['A'][0,0,0].data)
         zp_part=[]
         if icm: 
