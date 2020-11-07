@@ -57,7 +57,8 @@ def los_to_HI_axis_proj(dens,temp,vel,vchannel,memlim=1.,
     """
     
     Nv=len(vchannel)
-    mem=np.prod(temp.shape)*4*Nv/1024.**3
+    mem=np.prod(temp.shape)*8*Nv/1024.**3
+    print(mem)
     if memlim>0:
         if mem>memlim:
             nchunk=int(mem/memlim)+1

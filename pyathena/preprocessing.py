@@ -115,15 +115,20 @@ def zprof_to_xarray(base,problem_dir,problem_id,concatenated=True,icm=False):
     """    
     zpmerge_dir='{}{}/zprof_merged/'.format(base,problem_dir)
     if not os.path.isdir(zpmerge_dir): os.mkdir(zpmerge_dir)
-    plist=['phase1','phase2','phase3','phase4','phase5']
+    if icm:
+        plist=['phase1','phase2','phase3','phase4','phase5','phase6','phase7']
+    else:
+        plist=['phase1','phase2','phase3','phase4','phase5']
+
     for phase in plist:
         zprof_fnames=glob.glob('{}{}/zprof/{}.*.{}.zprof'.format(base,problem_dir,problem_id,phase))
-        if icm:
-            zprof_fnames=glob.glob('{}{}/zprof_icm/{}.*.{}-icm.zprof'.format(base,problem_dir,problem_id,phase))
+        if icm == 1: zprof_fnames=glob.glob('{}{}/zprof_icm/{}.*.{}.zprof'.format(base,problem_dir,problem_id,phase))
+        if icm == 2: zprof_fnames=glob.glob('{}{}/zprof_icm/{}.*.{}-icm.zprof'.format(base,problem_dir,problem_id,phase))
         zprof_fnames.sort()
         zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
-        if icm:
-            zpfile='{}{}/zprof_merged/{}.{}-icm.zprof.nc'.format(base,problem_dir,problem_id,phase)
+        if icm == 1: zpfile='{}{}/zprof_merged/{}.{}.zprof.nc'.format(base,problem_dir,problem_id,phase)
+        if icm == 2: zpfile='{}{}/zprof_merged/{}.{}-icm.zprof.nc'.format(base,problem_dir,problem_id,phase)
+
         if os.path.isfile(zpfile) and concatenated: 
             with xr.open_dataarray(zpfile) as da: da.load()
             nfiles_in_zpmerged=len(da.taxis)

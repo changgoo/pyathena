@@ -118,11 +118,11 @@ def plot_runaways(sim,ax,xaxis,yaxis,yoffset,Ly):
         rstar=ax.scatter(rspx,rspy+yoffset+Ly,marker='o',s=2,color='k',linewidths=0)
 
 def plot_image(sim,ax,cutaxis='z',scafield='nH',vecfield='',
-               yshift=0,log=True,colorbars=True,
+               yshift=0,log=True,colorbars=True,scalnorm=1.,
                clusters=False,runaways=False,
                im_kw=dict(),st_kw=dict()):
     if cutaxis != 'z': yshift=0
-    scal=np.roll(sim.slc[cutaxis][scafield],sim.joffset*yshift,axis=0)
+    scal=np.roll(sim.slc[cutaxis][scafield],sim.joffset*yshift,axis=0)/scalnorm
     
     if log: scal=np.log10(scal)
     xmin,xmax,ymin,ymax=sim.slc[cutaxis+'extent']

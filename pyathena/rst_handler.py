@@ -115,11 +115,12 @@ def get_eint(rstdata,neg_correct=True):
     eint -= 0.5*rstdata['2-MOMENTUM']**2/rstdata['DENSITY']
     eint -= 0.5*rstdata['3-MOMENTUM']**2/rstdata['DENSITY']
     
-    for i,f in enumerate(['1-FIELD','2-FIELD','3-FIELD']):
-        if f is '1-FIELD': Bc=0.5*(rstdata[f][:,:,:-1]+rstdata[f][:,:,1:])
-        elif f is '2-FIELD': Bc=0.5*(rstdata[f][:,:-1,:]+rstdata[f][:,1:,:])
-        elif f is '3-FIELD': Bc=0.5*(rstdata[f][:-1,:,:]+rstdata[f][1:,:,:])
-        eint -= 0.5*Bc**2
+    if '1-FIELD' in rstdata:
+        for i,f in enumerate(['1-FIELD','2-FIELD','3-FIELD']):
+            if f == '1-FIELD': Bc=0.5*(rstdata[f][:,:,:-1]+rstdata[f][:,:,1:])
+            elif f == '2-FIELD': Bc=0.5*(rstdata[f][:,:-1,:]+rstdata[f][:,1:,:])
+            elif f == '3-FIELD': Bc=0.5*(rstdata[f][:-1,:,:]+rstdata[f][1:,:,:])
+            eint -= 0.5*Bc**2
     
     if neg_correct:
         k_end,j_end,i_end = eint.shape
@@ -150,11 +151,12 @@ def to_etot(rstdata):
     eint += 0.5*rstdata['2-MOMENTUM']**2/rstdata['DENSITY']
     eint += 0.5*rstdata['3-MOMENTUM']**2/rstdata['DENSITY']
     
-    for i,f in enumerate(['1-FIELD','2-FIELD','3-FIELD']):
-        if f is '1-FIELD': Bc=0.5*(rstdata[f][:,:,:-1]+rstdata[f][:,:,1:])
-        elif f is '2-FIELD': Bc=0.5*(rstdata[f][:,:-1,:]+rstdata[f][:,1:,:])
-        elif f is '3-FIELD': Bc=0.5*(rstdata[f][:-1,:,:]+rstdata[f][1:,:,:])
-        eint += 0.5*Bc**2
+    if '1-FIELD' in rstdata:
+        for i,f in enumerate(['1-FIELD','2-FIELD','3-FIELD']):
+            if f == '1-FIELD': Bc=0.5*(rstdata[f][:,:,:-1]+rstdata[f][:,:,1:])
+            elif f == '2-FIELD': Bc=0.5*(rstdata[f][:,:-1,:]+rstdata[f][:,1:,:])
+            elif f == '3-FIELD': Bc=0.5*(rstdata[f][:-1,:,:]+rstdata[f][1:,:,:])
+            eint += 0.5*Bc**2
     return eint
 
 def degrade(rstdata,scalar=0):
@@ -210,7 +212,8 @@ def refine(rstdata,scalar=0):
     cc_varnames=['DENSITY','1-MOMENTUM','2-MOMENTUM','3-MOMENTUM',\
                  'ENERGY']
     if 'POTENTIAL' in rstdata: cc_varnames += ['POTENTIAL']
-    fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
+    if '1-FIELD' in rstdata: fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
+    else: fc_varnames=[]
     scalar_varnames=[]
     for ns in range(scalar):
         scalar_varnames.append('SCALAR %d' % ns)

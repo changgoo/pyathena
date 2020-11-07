@@ -74,6 +74,8 @@ for pid in ids:
     aux_surf=aux['surface_density']
     if system == 'tigress_rps':
         field_list=['star_particles','surface_density','specific_scalar3_proj','nH','specific_scalar3','temperature','pok','ram_pok_z']
+    elif system == 'tigress_arm':
+        field_list=['star_particles','surface_density','nH','temperature','pok','velocity_x','velocity_z']
     else:
         field_list=['star_particles','surface_density','nH','temperature','pok','velocity_z']
     slcdata=p.load(open(slc_files[0],'rb'), encoding='latin1')
