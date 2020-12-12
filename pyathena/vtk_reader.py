@@ -18,7 +18,7 @@ def parse_filename(filename):
     """
     #   PARSE_FILENAME    Break up a full-path filename into its component
     #   parts to check the extension, make it more readable, and extract the step
-    #   number.  
+    #   number.
     #
     #   PATH,BASENAME,STEP,EXT = PARSE_FILENAME(FILENAME)
     #
@@ -29,7 +29,7 @@ def parse_filename(filename):
 
 
     path=os.path.dirname(filename)
-    if path[-3:] == 'id0': 
+    if path[-3:] == 'id0':
         path=path[:-3]
         mpi_mode=True
     else:
@@ -58,8 +58,8 @@ def parse_line(line, grid):
         time_index = sp.index(b"time=")
         grid['time'] = float(sp[time_index+1].rstrip(b','))
         if b'level' in sp: grid['level'] = int(sp[time_index+3].rstrip(b','))
-        if b'domain' in sp: grid['domain'] = int(sp[time_index+5].rstrip(b','))  
-        if sp[0] == b"PRIMITIVE": 
+        if b'domain' in sp: grid['domain'] = int(sp[time_index+5].rstrip(b','))
+        if sp[0] == b"PRIMITIVE":
             grid['prim_var_type']=True
     elif b"DIMENSIONS" in sp:
         grid['Nx'] = np.array(sp[-3:]).astype('int')
@@ -85,7 +85,7 @@ def parse_line(line, grid):
 class AthenaDomain(object):
     def __init__(self,filename,ds=None,setgrid=True,serial=False):
         self.flist = glob.glob(filename)
-        if len(self.flist) == 0: 
+        if len(self.flist) == 0:
             print(('no such file: %s' % filename))
         dir, id, step, ext, mpi = parse_filename(filename)
         self.dir = dir
@@ -101,20 +101,20 @@ class AthenaDomain(object):
             for n in range(1,self.ngrids):
                 self.flist.append(os.path.join(dir,'id%d/%s-id%d.%s.%s' % (n,id,n,step, ext)))
         if setgrid:
-            if ds==None: 
+            if ds==None:
                 self.grids=self._setup_grid()
-            else: 
+            else:
                 if ds.grids[0]['filename'] != self.flist[0]:
                     for g,f in zip(ds.grids,self.flist): g['filename']=f
                 self.grids=ds.grids
             self.domain=self._setup_domain(self.grids)
-            if ds==None: 
+            if ds==None:
                 self.domain['field_map']=None
             else:
                 self.domain['field_map']=ds.domain['field_map']
             self._setup_mpi_grid()
             self._setup()
-    
+
     def _setup(self):
         self.domain['data']={}
 
@@ -161,7 +161,7 @@ class AthenaDomain(object):
             for m in range(self.NGrids[1]):
                 for l in range(self.NGrids[0]):
                     self.grids[i]['is']=np.array([l*gnx[0],m*gnx[1],n*gnx[2]])
-                    i += 1 
+                    i += 1
 
     def _setup_grid(self):
         grids=[]
@@ -189,7 +189,7 @@ class AthenaDomain(object):
 class AthenaZprof(object):
     def __init__(self,filename,stitch=True,clean=False,forced_clean=False):
         path=os.path.dirname(filename)
-        if path[-3:] == 'id0': 
+        if path[-3:] == 'id0':
             path=path[:-3]
             mpi=True
         else:
@@ -212,7 +212,7 @@ class AthenaZprof(object):
         self.filename = filename
         #print id,step,phase,ext
         self._set_plist()
-        if not filename.endswith('.p'): 
+        if not filename.endswith('.p'):
             self._set_time()
         if stitch:
             for p in self.plist: self._stitch(p)
@@ -230,7 +230,7 @@ class AthenaZprof(object):
         zpfile = glob.glob(os.path.join(self.path,'%s.%s.*.%s' % (self.id, self.step, self.ext)))
         zpfile.sort()
         self.plist=[]
-        for f in zpfile: 
+        for f in zpfile:
             phase=f.split('.')[-2]
             self.plist.append(phase)
 
@@ -239,8 +239,8 @@ class AthenaZprof(object):
         flist = [fname]
         #nproc = len(glob.glob(os.path.join(self.path,'id*')))
         if self.mpi: flist += glob.glob(os.path.join(self.path,'id*/%s-id*.%s.%s.%s' % (self.id, self.step, phase, self.ext)))
-        nf=len(flist)    
-        if not test_pickle(fname): 
+        nf=len(flist)
+        if not test_pickle(fname):
             if nf > 1:
 #                for i in range(1,nproc):
 #                    flist.append(os.path.join(self.path,'id%d/%s-id%d.%s.%s.%s' % (i, self.id, i, self.step, phase, self.ext)))
@@ -258,9 +258,9 @@ class AthenaZprof(object):
 
     def _clean(self,phase,forced=False):
         fname=self.zpfile(phase)
-        if test_pickle(fname) or forced: 
+        if test_pickle(fname) or forced:
             if self.mpi: flist = glob.glob(os.path.join(self.path,'id*/%s-id*.%s.%s.%s' % (self.id, self.step, phase, self.ext)))
-            if len(flist) != 0: 
+            if len(flist) != 0:
                 print(("Clean for ",phase))
                 for f in flist: os.remove(f)
 
@@ -270,24 +270,24 @@ class AthenaZprof(object):
         return string.join(f_sp,'.')
 
     def read(self,phase='all'):
-        if phase=='all': 
+        if phase=='all':
             zprof={}
             for p in self.plist:
                 zprof[p]=pd.read_pickle(self.zpfile(p)+'.p')
-        elif phase in self.plist: 
+        elif phase in self.plist:
             zprof=pd.read_pickle(self.zpfile(phase)+'.p')
-        else: 
+        else:
             print((phase," is not defined"))
 
         return zprof
-            
+
 class AthenaDataSet(AthenaDomain):
     def _setup(self):
         for i,g in enumerate(self.grids):
-#            if g['field_map']==None: 
+#            if g['field_map']==None:
 #                print "Setting %d-th grid" % (i)
 #                self._set_field_map(g)
-#            else: 
+#            else:
             g['data']={}
         self.units=set_units()
         if self.domain['field_map']==None:
@@ -309,7 +309,7 @@ class AthenaDataSet(AthenaDomain):
                     nscal += 1
         self.field_list=list(fm.keys())
 
-        
+
         derived_field_list=[]
         derived_field_list_hd=[]
         derived_field_list_mhd=[]
@@ -389,9 +389,9 @@ class AthenaDataSet(AthenaDomain):
 
         nvar=fm[field]['nvar']
         var = self._read_field(file,fm[field])
-        if nvar == 1: 
+        if nvar == 1:
             var.shape = (nx3, nx2, nx1)
-        else: 
+        else:
             var.shape = (nx3, nx2, nx1, nvar)
         file.close()
         grid['data'][field]=var
@@ -428,7 +428,7 @@ class AthenaDataSet(AthenaDomain):
             return gd[field]
         elif field.startswith('velocity'):
             self._read_grid_data(grid,'velocity')
-            if field == 'velocity_magnitude': 
+            if field == 'velocity_magnitude':
                 v1=gd['velocity1']
                 v2=gd['velocity2']
                 v3=gd['velocity3']
@@ -551,10 +551,9 @@ class AthenaDataSet(AthenaDomain):
             u['magnetic_stress1']=unit**2
             u['magnetic_stress2']=unit**2
             u['magnetic_stress3']=unit**2
-            if field == 'magnetic_stress1': return B2*B3 
-            if field == 'magnetic_stress2': return B1*B3 
+            if field == 'magnetic_stress1': return B2*B3
+            if field == 'magnetic_stress2': return B1*B3
             if field == 'magnetic_stress3': return B1*B2 
-            return B1*B2/(4*np.pi)
         elif field.startswith('reynold_stress'):
             self._read_grid_data(grid,'density')
             self._read_grid_data(grid,'velocity')
@@ -590,10 +589,10 @@ class AthenaDataSet(AthenaDomain):
             den=gd['density']
             sscal=gd['specific_scalar'+scal]
             return sscal*den
-        
+
     def _set_data_array(self,field,dnx):
         fm=self.domain['field_map']
-        
+
         if field in self.field_list:
             if fm[field]['nvar']==3:
                 data=np.empty((dnx[2],dnx[1],dnx[0],3),dtype=fm[field]['dtype'])
@@ -610,7 +609,7 @@ class AthenaDataSet(AthenaDomain):
         return data
 
     def _get_slab_grid(self,slab=1,verbose=False):
-        if slab > self.NGrids[2]: 
+        if slab > self.NGrids[2]:
             print(("%d is lareger than %d" % (slab,self,NGrids[2])))
         NxNy=self.NGrids[0]*self.NGrids[1]
         gidx, = np.where(slab == self.gid//NxNy+1)
@@ -624,7 +623,7 @@ class AthenaDataSet(AthenaDomain):
         #fm=self.grids[0]['field_map']
         fm=self.domain['field_map']
         dnx=np.copy(self.domain['Nx'])
-        if slab: 
+        if slab:
             dnx[2]=self.grids[0]['Nx'][2]
             grids = self._get_slab_grid(slab=slab,verbose=verbose)
         else:
@@ -648,7 +647,7 @@ class AthenaDataSet(AthenaDomain):
                 else:
                     gd=gd[0:gnx[2],0:gnx[1],0:gnx[0]]
                     data[gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]]=gd
-            
+
         return data
 
 
@@ -673,7 +672,7 @@ class AthenaRegion(object):
             zmax=g['right_edge'][axis]
             gle=g['left_edge'][aidx]
             gre=g['right_edge'][aidx]
-            
+
             if (zmin-c)*(zmax-c)<=0:
                 dle = gle-le
                 dre = gre-re
@@ -692,7 +691,7 @@ class AthenaRegion(object):
         for g in ds.grids:
             gle=g['left_edge']
             gre=g['right_edge']
-            
+
             # get all grids with gre > le
             if (gre > le).all() and (gle <re).all():
                 print((g['left_edge'],g['right_edge']))
@@ -703,7 +702,7 @@ class AthenaRegion(object):
         self.ngrid=len(grid_list)
         return grid_list
 
-    
+
 class AthenaSlice(AthenaRegion):
     def _region_selector(self,ds,*args,**kwargs):
         self.slice(ds,*args,**kwargs)
@@ -751,7 +750,7 @@ class AthenaSlice(AthenaRegion):
             gis=g['is'][aidx]
             gnx=g['Nx'][aidx]
             gie=gis+gnx
-            if field not in gd: 
+            if field not in gd:
                 #ng = ng+1
                 #print "Reading:",g['filename'],ng
                 gdata=ds._get_grid_data(g,field)
@@ -831,7 +830,7 @@ def set_field_map(grid):
             line=file.readline()
             sp = line.strip().split()
         #print line,sp,len(sp)
-        field=sp[1].decode('utf-8')    
+        field=sp[1].decode('utf-8')
         field_map[field] = {}
         field_map[field]['read_table']=False
 
@@ -853,7 +852,7 @@ def set_field_map(grid):
             field_map[field]['ndata']=Nx[0]*(Nx[1]+1)*Nx[2]
         elif field == 'face_centered_B3':
             field_map[field]['ndata']=Nx[0]*Nx[1]*(Nx[2]+1)
-                
+
         if sp[2]==b'int': dtype='i'
         elif sp[2]==b'float': dtype='f'
         elif sp[2]==b'double': dtype='d'
@@ -957,3 +956,51 @@ def starparvtk_to_starparhist(spfiles):
     fsp=f.split('.')
     sppd.to_pickle(fsp[0]+'.starpar.p')
     return sppd
+
+def read_data_slab(ds,field,z0,z1,verbose=False):
+    """Read given field within z=(z0,z1)
+
+    Parameters
+    ==========
+      ds : AthenaDataSet
+      field : str
+        field name to read
+      z0,z1 : float
+        range of z coordinate
+
+    Returns
+    =======
+      data : xarray.DataArray
+    """
+    # get grid shape
+    NG1,NG3,NG3=ds.domain['Nx']/ds.grids[0]['Nx']
+    # get grid size
+    lx1,lx2,lx3=ds.grids[0]['Nx']*ds.grids[0]['dx']
+    # get left edge of the domain
+    le=ds.domain['left_edge']
+
+    data = []
+    dm = dict()
+    dm['left_edge'] = []
+    dm['right_edge'] = []
+    for k in range(NG3.astype('int')):
+        zmin=le[2]+lx3*k
+        zmax=le[2]+lx3*(k+1)
+    #     print(k,zmin,zmax,z1>zmin,z0<zmax,(z1>zmin) * (z0<zmax))
+        if (z1>zmin) * (z0<zmax):
+            grids = ds._get_slab_grid(slab=k+1,verbose=verbose)
+            for g in grids:
+                dm['left_edge'].append(g['left_edge'])
+                dm['right_edge'].append(g['right_edge'])
+                dm['dx']=g['dx']
+            data.append(ds.read_all_data(field,slab=k+1))
+    dm['left_edge'] = np.min(dm['left_edge'],axis=0)
+    dm['right_edge'] = np.max(dm['right_edge'],axis=0)
+    dm['Lx'] = dm['right_edge']-dm['left_edge']
+    dm['Nx'] = (dm['Lx']/dm['dx']).astype('int')
+    data = np.concatenate(data)
+
+    x,y,z = pa.cc_arr(dm)
+
+    da = xr.DataArray(data,coords=[z,y,x],dims=['z','y','x'])
+    return da.sel(z=slice(z0,z1))
