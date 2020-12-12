@@ -12,6 +12,11 @@ from matplotlib.pyplot import cm
 
 from .tigunits import *
 
+def toggle_xticks(axes,visible=False):
+    plt.setp([ax.get_xticklabels() for ax in axes],visible=visible)
+def toggle_yticks(axes,visible=False):
+    plt.setp([ax.get_yticklabels() for ax in axes],visible=visible)
+
 plt.rcParams['figure.dpi']=200
 
 def set_axis_color(ax,xy,color):

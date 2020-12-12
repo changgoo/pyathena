@@ -4,7 +4,7 @@ import glob
 import os
 import sys
 
-#writer 
+#writer
 
 def parse_misc_info(rstfile):
     fp=open(rstfile,'rb')
@@ -17,12 +17,12 @@ def parse_misc_info(rstfile):
     while 1:
         block=search_block[iblock]
         size[block]=fp.tell()-start[block]
-        
+
         l=fp.readline()
         if not l: break
-    
+
         if l.startswith(b'N_STEP') or l.startswith(b'DENSITY') or \
-           l.startswith(b'STAR') or l.startswith(b'USER'): 
+           l.startswith(b'STAR') or l.startswith(b'USER'):
             iblock+=1
             start[search_block[iblock]]=start[block]+size[block]
 
@@ -34,7 +34,7 @@ def parse_misc_info(rstfile):
             data[block]=fp.read(size[block])
 
     fp.close()
-    
+
     return data
 
 def write_onefile(newfile,data_part,data_par):
@@ -54,7 +54,7 @@ def write_onefile(newfile,data_part,data_par):
             fp.write('\n{}\n'.format(f).encode())
             fp.write(data_part[f].flatten().tobytes('C'))
     fp.write(b'\n')
-    for block in ['star','user']: 
+    for block in ['star','user']:
       if block in data_par: fp.write(data_par[block])
     fp.close()
 
@@ -66,7 +66,7 @@ def write_allfile(pardata,rstdata,grids,grid_disp=np.array([0,0,0]),
 #    if not (ds.domain['Nx'][::-1] == rstdata['DENSITY'].shape).all():
 #       print 'mismatch in DIMENSIONS!!'
 #       print 'restart data dimension:', rstdata['DENSITY'].shape
-#       print 'new grid data dimension:', ds.domain['Nx'][::-1] 
+#       print 'new grid data dimension:', ds.domain['Nx'][::-1]
 #
 #       return -1
 
@@ -91,7 +91,7 @@ def write_allfile(pardata,rstdata,grids,grid_disp=np.array([0,0,0]),
         for f in cc_varnames:
             if f in fields:
                 data[f]=rstdata[f][gis[2]:gie[2],gis[1]:gie[1],gis[0]:gie[0]]
- 
+
         for f in fc_varnames:
             ib,jb,kb=(0,0,0)
             if f in fields:
@@ -99,7 +99,7 @@ def write_allfile(pardata,rstdata,grids,grid_disp=np.array([0,0,0]),
                 if f.startswith('2'): jb=1
                 if f.startswith('3'): kb=1
                 data[f]=rstdata[f][gis[2]:gie[2]+kb,gis[1]:gie[1]+jb,gis[0]:gie[0]+ib]
- 
+
         for ns in range(scalar):
             f='SCALAR %d' % ns
             if f in fields:
@@ -114,14 +114,14 @@ def get_eint(rstdata,neg_correct=True):
     eint -= 0.5*rstdata['1-MOMENTUM']**2/rstdata['DENSITY']
     eint -= 0.5*rstdata['2-MOMENTUM']**2/rstdata['DENSITY']
     eint -= 0.5*rstdata['3-MOMENTUM']**2/rstdata['DENSITY']
-    
+
     if '1-FIELD' in rstdata:
         for i,f in enumerate(['1-FIELD','2-FIELD','3-FIELD']):
             if f == '1-FIELD': Bc=0.5*(rstdata[f][:,:,:-1]+rstdata[f][:,:,1:])
             elif f == '2-FIELD': Bc=0.5*(rstdata[f][:,:-1,:]+rstdata[f][:,1:,:])
             elif f == '3-FIELD': Bc=0.5*(rstdata[f][:-1,:,:]+rstdata[f][1:,:,:])
             eint -= 0.5*Bc**2
-    
+
     if neg_correct:
         k_end,j_end,i_end = eint.shape
         k_str=j_str=i_str = 0
@@ -141,16 +141,16 @@ def get_eint(rstdata,neg_correct=True):
             print(kk,jj,ii,eint[kk,jj,ii],eavg[-1],epart.sum(),e_neg.sum())
         eint[k,j,i]=np.array(eavg)
         if len(eint[eint<0]) > 0: sys.exit("negative energy persist!")
- 
+
     return eint
 
 def to_etot(rstdata):
     eint=rstdata['ENERGY'].copy()
-   
+
     eint += 0.5*rstdata['1-MOMENTUM']**2/rstdata['DENSITY']
     eint += 0.5*rstdata['2-MOMENTUM']**2/rstdata['DENSITY']
     eint += 0.5*rstdata['3-MOMENTUM']**2/rstdata['DENSITY']
-    
+
     if '1-FIELD' in rstdata:
         for i,f in enumerate(['1-FIELD','2-FIELD','3-FIELD']):
             if f == '1-FIELD': Bc=0.5*(rstdata[f][:,:,:-1]+rstdata[f][:,:,1:])
@@ -160,7 +160,7 @@ def to_etot(rstdata):
     return eint
 
 def degrade(rstdata,scalar=0):
-    
+
     cc_varnames=['DENSITY','1-MOMENTUM','2-MOMENTUM','3-MOMENTUM',\
                  'ENERGY','POTENTIAL']
     fc_varnames=['1-FIELD','2-FIELD','3-FIELD']
@@ -183,7 +183,7 @@ def degrade(rstdata,scalar=0):
                 for k in range(2):
                     newdata += data[k::2,j::2,i::2]
         rstdata_new[f]=newdata*0.125
-        
+
     for f in fc_varnames:
         data=rstdata[f].copy()
         shape=np.array(data.shape)/2
@@ -203,12 +203,12 @@ def degrade(rstdata,scalar=0):
                 for i in range(2):
                     newdata += data[::2,j::2,i::2]
         rstdata_new[f]=newdata*0.25
-        
+
     rstdata_new['ENERGY']=to_etot(rstdata_new)
     return rstdata_new
 
 def refine(rstdata,scalar=0):
-    
+
     cc_varnames=['DENSITY','1-MOMENTUM','2-MOMENTUM','3-MOMENTUM',\
                  'ENERGY']
     if 'POTENTIAL' in rstdata: cc_varnames += ['POTENTIAL']
@@ -217,7 +217,7 @@ def refine(rstdata,scalar=0):
     scalar_varnames=[]
     for ns in range(scalar):
         scalar_varnames.append('SCALAR %d' % ns)
-    
+
     if scalar: cc_varnames += scalar_varnames
     rstdata_new={}
     for f in cc_varnames:
@@ -232,7 +232,7 @@ def refine(rstdata,scalar=0):
                 for k in range(2):
                     newdata[k::2,j::2,i::2] = data.copy()
         rstdata_new[f]=newdata
-        
+
     for f in fc_varnames:
         data=rstdata[f]
         shape=np.array(data.shape)*2
@@ -252,7 +252,7 @@ def refine(rstdata,scalar=0):
                 for k in range(2):
                     newdata[k::2,::2,i::2] = data.copy()
                     newdata[k::2,1::2,i::2] = idata.copy()
-                    
+
         if f is '3-FIELD':
             newdata=np.zeros(shape-np.array([1,0,0]),dtype='d')
             idata = 0.5*(data[:-1,:,:]+data[1:,:,:])
@@ -261,7 +261,7 @@ def refine(rstdata,scalar=0):
                     newdata[::2,j::2,i::2] = data.copy()
                     newdata[1::2,j::2,i::2] = idata.copy()
         rstdata_new[f]=newdata
-        
+
     rstdata_new['ENERGY']=to_etot(rstdata_new)
     return rstdata_new
 
@@ -282,7 +282,7 @@ def calculate_grid(Nx,NBx):
                grid['is']=np.array([l*NBx[0],m*NBx[1],n*NBx[2]]).astype('int')
                grid['Nx']=np.array(NBx).astype('int')
                grids.append(grid)
-               i += 1 
+               i += 1
 
     return grids,NGrids
 
@@ -293,7 +293,7 @@ def parse_par(rstfile):
     fp=open(rstfile,'rb')
     par={}
     line=fp.readline().decode('utf-8')
-    
+
     while 1:
 
         if line.startswith('<'):
@@ -312,11 +312,11 @@ def parse_par(rstfile):
     par[block]=fp.tell()
 
     fp.close()
-    
+
     return par
 
 def parse_rst(var,par,fm):
-    
+
     starpar=False
     if 'star particles' in par['configure']:
         if par['configure']['star particles'] == 'none':
@@ -349,7 +349,7 @@ def parse_rst(var,par,fm):
         if var.startswith('1'): nx1 += 1
         if var.startswith('2'): nx2 += 1
         if var.startswith('3'): nx3 += 1
-            
+
         ndata=nx1*nx2*nx3
         dtype='d'
         vtype='fcvar'
@@ -365,14 +365,14 @@ def parse_rst(var,par,fm):
         return 0
 
     fm[var]={}
-    
+
     fm[var]['ndata']=ndata
     fm[var]['dtype']=dtype
     fm[var]['vtype']=vtype
-    
+
     if vtype == 'ccvar' or vtype == 'fcvar':
         fm[var]['nx']=(nx3,nx2,nx1)
-        
+
     return 1
 
 def read_star(fp,nscal=0,ghost=True):
@@ -417,7 +417,7 @@ def read_star(fp,nscal=0,ghost=True):
     return star_dict
 
 def read_rst_grid(rstfile,verbose=False,starghost=True):
-    
+
     par=parse_par(rstfile)
 
     fp=open(rstfile,'rb')
@@ -435,28 +435,28 @@ def read_rst_grid(rstfile,verbose=False,starghost=True):
             vtype=rst[var]['vtype']
             dsize=ndata*struct.calcsize(dtype)
             data=fp.read(dsize)
-            if vtype == 'param': 
+            if vtype == 'param':
                 if verbose: print(var,struct.unpack('<'+ndata*dtype,data))
             elif vtype == 'star':
                 nstar,=struct.unpack('<'+ndata*dtype,data)
                 data=fp.read(dsize)
-                star_list=[] 
+                star_list=[]
                 if nstar > 0:
                   for i in range(nstar):
                       star_list.append(read_star(fp,nscal=nscal,ghost=starghost))
-                  if verbose: 
+                  if verbose:
                       print(var, nstar)
                       print(star_list[0])
                       print(star_list[nstar-1])
                 data_array[var]=star_list
-            else: 
+            else:
                 arr=np.asarray(struct.unpack('<'+ndata*dtype,data))
                 arr.shape = rst[var]['nx']
                 data_array[var]=arr
                 if verbose: print(var, arr.mean(), arr.shape)
                 if var.startswith('SCALAR'): nscal += 1
             fp.readline()
-        else: 
+        else:
             break
     if verbose: print(l, fp.tell())
     fp.close()
@@ -503,7 +503,7 @@ def read(rstfile,grids,NGrids,parfile=None,verbose=False,starghost=True):
         gis=g['is']
         gnx=g['Nx']
         gie=gis+gnx
-#        if i % 50 == 0: 
+#        if i % 50 == 0:
 #            print i,gis,gie
 #            print rstfile,g['filename']
         rstfname = '%s/%s-id%d%s' % (dirname,basename[:-9],i,basename[-9:])
@@ -645,7 +645,7 @@ def to_hdf5(h5file,rstdata,ds):
             print(ax)
         else:
             ccoord[ax] = xc[ax]
-        
+
         if ax in list(fcoord.keys()):
             print(ax)
         else:

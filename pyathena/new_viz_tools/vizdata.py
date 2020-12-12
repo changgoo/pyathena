@@ -26,7 +26,7 @@ class data(object):
 
     def get_list_itimes(self):
         vtkfiles=glob.glob('{}{}/surf/{}.????.surf.p'.format(self.base,self.pdir,self.pid))
-        vtkfiles.sort() 
+        vtkfiles.sort()
         self.itimes = []
         for f in vtkfiles:
             fbase=os.path.basename(f)
@@ -45,7 +45,7 @@ class data(object):
         pdir=self.pdir
         base=self.base
         itime=self.itime
-        
+
         self.readhst()
         #self.ds=pa.AthenaDataSet('{}/id0/{}.{:04d}.vtk'.format(self.vtkdir,pid,itime))
         self.sp=pa.read_starvtk('{}{}/starpar/{}.{:04d}.starpar.vtk'.format(base,pdir,pid,itime))
@@ -58,8 +58,8 @@ class data(object):
                     setattr(self,proj,pd.read_pickle(proj_file))
                 else:
                     setattr(self,proj[1:],pd.read_pickle(proj_file))
-        
-        
+
+
         sp=self.sp
         if len(sp)>0:
             if not 'mage' in sp: sp['mage']=sp['age']
@@ -72,7 +72,7 @@ class data(object):
             self.runpos=dict(x=runaway['x1'],y=runaway['x2'],z=runaway['x3'])
         self.clmass_keys=np.cbrt([1.e3,1.e4,1.e5])*5
         self.clcmap=add_alpha_to_cmap(cma.ember_r,expo=1,reversed=True)
-        
+
         time = self.slc['time']
         Lx = self.par['x1max']-self.par['x1min']
         Ly = self.par['x2max']-self.par['x2min']
