@@ -11,7 +11,7 @@ axes.axisbelow: True
 axes.grid: true
 axes.edgecolor: black
 axes.linewidth: 1.0
-axes.titlesize: x-large
+axes.titlesize: large
 
 patch.edgecolor: f0f0f0
 patch.linewidth: 0.5
@@ -30,8 +30,8 @@ ytick.minor.size: 3
 ytick.major.width: 2
 xtick.direction: in
 ytick.direction: in
-xtick.minor.visible: False
-ytick.minor.visible: False
+xtick.minor.visible: True
+ytick.minor.visible: True
 
 font.size:14.0
 
@@ -44,4 +44,4 @@ figure.subplot.bottom: 0.07
 figure.subplot.hspace: 0.0
 figure.facecolor: white
 figure.figsize: 8, 6
-figure.dpi: 100
+figure.dpi: 200
