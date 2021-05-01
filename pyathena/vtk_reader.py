@@ -14,7 +14,7 @@ from pyathena.ath_hst import test_pickle
 from pyathena.utils import *
 from pyathena.set_units import set_units
 
-def parse_filename(filename):
+def parse_filename(filename,outid=None):
     """
     #   PARSE_FILENAME    Break up a full-path filename into its component
     #   parts to check the extension, make it more readable, and extract the step
@@ -38,14 +38,30 @@ def parse_filename(filename):
 
     base=os.path.basename(filename)
     base_split=base.split('.')
-    if len(base_split) == 3:
-        id=base_split[0]
-        step=base_split[1]
-        ext=base_split[2]
+    if outid == None:
+        if len(base_split) == 3:
+            id=base_split[0]
+            step=base_split[1]
+            ext=base_split[2]
+        else:
+            id='.'.join(base_split[:-2])
+            step=base_split[-2]
+            ext=base_split[-1]
     else:
-        id='.'.join(base_split[:-2])
-        step=base_split[-2]
-        ext=base_split[-1]
+        if len(base_split) == 4:
+            if outid == base_split[2]:
+                id=base_split[0]
+                step=base_split[1]
+                ext=base_split[3]
+            else:
+                print("{} does not back with {} in {}".format(outid, base_split[2], base))
+        else:
+            if outid == base_split[-2]:
+                id='.'.join(base_split[:-3])
+                step=base_split[-3]
+                ext=base_split[-1]
+            else:
+                print("{} does not back with {} in {}".format(outid, base_split[-2], base))
 
     return path,id,step,ext,mpi_mode
 
@@ -83,23 +99,31 @@ def parse_line(line, grid):
 
 
 class AthenaDomain(object):
-    def __init__(self,filename,ds=None,setgrid=True,serial=False):
+    def __init__(self,filename,ds=None,setgrid=True,serial=False,outid=None):
         self.flist = glob.glob(filename)
         if len(self.flist) == 0:
             print(('no such file: %s' % filename))
-        dir, id, step, ext, mpi = parse_filename(filename)
+        dir, id, step, ext, mpi = parse_filename(filename,outid=outid)
         self.dir = dir
         self.id = id
         self.step = step
         self.ext = ext
+        self.outid = outid
         self.starfile = os.path.join(dir+'id0/','%s.%s.%s.%s' % (id,step,'starpar',ext))
         if serial: mpi = False
         self.mpi = mpi
         self.ngrids = 1
         if mpi:
-            self.ngrids += len(glob.glob(os.path.join(dir,'id*/%s-id*.%s.%s' % (id, step, ext))))
-            for n in range(1,self.ngrids):
-                self.flist.append(os.path.join(dir,'id%d/%s-id%d.%s.%s' % (n,id,n,step, ext)))
+            if outid == None:
+                self.ngrids += len(glob.glob(os.path.join(dir,'id*/%s-id*.%s.%s' % (id, step, ext))))
+                for n in range(1,self.ngrids):
+                    self.flist.append(os.path.join(dir,'id%d/%s-id%d.%s.%s' % (n,id,n,step, ext)))
+            else:
+                flist = glob.glob(os.path.join(dir,'id*/%s-id*.%s.%s.%s' % (id, step, outid, ext)))
+                flist.sort()
+                self.ngrids += len(flist)
+                for f in flist:
+                    self.flist.append(f)
         if setgrid:
             if ds==None:
                 self.grids=self._setup_grid()
@@ -553,7 +577,7 @@ class AthenaDataSet(AthenaDomain):
             u['magnetic_stress3']=unit**2
             if field == 'magnetic_stress1': return B2*B3
             if field == 'magnetic_stress2': return B1*B3
-            if field == 'magnetic_stress3': return B1*B2 
+            if field == 'magnetic_stress3': return B1*B2
         elif field.startswith('reynold_stress'):
             self._read_grid_data(grid,'density')
             self._read_grid_data(grid,'velocity')

@@ -9,8 +9,14 @@ def get_Tidx(T,Tmin,Tmax,nT,dT):
     Tidx=np.log10(T/Tmin)/dT
     return int(Tidx)
 
-
 class coolftn(object):
+    """A class handling tabulted cooling/heating functions and temperature conversion
+    used in the TIGRESS classic simulation suite. Table is hardcoded.
+
+    >>> cooling = coolftn()
+    >>> T1 = P/rho * m_p/k_B # assuming mu = 1
+    >>> temp = cooling.get_temp(T1)
+    """
     def __init__(self):
         self.cool=cool
         self.heat=heat
@@ -50,7 +56,7 @@ class coolftn(object):
         L=Li+(Lip1-Li)*(T1-T1i)/(T1ip1-T1i)
 
         return L
-    
+
     def get_heat(self,T1):
         T1idx=self.get_Tidx(T1)
         Gi=self.heat[T1idx]
